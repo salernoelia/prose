@@ -29,7 +29,7 @@ const {
 
 const dataViewEntries = computed(() => [...entries.value])
 
-const layout = ref<'grid' | 'list'>('list')
+const layout = ref<'grid' | 'list'>('grid')
 const showDeleteDialog = ref(false)
 const bookToDelete = ref<BookDto | null>(null)
 const appDataPath = ref('')
@@ -171,16 +171,7 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                 <div class="flex items-center gap-2">
                     <span class="text-(--text-tertiary) uppercase tracking-wider font-medium">Layout:</span>
                     <div class="flex gap-1.5">
-                        <button
-                            @click="layout = 'list'"
-                            class="px-2 py-0.5 transition-all rounded"
-                            :class="layout === 'list'
-                                ? 'text-(--text-primary) font-semibold bg-(--accent-color-light)'
-                                : 'hover:text-(--text-primary)'
-                                "
-                        >
-                            List
-                        </button>
+
                         <button
                             @click="layout = 'grid'"
                             class="px-2 py-0.5 transition-all rounded"
@@ -190,6 +181,17 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                                 "
                         >
                             Grid
+                        </button>
+
+                        <button
+                            @click="layout = 'list'"
+                            class="px-2 py-0.5 transition-all rounded"
+                            :class="layout === 'list'
+                                ? 'text-(--text-primary) font-semibold bg-(--accent-color-light)'
+                                : 'hover:text-(--text-primary)'
+                                "
+                        >
+                            List
                         </button>
                     </div>
                 </div>

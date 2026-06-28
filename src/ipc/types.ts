@@ -13,7 +13,7 @@
  *   generate these types automatically.
  */
 
-// ── Error ───────────────────────────────────────────────────────────────────
+// Error
 
 /** The serializable error returned by every Tauri command. */
 export interface AppError {
@@ -21,7 +21,7 @@ export interface AppError {
   message: string
 }
 
-// ── Settings ────────────────────────────────────────────────────────────────
+// Settings
 
 /** The full, flattened settings as returned by `settings_get`. */
 export interface SettingsDto {
@@ -45,7 +45,7 @@ export interface SettingsPatchDto {
 /** The three supported reading themes. */
 export type Theme = 'light' | 'dark' | 'sepia'
 
-// ── Event payloads ──────────────────────────────────────────────────────────
+// Event payloads
 
 /** Payload for the `settings:changed` event. */
 export interface SettingsChangedPayload {
@@ -70,7 +70,7 @@ export interface SyncFinishedPayload {
   message: string
 }
 
-// ── Library ──────────────────────────────────────────────────────────────────
+// Library
 
 export type Format = 'epub' | 'pdf'
 
@@ -96,7 +96,7 @@ export interface LibraryQueryDto {
   descending: boolean
 }
 
-// ── Event name constants ────────────────────────────────────────────────────
+// Event name constants
 
 /** Mirrors the Rust `ipc::event` constants so listeners use the same strings. */
 export const EventNames = {
