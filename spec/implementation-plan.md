@@ -122,11 +122,11 @@ Goal: model and ports exist and are unit-tested with fakes. No `tauri`, `rusqlit
 - [x] `feat(core): settings service`
 
 ### Commit 1.7: SyncService conflict logic (pure)
-- [ ] `domain/sync.rs`: conflict resolution only, against the `RemoteStore` port and a fake.
-- [ ] Reading position: keep furthest progression; everything else: last-write-wins by timestamp (FR-SYNC-04).
-- [ ] Outbox model and idempotent, id-keyed operations defined as pure types (architecture section 8).
-- [ ] Thorough unit tests for each conflict branch; this is load-bearing.
-- [ ] `feat(core): sync conflict resolution`
+- [x] `domain/sync.rs`: conflict resolution only, against the `RemoteStore` port and a fake.
+- [x] Reading position: keep furthest progression; everything else: last-write-wins by timestamp (FR-SYNC-04).
+- [x] Outbox model and idempotent, id-keyed operations defined as pure types (architecture section 8).
+- [x] Thorough unit tests for each conflict branch; this is load-bearing.
+- [x] `feat(core): sync conflict resolution`
 
 > Checkpoint: `cargo test` covers the core with fakes only. Target NFR-M-04 (>=80% on `domain/`).
 > Measure with `cargo llvm-cov` and record the number.

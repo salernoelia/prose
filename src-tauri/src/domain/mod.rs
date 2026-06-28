@@ -12,6 +12,7 @@ pub mod model;
 pub mod ports;
 pub mod reading;
 pub mod settings;
+pub mod sync;
 
 #[cfg(test)]
 pub mod testing;
@@ -26,3 +27,4 @@ pub use model::{
 pub use ports::{BookRepository, Clock, CredentialStore, ReaderAdapter, RemoteEntry, RemoteStore};
 pub use reading::ReadingService;
 pub use settings::{ReadingStylePatch, SettingsPatch, SettingsService};
+pub use sync::{merge_by_id, resolve_last_write, resolve_progress, Outbox, SyncOp, SyncService};
