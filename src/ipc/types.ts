@@ -1,0 +1,82 @@
+/**
+ * Hand-mirrored TypeScript types for the Rust IPC boundary.
+ *
+ * These types correspond 1:1 with the DTOs in `src-tauri/src/ipc/dto.rs`,
+ * the error in `src-tauri/src/ipc/error.rs`, and the event payloads in
+ * `src-tauri/src/ipc/event.rs`. They are the **single source of truth** for
+ * the TypeScript side of the boundary (architecture section 4.5, strategy 1).
+ *
+ * Rules:
+ * - Every field is camelCase, matching the Rust `#[serde(rename_all = "camelCase")]`.
+ * - Keep this file in sync with the Rust DTOs during review.
+ * - When the command surface grows, consider adopting `tauri-specta` to
+ *   generate these types automatically.
+ */
+
+// ── Error ───────────────────────────────────────────────────────────────────
+
+/** The serializable error returned by every Tauri command. */
+export interface AppError {
+  code: string;
+  message: string;
+}
+
+// ── Settings ────────────────────────────────────────────────────────────────
+
+/** The full, flattened settings as returned by `settings_get`. */
+export interface SettingsDto {
+  schemaVersion: number;
+  theme: Theme;
+  fontFamily: string;
+  fontSize: number;
+  lineHeight: number;
+  margin: number;
+}
+
+/** Partial settings update sent by `settings_patch`. Only present fields change. */
+export interface SettingsPatchDto {
+  theme?: Theme;
+  fontFamily?: string;
+  fontSize?: number;
+  lineHeight?: number;
+  margin?: number;
+}
+
+/** The three supported reading themes. */
+export type Theme = "light" | "dark" | "sepia";
+
+// ── Event payloads ──────────────────────────────────────────────────────────
+
+/** Payload for the `settings:changed` event. */
+export interface SettingsChangedPayload {
+  settings: SettingsDto;
+}
+
+/** Payload for the `import:progress` event. */
+export interface ImportProgressPayload {
+  message: string;
+  fraction: number;
+}
+
+/** Payload for the `sync:progress` event. */
+export interface SyncProgressPayload {
+  stage: string;
+  fraction: number;
+}
+
+/** Payload for the `sync:finished` event. */
+export interface SyncFinishedPayload {
+  success: boolean;
+  message: string;
+}
+
+// ── Event name constants ────────────────────────────────────────────────────
+
+/** Mirrors the Rust `ipc::event` constants so listeners use the same strings. */
+export const EventNames = {
+  SETTINGS_CHANGED: "settings:changed",
+  LIBRARY_CHANGED: "library:changed",
+  IMPORT_PROGRESS: "import:progress",
+  SYNC_PROGRESS: "sync:progress",
+  SYNC_FINISHED: "sync:finished",
+} as const;
