@@ -10,6 +10,7 @@ Tailwind CSS for styling.
 - `spec/architecture.md` defines how it is built (patterns, module layout, the TS <-> Rust
   IPC contract, reader adapters, settings, sync). Follow it before adding code.
 - `spec/implementation-plan.md` for the implementation progress. Tick off implemented and verified parts.
+- `spec/styles.md` lines out the style guides to utilize in the application
 
 ## The one rule
 

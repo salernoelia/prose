@@ -9,7 +9,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::domain::error::DomainError;
-use crate::domain::model::{Settings, Theme};
+use crate::domain::model::{Book, Format, LibraryEntry, LibraryQuery, Settings, SortKey, Theme};
 use crate::domain::settings::{ReadingStylePatch, SettingsPatch};
 
 /// The full settings, flattened: the nested reading typography is lifted to the
@@ -84,6 +84,80 @@ fn theme_from_str(value: &str) -> Result<Theme, DomainError> {
         "dark" => Ok(Theme::Dark),
         "sepia" => Ok(Theme::Sepia),
         other => Err(DomainError::InvalidInput(format!("unknown theme: {other}"))),
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BookDto {
+    pub id: String,
+    pub format: String,
+    pub title: String,
+    pub author: Option<String>,
+    pub cover: Option<String>,
+}
+
+impl From<Book> for BookDto {
+    fn from(book: Book) -> Self {
+        BookDto {
+            id: book.id.as_str().to_string(),
+            format: match book.format {
+                Format::Epub => "epub".to_string(),
+                Format::Pdf => "pdf".to_string(),
+            },
+            title: book.metadata.title,
+            author: book.metadata.author,
+            cover: book.metadata.cover,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LibraryEntryDto {
+    pub book: BookDto,
+    pub progress: f32,
+    pub last_read: Option<i64>,
+}
+
+impl From<LibraryEntry> for LibraryEntryDto {
+    fn from(entry: LibraryEntry) -> Self {
+        LibraryEntryDto {
+            book: BookDto::from(entry.book),
+            progress: entry.progress,
+            last_read: entry.last_read,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LibraryQueryDto {
+    pub search: Option<String>,
+    pub sort: String,
+    pub descending: bool,
+}
+
+impl TryFrom<LibraryQueryDto> for LibraryQuery {
+    type Error = DomainError;
+
+    fn try_from(dto: LibraryQueryDto) -> Result<Self, Self::Error> {
+        let sort = match dto.sort.as_str() {
+            "title" => SortKey::Title,
+            "author" => SortKey::Author,
+            "last_read" => SortKey::LastRead,
+            "progress" => SortKey::Progress,
+            other => {
+                return Err(DomainError::InvalidInput(format!(
+                    "unknown sort key: {other}"
+                )))
+            }
+        };
+        Ok(LibraryQuery {
+            search: dto.search,
+            sort,
+            descending: dto.descending,
+        })
     }
 }
 

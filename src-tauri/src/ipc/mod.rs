@@ -7,4 +7,5 @@
 pub mod dto;
 pub mod error;
 pub mod event;
+pub mod library;
 pub mod settings;

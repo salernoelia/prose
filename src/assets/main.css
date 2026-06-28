@@ -10,22 +10,22 @@
   /* Color Palette - Light Mode (Classic Paper) */
   --bg-app: #faf9f5;
   --bg-card: #ffffff;
-  
-  --text-primary: #18181b;      /* deep charcoal ink */
-  --text-secondary: #52525b;    /* muted charcoal */
-  --text-tertiary: #a1a1aa;     /* light gray */
-  
-  --border-color: #e5e5e0;      /* hairline gray-sand */
-  --border-color-hover: #c8c8c0;/* darker hairline */
-  
-  --accent-color: #18181b;      /* ink black */
+
+  --text-primary: #18181b; /* deep charcoal ink */
+  --text-secondary: #52525b; /* muted charcoal */
+  --text-tertiary: #a1a1aa; /* light gray */
+
+  --border-color: #e5e5e0; /* hairline gray-sand */
+  --border-color-hover: #c8c8c0; /* darker hairline */
+
+  --accent-color: #18181b; /* ink black */
   --accent-color-hover: #3f3f46;
-  --accent-color-light: #f5f5f0;/* warm white background selection */
-  
+  --accent-color-light: #f5f5f0; /* warm white background selection */
+
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.01);
   --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.02);
   --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.03);
-  
+
   --focus-ring: 0 0 0 2px #faf9f5, 0 0 0 4px #18181b;
 
   /* PrimeVue Variables Mapping - Light */
@@ -37,7 +37,7 @@
   --p-text-muted-color: var(--text-secondary);
   --p-content-background: var(--bg-card);
   --p-content-border-color: var(--border-color);
-  
+
   --p-select-background: var(--bg-card);
   --p-select-border-color: var(--border-color);
   --p-select-hover-border-color: var(--border-color-hover);
@@ -50,7 +50,7 @@
   --p-select-option-focus-background: var(--accent-color-light);
   --p-select-option-selected-color: var(--text-primary);
   --p-select-option-selected-background: var(--accent-color-light);
-  
+
   --p-slider-track-background: var(--border-color);
   --p-slider-range-background: var(--accent-color);
   --p-slider-handle-background: var(--bg-card);
@@ -69,22 +69,22 @@
   /* Color Palette - Dark Mode (Vellum Black) */
   --bg-app: #121212;
   --bg-card: #1c1c1c;
-  
-  --text-primary: #e4e4e7;      /* soft silver */
-  --text-secondary: #a1a1aa;    /* medium gray */
-  --text-tertiary: #52525b;     /* dark gray */
-  
-  --border-color: #27272a;      /* charcoal gray border */
+
+  --text-primary: #e4e4e7; /* soft silver */
+  --text-secondary: #a1a1aa; /* medium gray */
+  --text-tertiary: #52525b; /* dark gray */
+
+  --border-color: #27272a; /* charcoal gray border */
   --border-color-hover: #3f3f46;
-  
-  --accent-color: #f4f4f5;      /* silver white */
+
+  --accent-color: #f4f4f5; /* silver white */
   --accent-color-hover: #e4e4e7;
-  --accent-color-light: #242424;/* dark highlights */
-  
+  --accent-color-light: #242424; /* dark highlights */
+
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
   --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.3);
-  
+
   --focus-ring: 0 0 0 2px #121212, 0 0 0 4px #f4f4f5;
 
   /* PrimeVue Variables Mapping - Dark */
@@ -96,7 +96,7 @@
   --p-text-muted-color: var(--text-secondary);
   --p-content-background: var(--bg-card);
   --p-content-border-color: var(--border-color);
-  
+
   --p-select-background: var(--bg-card);
   --p-select-border-color: var(--border-color);
   --p-select-hover-border-color: var(--border-color-hover);
@@ -109,7 +109,7 @@
   --p-select-option-focus-background: var(--accent-color-light);
   --p-select-option-selected-color: var(--text-primary);
   --p-select-option-selected-background: var(--accent-color-light);
-  
+
   --p-slider-track-background: var(--border-color);
   --p-slider-range-background: var(--accent-color);
   --p-slider-handle-background: var(--bg-card);
@@ -126,24 +126,24 @@
 
 .sepia {
   /* Color Palette - Sepia Mode (Vintage Book - Richer & Darker) */
-  --bg-app: #d7c49e;            /* classic aged book page, deep warm sepia */
-  --bg-card: #dfcdab;           /* slightly lighter warm card */
-  
-  --text-primary: #36291b;      /* dark earth/umber ink */
-  --text-secondary: #5c4c38;    /* warm medium umber */
-  --text-tertiary: #8c7b64;     /* muted warm clay */
-  
-  --border-color: #c5b38d;      /* aged parchment border */
+  --bg-app: #d0b580; /* classic aged book page, deep warm sepia */
+  --bg-card: #dfcdab; /* slightly lighter warm card */
+
+  --text-primary: #36291b; /* dark earth/umber ink */
+  --text-secondary: #5c4c38; /* warm medium umber */
+  --text-tertiary: #8c7b64; /* muted warm clay */
+
+  --border-color: #c5b38d; /* aged parchment border */
   --border-color-hover: #b09f7a;
-  
-  --accent-color: #705235;      /* leather-brown accent */
+
+  --accent-color: #705235; /* leather-brown accent */
   --accent-color-hover: #543b22;
-  --accent-color-light: #dfcca5;/* subtle light-sepia highlight */
-  
+  --accent-color-light: #dfcca5; /* subtle light-sepia highlight */
+
   --shadow-sm: 0 1px 2px 0 rgba(67, 52, 34, 0.02);
   --shadow-md: 0 4px 10px rgba(67, 52, 34, 0.04);
   --shadow-lg: 0 10px 20px rgba(67, 52, 34, 0.06);
-  
+
   --focus-ring: 0 0 0 2px #d7c49e, 0 0 0 4px #705235;
 
   /* PrimeVue Variables Mapping - Sepia */
@@ -155,7 +155,7 @@
   --p-text-muted-color: var(--text-secondary);
   --p-content-background: var(--bg-card);
   --p-content-border-color: var(--border-color);
-  
+
   --p-select-background: var(--bg-card);
   --p-select-border-color: var(--border-color);
   --p-select-hover-border-color: var(--border-color-hover);
@@ -168,7 +168,7 @@
   --p-select-option-focus-background: var(--accent-color-light);
   --p-select-option-selected-color: var(--text-primary);
   --p-select-option-selected-background: var(--accent-color-light);
-  
+
   --p-slider-track-background: var(--border-color);
   --p-slider-range-background: var(--accent-color);
   --p-slider-handle-background: var(--bg-card);
@@ -181,7 +181,7 @@
   --p-button-primary-color: #faf7f0;
   --p-button-primary-hover-background: var(--accent-color-hover);
   --p-button-primary-hover-border-color: var(--accent-color-hover);
-  
+
   --p-button-secondary-background: var(--bg-card);
   --p-button-secondary-border-color: var(--border-color);
   --p-button-secondary-color: var(--text-primary);
@@ -196,9 +196,10 @@ html {
   font-family: var(--font-serif); /* Serif default for the entire UI */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
-              color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body {
@@ -216,8 +217,14 @@ body {
 
 /* Custom Micro-Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-in {

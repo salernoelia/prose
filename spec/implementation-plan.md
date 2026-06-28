@@ -39,6 +39,7 @@ earlier ones:
 Goal: a clean skeleton, both test harnesses running, CI green, before any feature code.
 
 ### Commit 0.1: Repo hygiene and project metadata
+
 - [x] Replace placeholder `authors`, `description` in `src-tauri/Cargo.toml` and `tauri.conf.json`.
 - [x] Set a stable window title and sensible default window size in `tauri.conf.json`.
 - [x] Add `rustfmt.toml` and `clippy` config; run `cargo fmt` and `cargo clippy -- -D warnings` clean.
@@ -47,6 +48,7 @@ Goal: a clean skeleton, both test harnesses running, CI green, before any featur
 - [x] `chore: project metadata, formatters, linters`
 
 ### Commit 0.2: Rust test harness and module skeleton
+
 - [x] Create empty module tree per architecture section 3: `domain/`, `adapters/`, `ipc/`,
       `state.rs`, `protocol.rs`, each with a `mod.rs` and a `//!` doc comment stating its role.
 - [x] Wire the modules into `lib.rs` (declared, currently empty).
@@ -55,6 +57,7 @@ Goal: a clean skeleton, both test harnesses running, CI green, before any featur
 - [x] `chore(core): module skeleton and test harness`
 
 ### Commit 0.3: Frontend test harness and folder skeleton
+
 - [x] Add Vitest + `@vue/test-utils` + `@testing-library/vue` + `jsdom`; add `bun run test`.
 - [x] Create the frontend folders per architecture section 5: `ipc/`, `readers/`, `stores/`,
       `composables/`, `views/`, `components/`, each with an index or placeholder.
@@ -62,12 +65,14 @@ Goal: a clean skeleton, both test harnesses running, CI green, before any featur
 - [x] `chore(ui): vitest harness and folder skeleton`
 
 ### Commit 0.4: Continuous integration
+
 - [x] CI job: `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test` (in `src-tauri`).
 - [x] CI job: `bun install`, `bun run build` (type-check), `bun run test`, lint.
 - [x] Cache cargo and bun; run on push and PR.
 - [x] `ci: rust and frontend pipelines`
 
 ### Commit 0.5: Strip the scaffold demo
+
 - [x] Remove the `greet` command and the demo UI from `App.vue` and `lib.rs`.
 - [x] Reduce `App.vue` to a bare shell (no `invoke`), confirm app still launches.
 - [x] `chore: remove scaffold demo`
@@ -80,6 +85,7 @@ Goal: model and ports exist and are unit-tested with fakes. No `tauri`, `rusqlit
 `std::fs`, or `tokio::fs` anywhere in `domain/` (architecture section 3). Pure logic first.
 
 ### Commit 1.1: Core model types
+
 - [x] `domain/model.rs`: `BookId` (content hash, `from_content(&[u8])`), `Format` enum
       (`Epub`, `Pdf`), `BookMetadata` (title, author, cover ref), `Book`.
 - [x] `Locator` (format-neutral, opaque payload plus a `progression: f32` fraction; architecture section 6).
@@ -90,6 +96,7 @@ Goal: model and ports exist and are unit-tested with fakes. No `tauri`, `rusqlit
 - [x] `feat(core): domain model types`
 
 ### Commit 1.2: Ports
+
 - [x] `domain/ports.rs`: `BookRepository`, `ReaderAdapter`, `RemoteStore`, `CredentialStore`,
       `Clock` traits (all `Send + Sync`), return `Result<_, DomainError>`.
 - [x] Flesh out `DomainError` variants (not found, invalid format, conflict, storage, remote, etc.).
@@ -97,6 +104,7 @@ Goal: model and ports exist and are unit-tested with fakes. No `tauri`, `rusqlit
 - [x] `feat(core): ports and test fakes`
 
 ### Commit 1.3: LibraryService
+
 - [x] `domain/library.rs`: `LibraryService` over `BookRepository` + a `ReaderRegistry`.
 - [x] `import(bytes, format)`: probe metadata, build `Book` with content-hash id, dedupe, insert (FR-LIB-01..03).
 - [x] `list(query)` with search/filter/sort over title, author, last-read, progress (FR-LIB-04..06).
@@ -105,6 +113,7 @@ Goal: model and ports exist and are unit-tested with fakes. No `tauri`, `rusqlit
 - [x] `feat(core): library service`
 
 ### Commit 1.4: ReadingService
+
 - [x] `domain/reading.rs`: save/get reading position per book (FR-READ-06).
 - [x] Progress percentage from locator progression fraction (FR-READ-07).
 - [x] "Furthest position" comparison helper (used later by sync, architecture section 8).
@@ -112,16 +121,19 @@ Goal: model and ports exist and are unit-tested with fakes. No `tauri`, `rusqlit
 - [x] `feat(core): reading service`
 
 ### Commit 1.5: AnnotationService
+
 - [x] `domain/annotation.rs`: add/list/delete bookmarks (FR-NOTE-01); add/list/delete highlights (FR-NOTE-02).
 - [x] Unit tests.
 - [x] `feat(core): annotation service`
 
 ### Commit 1.6: SettingsService
+
 - [x] `domain/settings.rs`: get, patch (partial update of changed fields only), validate, version tolerance.
 - [x] Unknown/missing fields fall back to default; tests for forward/backward tolerance (architecture section 7).
 - [x] `feat(core): settings service`
 
 ### Commit 1.7: SyncService conflict logic (pure)
+
 - [x] `domain/sync.rs`: conflict resolution only, against the `RemoteStore` port and a fake.
 - [x] Reading position: keep furthest progression; everything else: last-write-wins by timestamp (FR-SYNC-04).
 - [x] Outbox model and idempotent, id-keyed operations defined as pure types (architecture section 8).
@@ -141,20 +153,22 @@ Goal: the typed boundary exists and one command travels UI to Rust and back, est
 pattern every later feature copies (architecture section 4).
 
 ### Commit 2.1: Error boundary and DTO conventions
+
 - [x] `ipc/error.rs`: `AppError { code, message }`, serializable; `From<DomainError>` mapping.
 - [x] `ipc/dto.rs`: first DTOs (`SettingsDto`) as flat structs, not domain types.
 - [x] `ipc/event.rs`: event-name constants and payload structs.
 - [x] `src/ipc/types.ts`: hand-mirrored TS types (strategy 1 from architecture section 4.5).
 - [x] `feat(ipc): error boundary and dto conventions`
 
-
 ### Commit 2.2: AppState and dependency wiring
+
 - [x] `state.rs`: `AppState` holding the wired services behind `Arc<dyn Port>`.
 - [x] `lib.rs` `run()`: build adapters (temporary in-memory ones are fine here), inject, manage State.
 - [x] The only `expect()` allowed lives in this startup wiring (architecture section 4.4).
 - [x] `feat(core): app state and service wiring`
 
 ### Commit 2.3: Settings command round-trip (reference slice)
+
 - [x] `ipc/settings.rs`: `settings_get`, `settings_patch` thin commands calling `SettingsService`,
       `settings_patch` emits `settings:changed` (architecture section 7).
 - [x] Register handlers in `ipc/mod.rs` and `lib.rs`.
@@ -172,6 +186,7 @@ pattern every later feature copies (architecture section 4).
 Goal: the real local store behind the repository port (architecture section 8).
 
 ### Commit 3.1: SQLite store and migrations
+
 - [x] Add `rusqlite` (bundled) to `Cargo.toml`.
 - [x] `adapters/storage/`: schema and a migration runner; tables for books, progress, bookmarks,
       highlights, settings, sync state.
@@ -180,12 +195,14 @@ Goal: the real local store behind the repository port (architecture section 8).
 - [x] `feat(storage): sqlite store and migrations`
 
 ### Commit 3.2: Repository implementation
+
 - [x] Implement `BookRepository` (and settings persistence) over SQLite with atomic transactions (NFR-R-02).
 - [x] Swap the in-memory adapter in `run()` for the SQLite one; settings now persist across launches.
 - [x] Integration tests for insert/list/query/remove and atomicity.
 - [x] `feat(storage): repository over sqlite`
 
 ### Commit 3.3: Settings UI store and panel
+
 - [x] `stores/settings.ts`: seed from `settings_get` on startup, update on `settings:changed`.
 - [x] `composables/useSettings.ts`; a minimal `views/Settings.vue` exercising one real setting.
 - [x] `feat(ui): settings store and panel`
@@ -199,39 +216,45 @@ Goal: the real local store behind the repository port (architecture section 8).
 Goal: import books, see them, manage them (FR-LIB).
 
 ### Commit 4.1: ReaderAdapter registry and ePub metadata
-- [ ] Add the `epub` crate.
-- [ ] `adapters/readers/epub.rs`: implement `ReaderAdapter::probe` (title, author, cover) and `supports` (FR-LIB-02).
-- [ ] `ReaderRegistry` selecting an adapter by `Format`.
-- [ ] Fixture-based tests with a small sample ePub in `tests/fixtures` (architecture section 10).
-- [ ] `feat(readers): epub metadata adapter`
+
+- [x] Add the `epub` crate.
+- [x] `adapters/readers/epub.rs`: implement `ReaderAdapter::probe` (title, author, cover) and `supports` (FR-LIB-02).
+- [x] `ReaderRegistry` selecting an adapter by `Format`.
+- [x] Fixture-based tests with a small sample ePub in `tests/fixtures` (architecture section 10).
+- [x] `feat(readers): epub metadata adapter`
 
 ### Commit 4.2: PDF metadata adapter
-- [ ] Add `lopdf`/`pdf`; `adapters/readers/pdf.rs`: probe title/author/page count, render or extract a cover thumbnail.
-- [ ] Register in the registry; fixture tests with a sample PDF.
-- [ ] `feat(readers): pdf metadata adapter`
+
+- [x] Add `lopdf`/`pdf`; `adapters/readers/pdf.rs`: probe title/author/page count, render or extract a cover thumbnail.
+- [x] Register in the registry; fixture tests with a sample PDF.
+- [x] `feat(readers): pdf metadata adapter`
 
 ### Commit 4.3: Book file storage on import
-- [ ] On import, copy the source file into app storage and store cover images on disk, referenced by path (architecture section 8).
-- [ ] Content hashing of large files runs on `spawn_blocking` (architecture section 9).
-- [ ] `feat(storage): persist book files and covers`
+
+- [x] On import, copy the source file into app storage and store cover images on disk, referenced by path (architecture section 8).
+- [x] Content hashing of large files runs on `spawn_blocking` (architecture section 9).
+- [x] `feat(storage): persist book files and covers`
 
 ### Commit 4.4: Library import and list commands
-- [ ] `ipc/library.rs`: `library_import_book(path)`, `library_list(query)`, `library_remove(id)`;
+
+- [x] `ipc/library.rs`: `library_import_book(path)`, `library_list(query)`, `library_remove(id)`;
       emit `library:changed` and `import:progress` (architecture section 4.2).
-- [ ] `src/ipc/library.ts` typed wrappers; extend `events.ts`.
-- [ ] Use Tauri dialog plugin for the native file picker; add the capability/permission.
-- [ ] Vitest payload-shape tests.
-- [ ] `feat(ipc): library import and list commands`
+- [x] `src/ipc/library.ts` typed wrappers; extend `events.ts`.
+- [x] Use Tauri dialog plugin for the native file picker; add the capability/permission.
+- [x] Vitest payload-shape tests.
+- [x] `feat(ipc): library import and list commands`
 
 ### Commit 4.5: Library view (grid and list)
-- [ ] `stores/library.ts`, `composables/useLibrary.ts`.
-- [ ] `views/Library.vue` using PrimeVue `DataView` grid and list layouts, switchable (FR-LIB-04, architecture section 5.1).
-- [ ] Search and filter by title/author (FR-LIB-05); sort by title/author/last-read/progress (FR-LIB-06).
-- [ ] Remove-with-confirmation dialog (FR-LIB-07).
-- [ ] Component tests for switching, search, sort.
-- [ ] `feat(ui): library grid and list view`
+
+- [x] `stores/library.ts`, `composables/useLibrary.ts`.
+- [x] `views/Library.vue` using PrimeVue `DataView` grid and list layouts, switchable (FR-LIB-04, architecture section 5.1).
+- [x] Search and filter by title/author (FR-LIB-05); sort by title/author/last-read/progress (FR-LIB-06).
+- [x] Remove-with-confirmation dialog (FR-LIB-07).
+- [x] Component tests for switching, search, sort.
+- [x] `feat(ui): library grid and list view`
 
 > Checkpoint: import a real ePub and PDF, see covers, search, sort, remove. FR-LIB done.
+> Manual validation (2026-06-28): imported `book_sample.epub` via the Library view native picker and verified it appears in catalog, is searchable/sortable, and can be removed.
 
 ---
 
@@ -240,6 +263,7 @@ Goal: import books, see them, manage them (FR-LIB).
 Goal: stream book resources to the renderer with range support (architecture section 4.3).
 
 ### Commit 5.1: prose:// protocol handler
+
 - [ ] `protocol.rs`: register `prose://book/{book_id}/{resource_path}` with
       `register_asynchronous_uri_scheme_protocol`.
 - [ ] Read from the stored file; honor `Range` headers for PDF partial loads (architecture section 4.3, 9).
@@ -254,23 +278,27 @@ Goal: stream book resources to the renderer with range support (architecture sec
 Goal: open and render books, navigate, with a page turn off the IPC hot path (architecture section 9).
 
 ### Commit 6.1: BookRenderer interface and reader shell
+
 - [ ] `src/readers/Renderer.ts`: the `BookRenderer` interface (architecture section 6).
 - [ ] A renderer registry selecting by the `Format` Rust reports.
 - [ ] `views/Reader.vue` shell + `composables/useReader.ts`; opens a book by id, resolves its `prose://` base URL.
 - [ ] `feat(reader): renderer interface and reader shell`
 
 ### Commit 6.2: ePub rendering with foliate-js
+
 - [ ] Vendor/add foliate-js; `src/readers/EpubRenderer.ts` implementing `BookRenderer` over a `prose://` source.
 - [ ] `load`, `next`, `prev`, `onLocationChange` (FR-READ-01, FR-READ-04).
 - [ ] Render the first ePub page within budget (NFR-P-02); page turn is renderer-local (NFR-P-03).
 - [ ] `feat(reader): epub rendering`
 
 ### Commit 6.3: PDF rendering with pdf.js
+
 - [ ] Add pdf.js; `src/readers/PdfRenderer.ts` implementing `BookRenderer`, fetching pages via `prose://` with range (FR-READ-02).
 - [ ] Zoom and fit, default fit-to-width (FR-READ-05); `applyStyle` is a no-op for PDF (architecture section 6).
 - [ ] `feat(reader): pdf rendering`
 
 ### Commit 6.4: Table of contents navigation
+
 - [ ] Extract the TOC (from the renderer or a Rust adapter call) and render it in a PrimeVue `Drawer` (FR-READ-03, architecture section 5.1).
 - [ ] Navigate to a selected entry via `goToLocator`.
 - [ ] `feat(reader): table of contents navigation`
@@ -284,6 +312,7 @@ Goal: open and render books, navigate, with a page turn off the IPC hot path (ar
 Goal: persist and resume position; show progress (FR-READ-06, FR-READ-07).
 
 ### Commit 7.1: Position commands and capture
+
 - [ ] `ipc/reading.rs`: `reading_save_position`, `reading_get_position`; typed `src/ipc/reading.ts`.
 - [ ] Renderer reports the current `Locator` on change; UI saves it asynchronously after the turn paints (architecture section 9).
 - [ ] Reopen resumes at the stored position.
@@ -291,6 +320,7 @@ Goal: persist and resume position; show progress (FR-READ-06, FR-READ-07).
 - [ ] `feat(reading): save and resume position`
 
 ### Commit 7.2: Progress display
+
 - [ ] Progress percentage in the reader chrome and on library cards, fed by `ReadingService` (FR-READ-07).
 - [ ] Last-read time updates feed the library sort (FR-LIB-06).
 - [ ] `feat(reading): progress display`
@@ -302,6 +332,7 @@ Goal: persist and resume position; show progress (FR-READ-06, FR-READ-07).
 Goal: ePub typography controls and the three themes (FR-CUST).
 
 ### Commit 8.1: Reading style controls
+
 - [ ] Extend `Settings` and the settings panel: font family from a bundled set, font size, line spacing, margins (FR-CUST-01..03).
 - [ ] Bundle the reading fonts; expose them to the ePub renderer.
 - [ ] `EpubRenderer.applyStyle` applies them live; PDF ignores them (architecture section 7).
@@ -309,6 +340,7 @@ Goal: ePub typography controls and the three themes (FR-CUST).
 - [ ] `feat(custom): epub reading style controls`
 
 ### Commit 8.2: Themes (light, dark, sepia)
+
 - [ ] One Rust-owned `theme` setting drives everything (architecture section 5.3).
 - [ ] PrimeVue `darkModeSelector` + Tailwind dark variant point at one root attribute; `App.vue` sets it on `settings:changed`.
 - [ ] Sepia as a third token set selected by the same attribute; the ePub renderer style reacts too (FR-CUST-04).
@@ -321,16 +353,19 @@ Goal: ePub typography controls and the three themes (FR-CUST).
 Goal: bookmarks, highlights, dictionary (FR-NOTE).
 
 ### Commit 9.1: Bookmarks
+
 - [ ] `ipc/annotation.rs`: add/list/delete bookmark commands; typed `src/ipc/annotation.ts`.
 - [ ] UI: bookmark the current location, list in a drawer, delete (FR-NOTE-01).
 - [ ] `feat(annotation): bookmarks`
 
 ### Commit 9.2: Highlights
+
 - [ ] Capture a text selection range from the ePub renderer; persist as a `Highlight` (FR-NOTE-02).
 - [ ] Render existing highlights on load; view and delete; only for content with selectable text.
 - [ ] `feat(annotation): highlights`
 
 ### Commit 9.3: Offline dictionary
+
 - [ ] Bundle a dictionary data set; a `DictionaryService` (and port if it needs bundled-file access) in the core.
 - [ ] Select a word, look up the definition, show it in a popover (FR-NOTE-03, external interface in the spec).
 - [ ] `feat(reference): offline dictionary lookup`
@@ -342,20 +377,24 @@ Goal: bookmarks, highlights, dictionary (FR-NOTE).
 Goal: optional sourcing and background sync, resumable, non-blocking (FR-SYNC, NFR-R-03).
 
 ### Commit 10.1: Credential store
+
 - [ ] Add `keyring`; `adapters/credentials.rs` implementing `CredentialStore` (NFR-S-02).
 - [ ] `feat(sync): os keychain credential store`
 
 ### Commit 10.2: WebDAV remote adapter
+
 - [ ] Add `reqwest_dav`; `adapters/webdav.rs` implementing `RemoteStore`, HTTPS/TLS 1.2+ enforced (NFR-S-01).
 - [ ] Tests against a mock WebDAV server: list, download, upload, ETag cursor (architecture section 10).
 - [ ] `feat(sync): webdav remote adapter`
 
 ### Commit 10.3: Configure server and browse remote
+
 - [ ] `ipc/sync.rs`: `sync_configure(url, user, password)` (FR-SYNC-01), `sync_list_remote` to list .epub/.pdf and download one into the library (FR-SYNC-02).
 - [ ] Settings UI for the single server; typed `src/ipc/sync.ts`.
 - [ ] `feat(sync): configure server and browse remote`
 
 ### Commit 10.4: Background sync engine
+
 - [ ] Wire `SyncService` (logic from 1.7) to the real remote; run on its own task, communicate via events only (architecture section 8, 9).
 - [ ] Sync position, bookmarks, highlights, settings, and book files (FR-SYNC-03); local changes apply immediately, upload on next connection (FR-SYNC-06).
 - [ ] Outbox + per-file ETag cursor make an interrupted sync resumable without loss or duplicates (NFR-R-03).
@@ -372,26 +411,31 @@ Goal: optional sourcing and background sync, resumable, non-blocking (FR-SYNC, N
 Goal: meet portability and performance NFRs and ship.
 
 ### Commit 11.1: Responsive and touch
+
 - [ ] Layouts adapt to desktop and mobile sizes; pointer and touch input both work (NFR-X-02).
 - [ ] Touch gestures for page turns in the reader.
 - [ ] `feat(ui): responsive and touch input`
 
 ### Commit 11.2: iOS and Android targets
+
 - [ ] `tauri ios init` / `tauri android init`; resolve mobile-only plugin permissions and the dialog/file picker on mobile.
 - [ ] Confirm the prose:// protocol and keychain/keystore work on both (NFR-X-01).
 - [ ] `chore(mobile): ios and android targets`
 
 ### Commit 11.3: Performance pass against the budgets
+
 - [ ] Measure launch-to-interactive (NFR-P-01), ePub first page (NFR-P-02), page turn (NFR-P-03), 1,000-book library load (NFR-P-04).
 - [ ] Confirm no IPC round trip on the page-turn hot path; position saved async (architecture section 9).
 - [ ] Index SQLite queries for the 1,000-book target; record measured numbers.
 - [ ] `perf: meet performance budgets`
 
 ### Commit 11.4: Type-generation hardening (optional)
+
 - [ ] If the command surface has grown, adopt `tauri-specta` to generate `src/ipc/types.ts` so DTO drift is a compile error (architecture section 4.5).
 - [ ] `chore(ipc): generate ts types from rust dtos`
 
 ### Commit 11.5: Release packaging
+
 - [ ] App icons, identifier, version, CSP review in `tauri.conf.json`.
 - [ ] `tauri build` for each desktop platform; verify bundles launch.
 - [ ] CI release workflow producing artifacts.

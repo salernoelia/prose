@@ -19,6 +19,7 @@ use std::sync::Arc;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             use tauri::Manager;
@@ -27,13 +28,22 @@ pub fn run() {
                 .app_data_dir()
                 .expect("failed to get app data dir");
             std::fs::create_dir_all(&app_data).expect("failed to create app data dir");
+            std::fs::create_dir_all(app_data.join("books")).expect("failed to create books dir");
+            std::fs::create_dir_all(app_data.join("covers")).expect("failed to create covers dir");
             let db_path = app_data.join("prose.db");
 
             let repo =
                 Arc::new(SqliteBookRepository::new(db_path).expect("failed to open database"));
             let remote = Arc::new(InMemoryRemoteStore::new());
             let clock = Arc::new(WallClock);
-            let readers = ReaderRegistry::default();
+            let readers = ReaderRegistry::new(vec![
+                Arc::new(crate::adapters::readers::epub::EpubReader::new(
+                    app_data.clone(),
+                )),
+                Arc::new(crate::adapters::readers::pdf::PdfReader::new(
+                    app_data.clone(),
+                )),
+            ]);
 
             let app_state = AppState {
                 settings: SettingsService::new(
@@ -60,6 +70,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             ipc::settings::settings_get,
             ipc::settings::settings_patch,
+            ipc::library::library_import_book,
+            ipc::library::library_list,
+            ipc::library::library_remove,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

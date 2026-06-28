@@ -10,8 +10,6 @@ use serde::Serialize;
 
 use crate::ipc::dto::SettingsDto;
 
-// ── Event name constants ────────────────────────────────────────────────────
-
 /// The settings were changed (by a local patch or a sync merge).
 pub const SETTINGS_CHANGED: &str = "settings:changed";
 
@@ -26,8 +24,6 @@ pub const SYNC_PROGRESS: &str = "sync:progress";
 
 /// Sync run finished (success or error).
 pub const SYNC_FINISHED: &str = "sync:finished";
-
-// ── Payload structs ─────────────────────────────────────────────────────────
 
 /// Payload for `settings:changed`. Carries the full updated settings so every
 /// listening window can replace its local copy atomically.

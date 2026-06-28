@@ -3,7 +3,11 @@ import { settingsState, updateSettings, initSettingsStore } from '../stores/sett
 import type { Theme } from '../ipc/types'
 
 // Shared reactive module-scoped state for click zone size, persisted locally
-const clickZoneSize = ref(Number((typeof localStorage !== 'undefined' ? localStorage.getItem('clickZoneSize') : null) || '25'))
+const clickZoneSize = ref(
+  Number(
+    (typeof localStorage !== 'undefined' ? localStorage.getItem('clickZoneSize') : null) || '25',
+  ),
+)
 const showClickZonePreview = ref(false)
 
 let previewTimeout: ReturnType<typeof setTimeout> | null = null

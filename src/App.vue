@@ -4,9 +4,10 @@
 >
 import { ref, watchEffect } from 'vue'
 import { useSettings } from './composables/useSettings'
-import SettingsView from './views/Settings.vue'
-import LibraryView, { type Book } from './views/Library.vue'
-import ReaderView from './views/Reader.vue'
+import SettingsView from './views/SettingsView.vue'
+import LibraryView from './views/LibraryView.vue'
+import ReaderView from './views/ReaderView.vue'
+import type { BookDto } from './ipc/types'
 
 const { theme, loaded, showClickZonePreview, clickZoneSize } = useSettings()
 
@@ -29,12 +30,12 @@ type ViewType = 'library' | 'settings' | 'sync' | 'reader'
 
 const currentView = ref<ViewType>('library')
 const isSidebarOpen = ref(false)
-const selectedBook = ref<Book | null>(null)
+const selectedBook = ref<BookDto | null>(null)
 
 const navItems = [
     { label: 'Library', value: 'library' as ViewType },
     { label: 'Settings', value: 'settings' as ViewType },
-    { label: 'Sync', value: 'sync' as ViewType }
+    { label: 'Sync', value: 'sync' as ViewType },
 ]
 
 function setView(view: ViewType) {
@@ -48,7 +49,7 @@ function setView(view: ViewType) {
     }
 }
 
-function onSelectBook(book: Book) {
+function onSelectBook(book: BookDto) {
     selectedBook.value = book
     currentView.value = 'reader'
     isSidebarOpen.value = false // Close sidebar on reader open
@@ -57,7 +58,7 @@ function onSelectBook(book: Book) {
 
 <template>
     <div
-        class="min-h-screen flex relative overflow-x-hidden bg-[var(--bg-app)] text-[var(--text-primary)]"
+        class="min-h-screen flex relative overflow-x-hidden bg-(--bg-app) text-(--text-primary)"
         :class="{ 'h-screen overflow-hidden': currentView === 'reader' }"
     >
         <!-- Menu Toggle Button -->
@@ -67,22 +68,23 @@ function onSelectBook(book: Book) {
         >
             <button
                 @click="isSidebarOpen = !isSidebarOpen"
-                class="flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors focus-ring-minimal p-2 bg-[var(--bg-app)] border border-[var(--border-color)] rounded-md shadow-sm"
+                class="flex items-center justify-center text-(--text-secondary) hover:text-(--text-primary) transition-colors focus-ring-minimal p-2 bg-(--bg-app) border border-(--border-color) rounded-md shadow-sm"
                 aria-label="Toggle navigation menu"
             >
-                <span class="material-symbols-outlined text-lg leading-none select-none">{{ isSidebarOpen ? "close" :
-                    "menu" }}</span>
+                <span class="material-symbols-outlined text-lg leading-none select-none">{{
+                    isSidebarOpen ? 'close' : 'menu'
+                    }}</span>
             </button>
         </div>
 
         <!-- Sidebar Navigation -->
         <aside
-            class="fixed top-0 left-0 h-full w-64 bg-[var(--bg-app)] border-r border-[var(--border-color)] transition-transform duration-300 ease-in-out z-40 p-8 pt-24 flex flex-col justify-between shadow-sm"
+            class="fixed top-0 left-0 h-full w-64 bg-(--bg-app) border-r border-(--border-color) transition-transform duration-300 ease-in-out z-40 p-8 pt-24 flex flex-col justify-between shadow-sm"
             :class="isSidebarOpen ? 'translate-x-0' : '-translate-x-full'"
         >
             <div class="flex flex-col gap-8">
                 <!-- Logo / Title -->
-                <span class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Prose</span>
+                <span class="text-xl font-semibold tracking-tight text-(--text-primary)">Prose</span>
 
                 <!-- Navigation Menu -->
                 <nav class="flex flex-col gap-3">
@@ -90,20 +92,16 @@ function onSelectBook(book: Book) {
                         v-for="item in navItems"
                         :key="item.value"
                         @click="setView(item.value)"
-                        class="text-left py-1 text-base hover:text-[var(--text-primary)] transition-all focus-ring-minimal font-normal"
-                        :class="currentView === item.value ||
-                            (item.value === 'library' && currentView === 'reader')
-                            ? 'text-[var(--text-primary)] font-semibold translate-x-1'
-                            : 'text-[var(--text-secondary)]'
+                        class="text-left py-1 text-base hover:text-(--text-primary) transition-all focus-ring-minimal font-normal"
+                        :class="currentView === item.value || (item.value === 'library' && currentView === 'reader')
+                            ? 'text-(--text-primary) font-semibold translate-x-1'
+                            : 'text-(--text-secondary)'
                             "
                     >
                         {{ item.label }}
                     </button>
                 </nav>
             </div>
-
-            <!-- Footer Branding -->
-            <span class="text-xs text-[var(--text-tertiary)]">Local-first reader</span>
         </aside>
 
         <!-- Overlay when sidebar is open on mobile size -->
@@ -123,10 +121,7 @@ function onSelectBook(book: Book) {
                     : 'min-h-screen p-8 pt-24 pl-8 items-start'
                 "
         >
-            <div :class="currentView === 'reader'
-                ? 'w-full max-w-4xl mx-auto h-full'
-                : 'w-full max-w-3xl'
-                ">
+            <div :class="currentView === 'reader' ? 'w-full max-w-4xl mx-auto h-full' : 'w-full max-w-3xl'">
                 <!-- Active View Dispatcher -->
                 <div
                     v-if="currentView === 'settings'"
@@ -159,18 +154,16 @@ function onSelectBook(book: Book) {
                     v-else-if="currentView === 'sync'"
                     class="w-full animate-fade-in"
                 >
-                    <header class="pb-6 mb-6 border-b border-[var(--border-color)]">
-                        <h1 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">
-                            Sync
-                        </h1>
+                    <header class="pb-6 mb-6 border-b border-(--border-color)">
+                        <h1 class="text-xl font-semibold tracking-tight text-(--text-primary)">Sync</h1>
                     </header>
                     <div class="py-12 text-left">
-                        <p class="text-base text-[var(--text-secondary)] leading-relaxed">
+                        <p class="text-base text-(--text-secondary) leading-relaxed">
                             Synchronization is not active.
                         </p>
-                        <p class="text-sm text-[var(--text-tertiary)] mt-2 leading-relaxed">
-                            Configure your WebDAV connection settings to keep books,
-                            highlights, and progress synced across devices.
+                        <p class="text-sm text-(--text-tertiary) mt-2 leading-relaxed">
+                            Configure your WebDAV connection settings to keep books, highlights, and progress
+                            synced across devices.
                         </p>
                     </div>
                 </div>

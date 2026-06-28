@@ -17,66 +17,92 @@
 
 /** The serializable error returned by every Tauri command. */
 export interface AppError {
-  code: string;
-  message: string;
+  code: string
+  message: string
 }
 
 // ── Settings ────────────────────────────────────────────────────────────────
 
 /** The full, flattened settings as returned by `settings_get`. */
 export interface SettingsDto {
-  schemaVersion: number;
-  theme: Theme;
-  fontFamily: string;
-  fontSize: number;
-  lineHeight: number;
-  margin: number;
+  schemaVersion: number
+  theme: Theme
+  fontFamily: string
+  fontSize: number
+  lineHeight: number
+  margin: number
 }
 
 /** Partial settings update sent by `settings_patch`. Only present fields change. */
 export interface SettingsPatchDto {
-  theme?: Theme;
-  fontFamily?: string;
-  fontSize?: number;
-  lineHeight?: number;
-  margin?: number;
+  theme?: Theme
+  fontFamily?: string
+  fontSize?: number
+  lineHeight?: number
+  margin?: number
 }
 
 /** The three supported reading themes. */
-export type Theme = "light" | "dark" | "sepia";
+export type Theme = 'light' | 'dark' | 'sepia'
 
 // ── Event payloads ──────────────────────────────────────────────────────────
 
 /** Payload for the `settings:changed` event. */
 export interface SettingsChangedPayload {
-  settings: SettingsDto;
+  settings: SettingsDto
 }
 
 /** Payload for the `import:progress` event. */
 export interface ImportProgressPayload {
-  message: string;
-  fraction: number;
+  message: string
+  fraction: number
 }
 
 /** Payload for the `sync:progress` event. */
 export interface SyncProgressPayload {
-  stage: string;
-  fraction: number;
+  stage: string
+  fraction: number
 }
 
 /** Payload for the `sync:finished` event. */
 export interface SyncFinishedPayload {
-  success: boolean;
-  message: string;
+  success: boolean
+  message: string
+}
+
+// ── Library ──────────────────────────────────────────────────────────────────
+
+export type Format = 'epub' | 'pdf'
+
+export interface BookDto {
+  id: string
+  format: Format
+  title: string
+  author: string | null
+  cover: string | null
+}
+
+export interface LibraryEntryDto {
+  book: BookDto
+  progress: number
+  lastRead: number | null
+}
+
+export type SortKey = 'title' | 'author' | 'last_read' | 'progress'
+
+export interface LibraryQueryDto {
+  search: string | null
+  sort: SortKey
+  descending: boolean
 }
 
 // ── Event name constants ────────────────────────────────────────────────────
 
 /** Mirrors the Rust `ipc::event` constants so listeners use the same strings. */
 export const EventNames = {
-  SETTINGS_CHANGED: "settings:changed",
-  LIBRARY_CHANGED: "library:changed",
-  IMPORT_PROGRESS: "import:progress",
-  SYNC_PROGRESS: "sync:progress",
-  SYNC_FINISHED: "sync:finished",
-} as const;
+  SETTINGS_CHANGED: 'settings:changed',
+  LIBRARY_CHANGED: 'library:changed',
+  IMPORT_PROGRESS: 'import:progress',
+  SYNC_PROGRESS: 'sync:progress',
+  SYNC_FINISHED: 'sync:finished',
+} as const

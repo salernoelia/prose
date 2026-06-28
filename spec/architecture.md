@@ -1,7 +1,7 @@
 # Prose Architecture and Engineering Guidelines
 
 This document defines how Prose is built. It is the companion to the requirements in
-`spec/software-requirements.typ`: the spec says *what* the product does, this says *how*
+`spec/software-requirements.typ`: the spec says _what_ the product does, this says _how_
 the code is organized so it stays maintainable, flexible, robust, and fast.
 
 Read this before adding a feature. When a rule here conflicts with convenience, follow the
@@ -25,23 +25,23 @@ and it is unit testable without a UI, filesystem, or network (NFR-M-04).
 Prose has two runtimes: the **Rust core** (one process, shared across all platforms) and
 the **WebView** (the system WebKit/WebView2 running Vue). The split is deliberate.
 
-| Concern | Owner | Why |
-| --- | --- | --- |
-| Library catalog, metadata, IDs | Rust | Single source of truth, fast queries, atomic writes |
-| Book file storage and import | Rust | Filesystem access, content hashing, offline guarantee |
-| Reading position, bookmarks, highlights | Rust | Persisted, synced, conflict-resolved in one place |
-| Settings persistence | Rust | One authority, atomic, emitted to every window |
-| WebDAV sync engine | Rust | Background task, TLS, resumability, conflict rules |
-| Credential storage | Rust | OS keychain via a single port |
-| Rendering reflowable ePub | WebView (foliate-js) | DOM is the rendering engine |
-| Rendering PDF pages | WebView (pdf.js) | Canvas rendering, partial loads |
-| UI, navigation, gestures | WebView (Vue, PrimeVue, Tailwind) | Native WebView input, responsive layout |
-| Capturing the current locator | WebView, sent to Rust | The renderer knows the position; Rust stores it |
+| Concern                                 | Owner                             | Why                                                   |
+| --------------------------------------- | --------------------------------- | ----------------------------------------------------- |
+| Library catalog, metadata, IDs          | Rust                              | Single source of truth, fast queries, atomic writes   |
+| Book file storage and import            | Rust                              | Filesystem access, content hashing, offline guarantee |
+| Reading position, bookmarks, highlights | Rust                              | Persisted, synced, conflict-resolved in one place     |
+| Settings persistence                    | Rust                              | One authority, atomic, emitted to every window        |
+| WebDAV sync engine                      | Rust                              | Background task, TLS, resumability, conflict rules    |
+| Credential storage                      | Rust                              | OS keychain via a single port                         |
+| Rendering reflowable ePub               | WebView (foliate-js)              | DOM is the rendering engine                           |
+| Rendering PDF pages                     | WebView (pdf.js)                  | Canvas rendering, partial loads                       |
+| UI, navigation, gestures                | WebView (Vue, PrimeVue, Tailwind) | Native WebView input, responsive layout               |
+| Capturing the current locator           | WebView, sent to Rust             | The renderer knows the position; Rust stores it       |
 
 The mental model: **Rust decides and remembers, the WebView shows and reacts.** The reader
 "opens" a book in the UI, but the bytes are served and the position is stored by Rust.
 
-Do not duplicate domain logic in TypeScript. The frontend may hold a reactive *copy* of
+Do not duplicate domain logic in TypeScript. The frontend may hold a reactive _copy_ of
 state for display, but the authority is always Rust.
 
 ---
@@ -335,12 +335,12 @@ One implementation per format, selected by the format Rust reports.
 ```ts
 // src/readers/Renderer.ts
 export interface BookRenderer {
-  load(source: string): Promise<void>          // a prose:// URL
+  load(source: string): Promise<void> // a prose:// URL
   goToLocator(locator: Locator): Promise<void>
   next(): void
   prev(): void
   onLocationChange(cb: (l: Locator) => void): void
-  applyStyle(style: ReadingStyle): void          // ePub only; PDF is fixed-layout
+  applyStyle(style: ReadingStyle): void // ePub only; PDF is fixed-layout
 }
 // EpubRenderer wraps foliate-js, PdfRenderer wraps pdf.js
 ```
@@ -435,14 +435,14 @@ fake remote.
 
 ## 10. Testing
 
-| Layer | How | Target |
-| --- | --- | --- |
-| `domain/*` | Pure unit tests, all ports faked, no I/O | ≥80% line coverage (NFR-M-04) |
-| `adapters/storage` | Integration test against a temp SQLite db | Behavior of the real store |
-| `adapters/webdav` | Against a mock WebDAV server | Sync round trips, resumability |
-| `adapters/readers` | Fixture ePub/PDF files in `tests/fixtures` | Correct metadata extraction |
-| `src/ipc/*` | Vitest with `invoke` mocked | Payload shapes, error mapping |
-| Vue components | Vitest + Testing Library | Rendering and interaction |
+| Layer              | How                                        | Target                         |
+| ------------------ | ------------------------------------------ | ------------------------------ |
+| `domain/*`         | Pure unit tests, all ports faked, no I/O   | ≥80% line coverage (NFR-M-04)  |
+| `adapters/storage` | Integration test against a temp SQLite db  | Behavior of the real store     |
+| `adapters/webdav`  | Against a mock WebDAV server               | Sync round trips, resumability |
+| `adapters/readers` | Fixture ePub/PDF files in `tests/fixtures` | Correct metadata extraction    |
+| `src/ipc/*`        | Vitest with `invoke` mocked                | Payload shapes, error mapping  |
+| Vue components     | Vitest + Testing Library                   | Rendering and interaction      |
 
 The domain tests are the load-bearing ones. If a piece of logic is hard to test without a file
 or a socket, it is in the wrong layer; move it behind a port.
@@ -471,14 +471,14 @@ or a socket, it is in the wrong layer; move it behind a port.
 
 **Naming reference**
 
-| Thing | Convention | Example |
-| --- | --- | --- |
-| Command | `domain_verb_noun` | `reading_save_position` |
-| Event | `domain:event` | `sync:progress` |
-| Rust DTO | `*Dto` suffix | `BookDto` |
-| Port (trait) | role noun | `RemoteStore` |
-| Adapter | technology noun | `WebDavRemoteStore` |
-| Book ID | content hash | `BookId` |
+| Thing        | Convention         | Example                 |
+| ------------ | ------------------ | ----------------------- |
+| Command      | `domain_verb_noun` | `reading_save_position` |
+| Event        | `domain:event`     | `sync:progress`         |
+| Rust DTO     | `*Dto` suffix      | `BookDto`               |
+| Port (trait) | role noun          | `RemoteStore`           |
+| Adapter      | technology noun    | `WebDavRemoteStore`     |
+| Book ID      | content hash       | `BookId`                |
 
 ---
 
@@ -487,14 +487,14 @@ or a socket, it is in the wrong layer; move it behind a port.
 Consistent with the dependency table in the spec, these are candidates pending final selection,
 not hard mandates. Confirm license and maintenance before adopting.
 
-| Need | Candidate | Layer |
-| --- | --- | --- |
-| ePub rendering | foliate-js | TS renderer |
-| PDF rendering | pdf.js | TS renderer |
-| ePub metadata | `epub` crate | Rust reader adapter |
-| PDF metadata | `lopdf` / `pdf` | Rust reader adapter |
-| Local store | `rusqlite` (bundled) | Rust storage adapter |
-| WebDAV | `reqwest_dav` | Rust remote adapter |
-| Credentials | `keyring` | Rust credential adapter |
-| Error types | `thiserror` | Rust domain |
-| TS type generation | `tauri-specta` | Build tooling (optional) |
+| Need               | Candidate            | Layer                    |
+| ------------------ | -------------------- | ------------------------ |
+| ePub rendering     | foliate-js           | TS renderer              |
+| PDF rendering      | pdf.js               | TS renderer              |
+| ePub metadata      | `epub` crate         | Rust reader adapter      |
+| PDF metadata       | `lopdf` / `pdf`      | Rust reader adapter      |
+| Local store        | `rusqlite` (bundled) | Rust storage adapter     |
+| WebDAV             | `reqwest_dav`        | Rust remote adapter      |
+| Credentials        | `keyring`            | Rust credential adapter  |
+| Error types        | `thiserror`          | Rust domain              |
+| TS type generation | `tauri-specta`       | Build tooling (optional) |
