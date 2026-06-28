@@ -12,9 +12,11 @@
   "app": {
     "windows": [
       {
-        "title": "prose",
-        "width": 800,
-        "height": 600
+        "title": "Prose",
+        "width": 1100,
+        "height": 760,
+        "minWidth": 480,
+        "minHeight": 600
       }
     ],
     "security": {

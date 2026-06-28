@@ -39,12 +39,12 @@ earlier ones:
 Goal: a clean skeleton, both test harnesses running, CI green, before any feature code.
 
 ### Commit 0.1: Repo hygiene and project metadata
-- [ ] Replace placeholder `authors`, `description` in `src-tauri/Cargo.toml` and `tauri.conf.json`.
-- [ ] Set a stable window title and sensible default window size in `tauri.conf.json`.
-- [ ] Add `rustfmt.toml` and `clippy` config; run `cargo fmt` and `cargo clippy -- -D warnings` clean.
-- [ ] Add Prettier + ESLint for the frontend (Vue 3 + TS preset); format the existing files.
-- [ ] Add an `.editorconfig`.
-- [ ] `chore: project metadata, formatters, linters`
+- [x] Replace placeholder `authors`, `description` in `src-tauri/Cargo.toml` and `tauri.conf.json`.
+- [x] Set a stable window title and sensible default window size in `tauri.conf.json`.
+- [x] Add `rustfmt.toml` and `clippy` config; run `cargo fmt` and `cargo clippy -- -D warnings` clean.
+- [x] Add Prettier + ESLint for the frontend (Vue 3 + TS preset); format the existing files.
+- [x] Add an `.editorconfig`.
+- [x] `chore: project metadata, formatters, linters`
 
 ### Commit 0.2: Rust test harness and module skeleton
 - [ ] Create empty module tree per architecture section 3: `domain/`, `adapters/`, `ipc/`,
