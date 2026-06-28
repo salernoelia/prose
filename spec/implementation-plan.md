@@ -105,11 +105,11 @@ Goal: model and ports exist and are unit-tested with fakes. No `tauri`, `rusqlit
 - [x] `feat(core): library service`
 
 ### Commit 1.4: ReadingService
-- [ ] `domain/reading.rs`: save/get reading position per book (FR-READ-06).
-- [ ] Progress percentage from locator progression fraction (FR-READ-07).
-- [ ] "Furthest position" comparison helper (used later by sync, architecture section 8).
-- [ ] Unit tests for resume and progress math.
-- [ ] `feat(core): reading service`
+- [x] `domain/reading.rs`: save/get reading position per book (FR-READ-06).
+- [x] Progress percentage from locator progression fraction (FR-READ-07).
+- [x] "Furthest position" comparison helper (used later by sync, architecture section 8).
+- [x] Unit tests for resume and progress math.
+- [x] `feat(core): reading service`
 
 ### Commit 1.5: AnnotationService
 - [ ] `domain/annotation.rs`: add/list/delete bookmarks (FR-NOTE-01); add/list/delete highlights (FR-NOTE-02).
