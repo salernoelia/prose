@@ -72,6 +72,36 @@ const fontOptions = [
                 />
             </div>
 
+            <!-- Typography Preview -->
+            <div class="mt-4 flex flex-col gap-1.5">
+                <span class="text-xs font-medium uppercase tracking-wider text-(--text-tertiary)">Preview</span>
+                <div
+                    class="overflow-hidden border border-(--border-color) rounded-lg bg-(--bg-card) shadow-inner"
+                    :style="{ height: '300px' }"
+                >
+                    <div
+                        class="h-full overflow-y-auto select-none p-6"
+                        :style="{
+                            fontFamily: settings.fontFamily,
+                            fontSize: settings.fontSize + 'px',
+                            lineHeight: settings.lineHeight,
+                            paddingLeft: settings.margin * 12 + 'px',
+                            paddingRight: settings.margin * 12 + 'px',
+                        }"
+                    >
+                        <h2 class="font-semibold mb-2 text-[1.1em] tracking-tight">
+                            Chapter I: Down the Rabbit-Hole
+                        </h2>
+                        <p class="text-left text-[0.95em]">
+                            Alice was beginning to get very tired of sitting by her sister on the bank, and of
+                            having nothing to do: once or twice she had peeped into the book her sister was
+                            reading, but it had no pictures or conversations in it, “and what is the use of a
+                            book,” thought Alice “without pictures or conversations?”
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Font Size Slider -->
             <div class="flex flex-col gap-1.5">
                 <div
@@ -146,35 +176,7 @@ const fontOptions = [
                 </div>
             </div>
 
-            <!-- Typography Preview -->
-            <div class="mt-4 flex flex-col gap-1.5">
-                <span class="text-xs font-medium uppercase tracking-wider text-(--text-tertiary)">Preview</span>
-                <div
-                    class="overflow-hidden border border-(--border-color) rounded-lg bg-(--bg-card) shadow-inner"
-                    :style="{ height: '300px' }"
-                >
-                    <div
-                        class="h-full overflow-y-auto select-none p-6"
-                        :style="{
-                            fontFamily: settings.fontFamily,
-                            fontSize: settings.fontSize + 'px',
-                            lineHeight: settings.lineHeight,
-                            paddingLeft: settings.margin * 12 + 'px',
-                            paddingRight: settings.margin * 12 + 'px',
-                        }"
-                    >
-                        <h2 class="font-semibold mb-2 text-[1.1em] tracking-tight">
-                            Chapter I: Down the Rabbit-Hole
-                        </h2>
-                        <p class="text-left text-[0.95em]">
-                            Alice was beginning to get very tired of sitting by her sister on the bank, and of
-                            having nothing to do: once or twice she had peeped into the book her sister was
-                            reading, but it had no pictures or conversations in it, “and what is the use of a
-                            book,” thought Alice “without pictures or conversations?”
-                        </p>
-                    </div>
-                </div>
-            </div>
+
         </div>
 
         <!-- Loading State -->
