@@ -47,12 +47,12 @@ Goal: a clean skeleton, both test harnesses running, CI green, before any featur
 - [x] `chore: project metadata, formatters, linters`
 
 ### Commit 0.2: Rust test harness and module skeleton
-- [ ] Create empty module tree per architecture section 3: `domain/`, `adapters/`, `ipc/`,
+- [x] Create empty module tree per architecture section 3: `domain/`, `adapters/`, `ipc/`,
       `state.rs`, `protocol.rs`, each with a `mod.rs` and a `//!` doc comment stating its role.
-- [ ] Wire the modules into `lib.rs` (declared, currently empty).
-- [ ] Add `thiserror` to `Cargo.toml`; create `domain/error.rs` with an empty `DomainError` enum.
-- [ ] Add a trivial domain unit test so `cargo test` runs.
-- [ ] `chore(core): module skeleton and test harness`
+- [x] Wire the modules into `lib.rs` (declared, currently empty).
+- [x] Add `thiserror` to `Cargo.toml`; create `domain/error.rs` with an empty `DomainError` enum.
+- [x] Add a trivial domain unit test so `cargo test` runs.
+- [x] `chore(core): module skeleton and test harness`
 
 ### Commit 0.3: Frontend test harness and folder skeleton
 - [ ] Add Vitest + `@vue/test-utils` + `@testing-library/vue` + `jsdom`; add `bun run test`.

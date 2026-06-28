@@ -1,3 +1,13 @@
+//! Application entry point for the Prose core. `run()` builds the concrete
+//! adapters, wires them into the domain services, and registers the Tauri
+//! commands and the `prose://` protocol.
+
+pub mod adapters;
+pub mod domain;
+pub mod ipc;
+pub mod protocol;
+pub mod state;
+
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
 fn greet(name: &str) -> String {
