@@ -80,14 +80,14 @@ Goal: model and ports exist and are unit-tested with fakes. No `tauri`, `rusqlit
 `std::fs`, or `tokio::fs` anywhere in `domain/` (architecture section 3). Pure logic first.
 
 ### Commit 1.1: Core model types
-- [ ] `domain/model.rs`: `BookId` (content hash, `from_content(&[u8])`), `Format` enum
+- [x] `domain/model.rs`: `BookId` (content hash, `from_content(&[u8])`), `Format` enum
       (`Epub`, `Pdf`), `BookMetadata` (title, author, cover ref), `Book`.
-- [ ] `Locator` (format-neutral, opaque payload plus a `progression: f32` fraction; architecture section 6).
-- [ ] `Progress`, `Bookmark`, `Highlight`, `ReadingStyle`, `Settings` (with `schema_version`,
+- [x] `Locator` (format-neutral, opaque payload plus a `progression: f32` fraction; architecture section 6).
+- [x] `Progress`, `Bookmark`, `Highlight`, `ReadingStyle`, `Settings` (with `schema_version`,
       every field defaulted; architecture section 7).
-- [ ] Derive `serde`, `Clone`, `PartialEq`; unit tests for `BookId::from_content` determinism
+- [x] Derive `serde`, `Clone`, `PartialEq`; unit tests for `BookId::from_content` determinism
       and `Settings::default`.
-- [ ] `feat(core): domain model types`
+- [x] `feat(core): domain model types`
 
 ### Commit 1.2: Ports
 - [ ] `domain/ports.rs`: `BookRepository`, `ReaderAdapter`, `RemoteStore`, `CredentialStore`,

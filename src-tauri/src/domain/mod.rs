@@ -6,14 +6,10 @@
 //! compiles once and is unit-testable without a UI, disk, or network.
 
 pub mod error;
+pub mod model;
 
 pub use error::DomainError;
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn core_builds() {
-        let sum = 1 + 1;
-        assert_eq!(sum, 2);
-    }
-}
+pub use model::{
+    Book, BookId, BookMetadata, Bookmark, Format, Highlight, Locator, Progress, ReadingStyle,
+    Settings, Theme, SETTINGS_SCHEMA_VERSION,
+};
