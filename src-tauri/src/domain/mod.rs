@@ -6,6 +6,7 @@
 //! and is unit-testable without a UI, disk, or network.
 
 pub mod error;
+pub mod library;
 pub mod model;
 pub mod ports;
 
@@ -13,6 +14,7 @@ pub mod ports;
 pub mod testing;
 
 pub use error::DomainError;
+pub use library::{LibraryService, ReaderRegistry};
 pub use model::{
     Book, BookId, BookMetadata, Bookmark, Format, Highlight, LibraryEntry, LibraryQuery, Locator,
     Progress, ReadingStyle, Settings, SortKey, Theme, SETTINGS_SCHEMA_VERSION,

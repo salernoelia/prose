@@ -97,12 +97,12 @@ Goal: model and ports exist and are unit-tested with fakes. No `tauri`, `rusqlit
 - [x] `feat(core): ports and test fakes`
 
 ### Commit 1.3: LibraryService
-- [ ] `domain/library.rs`: `LibraryService` over `BookRepository` + a `ReaderRegistry`.
-- [ ] `import(bytes, format)`: probe metadata, build `Book` with content-hash id, dedupe, insert (FR-LIB-01..03).
-- [ ] `list(query)` with search/filter/sort over title, author, last-read, progress (FR-LIB-04..06).
-- [ ] `remove(id)` (FR-LIB-07).
-- [ ] Unit tests with fake repo and fake reader, including dedup of the same content hash.
-- [ ] `feat(core): library service`
+- [x] `domain/library.rs`: `LibraryService` over `BookRepository` + a `ReaderRegistry`.
+- [x] `import(bytes, format)`: probe metadata, build `Book` with content-hash id, dedupe, insert (FR-LIB-01..03).
+- [x] `list(query)` with search/filter/sort over title, author, last-read, progress (FR-LIB-04..06).
+- [x] `remove(id)` (FR-LIB-07).
+- [x] Unit tests with fake repo and fake reader, including dedup of the same content hash.
+- [x] `feat(core): library service`
 
 ### Commit 1.4: ReadingService
 - [ ] `domain/reading.rs`: save/get reading position per book (FR-READ-06).
