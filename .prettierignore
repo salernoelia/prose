@@ -3,3 +3,4 @@ node_modules
 src-tauri
 coverage
 bun.lock
+src/readers/vendor

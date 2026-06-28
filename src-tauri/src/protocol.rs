@@ -40,9 +40,26 @@ pub fn handle<R: Runtime>(
 
     // File reading is blocking; keep it off the async executor.
     tauri::async_runtime::spawn_blocking(move || {
-        let response = build_response(&app, &uri, range.as_deref());
+        let response = with_cors(build_response(&app, &uri, range.as_deref()));
         responder.respond(response);
     });
+}
+
+/// The renderer fetches `prose://` URLs from the WebView origin
+/// (`http://localhost` in dev, `tauri://localhost` when packaged), which is a
+/// cross-origin request to this scheme. Allow it explicitly, and expose the
+/// range headers pdf.js reads to size its partial loads.
+fn with_cors(mut response: Response<Vec<u8>>) -> Response<Vec<u8>> {
+    let headers = response.headers_mut();
+    headers.insert(
+        header::ACCESS_CONTROL_ALLOW_ORIGIN,
+        header::HeaderValue::from_static("*"),
+    );
+    headers.insert(
+        header::ACCESS_CONTROL_EXPOSE_HEADERS,
+        header::HeaderValue::from_static("Accept-Ranges, Content-Range, Content-Length"),
+    );
+    response
 }
 
 /// Resolve a request to a response, mapping every failure to a status code.

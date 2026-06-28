@@ -1,0 +1,48 @@
+<script
+    setup
+    lang="ts"
+>
+defineProps<{
+    /** Width of each side turn-zone, in viewport-width units. */
+    zoneSize: number
+}>()
+
+const emit = defineEmits<{
+    (e: 'prev'): void
+    (e: 'next'): void
+    (e: 'toggle'): void
+}>()
+</script>
+
+<template>
+    <!-- LEFT page turn click zone -->
+    <div
+        @click.stop="emit('prev')"
+        class="fixed left-0 top-0 bottom-0 z-20 bg-transparent transition-all duration-200"
+        :style="{ width: zoneSize + 'vw' }"
+        style="cursor: w-resize"
+        title="Previous Page"
+    >
+        <div class="w-1 h-full bg-(--accent-color) opacity-0 hover:opacity-5 transition-opacity"></div>
+    </div>
+
+    <!-- RIGHT page turn click zone -->
+    <div
+        @click.stop="emit('next')"
+        class="fixed right-0 top-0 bottom-0 z-20 bg-transparent transition-all duration-200"
+        :style="{ width: zoneSize + 'vw' }"
+        style="cursor: e-resize"
+        title="Next Page"
+    >
+        <div class="w-1 h-full bg-(--accent-color) right-0 absolute opacity-0 hover:opacity-5 transition-opacity">
+        </div>
+    </div>
+
+    <!-- CENTER menu toggle zone (between left & right zones) -->
+    <div
+        @click="emit('toggle')"
+        class="fixed top-0 bottom-0 z-10 bg-transparent cursor-pointer"
+        :style="{ left: zoneSize + 'vw', right: zoneSize + 'vw' }"
+        title="Toggle Controls"
+    ></div>
+</template>

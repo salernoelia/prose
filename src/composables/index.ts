@@ -2,4 +2,4 @@
 // IPC wrappers together for the views.
 export { useLibrary } from './useLibrary'
 export { useSettings } from './useSettings'
-export {}
+export { useReader } from './useReader'

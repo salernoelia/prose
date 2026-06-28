@@ -51,7 +51,7 @@ function onSelectBook(book: BookDto) {
         <main
             class="flex-1 transition-all duration-300 flex justify-center w-full"
             :class="currentView === 'reader'
-                ? 'h-full p-6 md:p-12 overflow-hidden items-stretch'
+                ? 'h-full px-6 pb-6 md:px-12 md:pb-8 overflow-hidden items-stretch'
                 : 'min-h-screen p-8 pt-12 pb-24 items-start'
                 "
         >

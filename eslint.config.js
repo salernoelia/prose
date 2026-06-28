@@ -9,7 +9,13 @@ export default defineConfigWithVueTs(
   },
   {
     name: 'app/files-to-ignore',
-    ignores: ['**/dist/**', '**/node_modules/**', '**/src-tauri/**', '**/coverage/**'],
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/src-tauri/**',
+      '**/coverage/**',
+      'src/readers/vendor/**',
+    ],
   },
   pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,

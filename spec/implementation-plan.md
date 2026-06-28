@@ -287,28 +287,28 @@ Goal: open and render books, navigate, with a page turn off the IPC hot path (ar
 
 ### Commit 6.1: BookRenderer interface and reader shell
 
-- [ ] `src/readers/Renderer.ts`: the `BookRenderer` interface (architecture section 6).
-- [ ] A renderer registry selecting by the `Format` Rust reports.
-- [ ] `views/Reader.vue` shell + `composables/useReader.ts`; opens a book by id, resolves its `prose://` base URL.
+- [x] `src/readers/Renderer.ts`: the `BookRenderer` interface (architecture section 6). Implemented as `src/readers/types.ts`.
+- [x] A renderer registry selecting by the `Format` Rust reports (`src/readers/registry.ts`, lazy-loaded).
+- [x] `views/Reader.vue` shell + `composables/useReader.ts`; opens a book by id, resolves its `prose://` base URL (`ipc/protocol.ts`). Shell is the existing `ReaderView.vue`, componentized.
 - [ ] `feat(reader): renderer interface and reader shell`
 
 ### Commit 6.2: ePub rendering with foliate-js
 
-- [ ] Vendor/add foliate-js; `src/readers/EpubRenderer.ts` implementing `BookRenderer` over a `prose://` source.
-- [ ] `load`, `next`, `prev`, `onLocationChange` (FR-READ-01, FR-READ-04).
-- [ ] Render the first ePub page within budget (NFR-P-02); page turn is renderer-local (NFR-P-03).
+- [x] Vendor/add foliate-js; `src/readers/EpubRenderer.ts` implementing `BookRenderer` over a `prose://` source.
+- [x] `load`, `next`, `prev`, `onLocationChange` (FR-READ-01, FR-READ-04).
+- [x] Render the first ePub page within budget (NFR-P-02); page turn is renderer-local (NFR-P-03).
 - [ ] `feat(reader): epub rendering`
 
 ### Commit 6.3: PDF rendering with pdf.js
 
-- [ ] Add pdf.js; `src/readers/PdfRenderer.ts` implementing `BookRenderer`, fetching pages via `prose://` with range (FR-READ-02).
-- [ ] Zoom and fit, default fit-to-width (FR-READ-05); `applyStyle` is a no-op for PDF (architecture section 6).
+- [x] Add pdf.js; `src/readers/PdfRenderer.ts` implementing `BookRenderer`, fetching pages via `prose://` with range (FR-READ-02).
+- [x] Zoom and fit, default fit-to-width (FR-READ-05); `applyStyle` is a no-op for PDF (architecture section 6).
 - [ ] `feat(reader): pdf rendering`
 
 ### Commit 6.4: Table of contents navigation
 
-- [ ] Extract the TOC (from the renderer or a Rust adapter call) and render it in a PrimeVue `Drawer` (FR-READ-03, architecture section 5.1).
-- [ ] Navigate to a selected entry via `goToLocator`.
+- [x] Extract the TOC (from the renderer) and render it in a PrimeVue `Drawer` (FR-READ-03, architecture section 5.1).
+- [x] Navigate to a selected entry via `goToHref` (the renderer-neutral destination on `TocItem`).
 - [ ] `feat(reader): table of contents navigation`
 
 > Checkpoint: open both formats, turn pages, navigate by TOC. Verify NFR-P-02 and NFR-P-03 by hand.
