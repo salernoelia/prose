@@ -5,6 +5,7 @@
 //! external is reached through a port in `ports.rs`, so the core compiles once
 //! and is unit-testable without a UI, disk, or network.
 
+pub mod annotation;
 pub mod error;
 pub mod library;
 pub mod model;
@@ -14,6 +15,7 @@ pub mod reading;
 #[cfg(test)]
 pub mod testing;
 
+pub use annotation::AnnotationService;
 pub use error::DomainError;
 pub use library::{LibraryService, ReaderRegistry};
 pub use model::{

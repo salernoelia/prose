@@ -112,9 +112,9 @@ Goal: model and ports exist and are unit-tested with fakes. No `tauri`, `rusqlit
 - [x] `feat(core): reading service`
 
 ### Commit 1.5: AnnotationService
-- [ ] `domain/annotation.rs`: add/list/delete bookmarks (FR-NOTE-01); add/list/delete highlights (FR-NOTE-02).
-- [ ] Unit tests.
-- [ ] `feat(core): annotation service`
+- [x] `domain/annotation.rs`: add/list/delete bookmarks (FR-NOTE-01); add/list/delete highlights (FR-NOTE-02).
+- [x] Unit tests.
+- [x] `feat(core): annotation service`
 
 ### Commit 1.6: SettingsService
 - [ ] `domain/settings.rs`: get, patch (partial update of changed fields only), validate, version tolerance.
