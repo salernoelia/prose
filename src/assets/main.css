@@ -190,6 +190,10 @@
 }
 
 /* Global Reset and Aesthetics */
+* {
+  touch-action: manipulation;
+}
+
 html {
   background-color: var(--bg-app);
   color: var(--text-primary);
