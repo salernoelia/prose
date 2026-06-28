@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { useSettings } from '../composables/useSettings'
+import Select from 'primevue/select'
+import Slider from 'primevue/slider'
+import type { Theme } from '../ipc/types'
 
 const {
   settings,
@@ -9,113 +12,165 @@ const {
   fontSize,
   lineHeight,
   margin,
+  clickZoneSize,
 } = useSettings()
+
+const themeOptions = [
+  { label: 'Light', value: 'light' as Theme },
+  { label: 'Dark', value: 'dark' as Theme },
+  { label: 'Sepia', value: 'sepia' as Theme }
+]
+
+const fontOptions = [
+  { label: 'Literata', value: 'Literata' },
+  { label: 'Georgia', value: 'Georgia' },
+  { label: 'Inter', value: 'Inter' },
+  { label: 'Outfit', value: 'Outfit' }
+]
 </script>
 
 <template>
-  <div class="p-6 max-w-md mx-auto">
-    <h1 class="text-xl font-bold mb-4 flex items-center">
-      <span class="material-symbols-outlined mr-2">settings</span>
-      Settings
-    </h1>
+  <div class="w-full animate-fade-in">
+    <!-- Typography-driven Header (No Icons) -->
+    <header class="pb-6 mb-6 border-b border-[var(--border-color)]">
+      <h1 class="text-xl font-semibold tracking-tight text-[var(--text-primary)]">Settings</h1>
+    </header>
     
-    <div v-if="loaded" class="flex flex-col gap-4">
-      <!-- Theme Setting -->
-      <div class="flex flex-col gap-1">
-        <label for="theme-select" class="font-medium flex items-center gap-1">
-          <span class="material-symbols-outlined text-lg">palette</span>
+    <!-- Form Controls (No Icons, Minimal Labels) -->
+    <div v-if="loaded" class="flex flex-col gap-6">
+      
+      <!-- Theme Selection -->
+      <div class="flex flex-col gap-1.5">
+        <label for="theme-select" class="text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
           Theme
         </label>
-        <select id="theme-select" v-model="theme" class="border p-1 rounded">
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-          <option value="sepia">Sepia</option>
-        </select>
-      </div>
-
-      <!-- Font Family Setting -->
-      <div class="flex flex-col gap-1">
-        <label for="font-family-select" class="font-medium flex items-center gap-1">
-          <span class="material-symbols-outlined text-lg">font_download</span>
-          Font Family
-        </label>
-        <select id="font-family-select" v-model="fontFamily" class="border p-1 rounded">
-          <option value="Literata">Literata</option>
-          <option value="Georgia">Georgia</option>
-          <option value="Inter">Inter</option>
-          <option value="Outfit">Outfit</option>
-        </select>
-      </div>
-
-      <!-- Font Size Setting -->
-      <div class="flex flex-col gap-1">
-        <label for="font-size-input" class="font-medium flex items-center gap-1">
-          <span class="material-symbols-outlined text-lg">format_size</span>
-          Font Size ({{ fontSize }}px)
-        </label>
-        <input
-          id="font-size-input"
-          type="range"
-          v-model.number="fontSize"
-          min="12"
-          max="48"
-          class="w-full"
+        <Select
+          id="theme-select"
+          v-model="theme"
+          :options="themeOptions"
+          optionLabel="label"
+          optionValue="value"
+          class="w-full focus-ring-minimal"
         />
       </div>
 
-      <!-- Line Height Setting -->
-      <div class="flex flex-col gap-1">
-        <label for="line-height-input" class="font-medium flex items-center gap-1">
-          <span class="material-symbols-outlined text-lg">format_line_spacing</span>
-          Line Spacing ({{ lineHeight }}x)
+      <!-- Font Family Selection -->
+      <div class="flex flex-col gap-1.5">
+        <label for="font-family-select" class="text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+          Typeface
         </label>
-        <input
-          id="line-height-input"
-          type="range"
-          v-model.number="lineHeight"
-          min="1.0"
-          max="3.0"
-          step="0.1"
-          class="w-full"
+        <Select
+          id="font-family-select"
+          v-model="fontFamily"
+          :options="fontOptions"
+          optionLabel="label"
+          optionValue="value"
+          class="w-full focus-ring-minimal"
         />
       </div>
 
-      <!-- Margin Setting -->
-      <div class="flex flex-col gap-1">
-        <label for="margin-input" class="font-medium flex items-center gap-1">
-          <span class="material-symbols-outlined text-lg">margin</span>
-          Page Margin ({{ margin }}x)
-        </label>
-        <input
-          id="margin-input"
-          type="range"
-          v-model.number="margin"
-          min="0.5"
-          max="3.0"
-          step="0.1"
-          class="w-full"
-        />
+      <!-- Font Size Slider -->
+      <div class="flex flex-col gap-1.5">
+        <div class="flex justify-between items-center text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+          <label for="font-size-slider">Size</label>
+          <span class="text-[var(--text-tertiary)]">{{ fontSize }}px</span>
+        </div>
+        <div class="py-2">
+          <Slider
+            id="font-size-slider"
+            v-model="fontSize"
+            :min="12"
+            :max="48"
+            class="w-full focus-ring-minimal"
+          />
+        </div>
       </div>
 
-      <!-- Preview block -->
-      <div class="mt-4 p-4 border rounded" :style="{ fontSize: fontSize + 'px' }">
-        <p
-          :style="{
-            fontFamily: settings.fontFamily,
-            fontSize: settings.fontSize + 'px',
-            lineHeight: settings.lineHeight,
-            paddingLeft: (settings.margin * 10) + 'px',
-            paddingRight: (settings.margin * 10) + 'px'
-          }"
+      <!-- Line Height Slider -->
+      <div class="flex flex-col gap-1.5">
+        <div class="flex justify-between items-center text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+          <label for="line-height-slider">Spacing</label>
+          <span class="text-[var(--text-tertiary)]">{{ lineHeight.toFixed(1) }}x</span>
+        </div>
+        <div class="py-2">
+          <Slider
+            id="line-height-slider"
+            v-model="lineHeight"
+            :min="1.0"
+            :max="3.0"
+            :step="0.1"
+            class="w-full focus-ring-minimal"
+          />
+        </div>
+      </div>
+
+      <!-- Margin Slider -->
+      <div class="flex flex-col gap-1.5">
+        <div class="flex justify-between items-center text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+          <label for="margin-slider">Margin</label>
+          <span class="text-[var(--text-tertiary)]">{{ margin.toFixed(1) }}x</span>
+        </div>
+        <div class="py-2">
+          <Slider
+            id="margin-slider"
+            v-model="margin"
+            :min="0.5"
+            :max="3.0"
+            :step="0.1"
+            class="w-full focus-ring-minimal"
+          />
+        </div>
+      </div>
+
+      <!-- Click Zone Slider -->
+      <div class="flex flex-col gap-1.5">
+        <div class="flex justify-between items-center text-xs font-medium uppercase tracking-wider text-[var(--text-secondary)]">
+          <label for="click-zone-slider">Page-Turn Zone</label>
+          <span class="text-[var(--text-tertiary)]">{{ clickZoneSize }}%</span>
+        </div>
+        <div class="py-2">
+          <Slider
+            id="click-zone-slider"
+            v-model="clickZoneSize"
+            :min="10"
+            :max="45"
+            class="w-full focus-ring-minimal"
+          />
+        </div>
+      </div>
+
+      <!-- Typography Preview -->
+      <div class="mt-4 flex flex-col gap-1.5">
+        <span class="text-xs font-medium uppercase tracking-wider text-[var(--text-tertiary)]">Preview</span>
+        <div 
+          class="overflow-hidden border border-[var(--border-color)] rounded-lg bg-[var(--bg-card)] shadow-inner"
+          :style="{ height: '180px' }"
         >
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam ac ante eget sem congue dictum nec vel mi. Pellentesque egestas scelerisque nisl eget tincidunt. Morbi quis nisi nec metus commodo tempor in et lectus. Ut egestas, magna ac placerat feugiat, nulla elit fermentum turpis, ut euismod leo velit vel nisi. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Mauris congue arcu nisl, non tempor lorem ornare non. Curabitur elementum lacus felis, sit amet facilisis tellus egestas at. Sed dictum convallis sapien, vitae tincidunt neque tincidunt nec.
-
-        </p>
+          <div 
+            class="h-full overflow-y-auto select-none p-6"
+            :style="{
+              fontFamily: settings.fontFamily,
+              fontSize: settings.fontSize + 'px',
+              lineHeight: settings.lineHeight,
+              paddingLeft: (settings.margin * 12) + 'px',
+              paddingRight: (settings.margin * 12) + 'px'
+            }"
+          >
+            <h2 class="font-semibold mb-2 text-[1.1em] tracking-tight">Chapter I: Down the Rabbit-Hole</h2>
+            <p class="text-left text-[0.95em]">
+              Alice was beginning to get very tired of sitting by her sister on the bank, and of having nothing to do: once or twice she had peeped into the book her sister was reading, but it had no pictures or conversations in it, “and what is the use of a book,” thought Alice “without pictures or conversations?”
+            </p>
+          </div>
+        </div>
       </div>
+
     </div>
     
-    <div v-else class="text-gray-500">
-      Loading settings...
+    <!-- Loading State -->
+    <div v-else class="flex flex-col items-center justify-center py-16 gap-3">
+      <div class="w-6 h-6 rounded-full border border-[var(--border-color)] border-t-[var(--accent-color)] animate-spin"></div>
+      <p class="text-xs text-[var(--text-secondary)] font-medium">Loading</p>
     </div>
+
   </div>
 </template>
