@@ -27,7 +27,7 @@ const fontOptions = [
 <template>
     <div class="w-full animate-fade-in">
         <!-- Typography-driven Header (No Icons) -->
-        <header class="pb-6 mb-6 border-b border-(--border-color)">
+        <header class="pb-6">
             <h1 class="text-xl font-semibold tracking-tight text-(--text-primary)">Settings</h1>
         </header>
 
