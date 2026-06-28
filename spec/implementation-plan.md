@@ -141,26 +141,27 @@ Goal: the typed boundary exists and one command travels UI to Rust and back, est
 pattern every later feature copies (architecture section 4).
 
 ### Commit 2.1: Error boundary and DTO conventions
-- [ ] `ipc/error.rs`: `AppError { code, message }`, serializable; `From<DomainError>` mapping.
-- [ ] `ipc/dto.rs`: first DTOs (`SettingsDto`) as flat structs, not domain types.
-- [ ] `ipc/event.rs`: event-name constants and payload structs.
-- [ ] `src/ipc/types.ts`: hand-mirrored TS types (strategy 1 from architecture section 4.5).
-- [ ] `feat(ipc): error boundary and dto conventions`
+- [x] `ipc/error.rs`: `AppError { code, message }`, serializable; `From<DomainError>` mapping.
+- [x] `ipc/dto.rs`: first DTOs (`SettingsDto`) as flat structs, not domain types.
+- [x] `ipc/event.rs`: event-name constants and payload structs.
+- [x] `src/ipc/types.ts`: hand-mirrored TS types (strategy 1 from architecture section 4.5).
+- [x] `feat(ipc): error boundary and dto conventions`
+
 
 ### Commit 2.2: AppState and dependency wiring
-- [ ] `state.rs`: `AppState` holding the wired services behind `Arc<dyn Port>`.
-- [ ] `lib.rs` `run()`: build adapters (temporary in-memory ones are fine here), inject, manage State.
-- [ ] The only `expect()` allowed lives in this startup wiring (architecture section 4.4).
-- [ ] `feat(core): app state and service wiring`
+- [x] `state.rs`: `AppState` holding the wired services behind `Arc<dyn Port>`.
+- [x] `lib.rs` `run()`: build adapters (temporary in-memory ones are fine here), inject, manage State.
+- [x] The only `expect()` allowed lives in this startup wiring (architecture section 4.4).
+- [x] `feat(core): app state and service wiring`
 
 ### Commit 2.3: Settings command round-trip (reference slice)
-- [ ] `ipc/settings.rs`: `settings_get`, `settings_patch` thin commands calling `SettingsService`,
+- [x] `ipc/settings.rs`: `settings_get`, `settings_patch` thin commands calling `SettingsService`,
       `settings_patch` emits `settings:changed` (architecture section 7).
-- [ ] Register handlers in `ipc/mod.rs` and `lib.rs`.
-- [ ] `src/ipc/settings.ts`: the only place `invoke` appears for settings.
-- [ ] `src/ipc/events.ts`: typed `onSettingsChanged` listener.
-- [ ] Vitest test with `invoke` mocked: payload shape and error mapping (architecture section 10).
-- [ ] `feat(ipc): settings command round-trip`
+- [x] Register handlers in `ipc/mod.rs` and `lib.rs`.
+- [x] `src/ipc/settings.ts`: the only place `invoke` appears for settings.
+- [x] `src/ipc/events.ts`: typed `onSettingsChanged` listener.
+- [x] Vitest test with `invoke` mocked: payload shape and error mapping (architecture section 10).
+- [x] `feat(ipc): settings command round-trip`
 
 > Checkpoint: the full stack works end to end for one command. Every later vertical mirrors this.
 
