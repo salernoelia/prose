@@ -48,7 +48,6 @@ impl From<DomainError> for AppError {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

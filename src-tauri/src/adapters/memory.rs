@@ -9,9 +9,7 @@ use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::domain::error::DomainError;
-use crate::domain::model::{
-    Book, BookId, Bookmark, Highlight, LibraryEntry, Progress, Settings,
-};
+use crate::domain::model::{Book, BookId, Bookmark, Highlight, LibraryEntry, Progress, Settings};
 use crate::domain::ports::{BookRepository, Clock, RemoteEntry, RemoteStore};
 
 /// In-memory implementation of [`BookRepository`].

@@ -27,7 +27,12 @@ pub fn settings_patch(
     let domain_patch = patch.try_into().map_err(AppError::from)?;
     let updated = state.settings.patch(&domain_patch)?;
     let dto = SettingsDto::from(updated);
-    app.emit(SETTINGS_CHANGED, SettingsChangedPayload { settings: dto.clone() })
-        .map_err(|e| AppError::from_internal(e.to_string()))?;
+    app.emit(
+        SETTINGS_CHANGED,
+        SettingsChangedPayload {
+            settings: dto.clone(),
+        },
+    )
+    .map_err(|e| AppError::from_internal(e.to_string()))?;
     Ok(dto)
 }
