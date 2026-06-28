@@ -15,6 +15,7 @@ import {
   type TocItem,
 } from '../readers'
 import { bookResourceUrl } from '../ipc/protocol'
+import { readingSavePosition, readingGetPosition } from '../ipc/reading'
 import type { BookDto } from '../ipc/types'
 import { useSettings } from './useSettings'
 
@@ -33,6 +34,7 @@ export function useReader(book: Ref<BookDto>) {
 
   const canZoom = ref(false)
   const ZOOM_FACTOR = 1.25
+  let saveTimer: ReturnType<typeof setTimeout> | null = null
 
   function readingStyle() {
     return {
@@ -52,15 +54,25 @@ export function useReader(book: Ref<BookDto>) {
     toc.value = []
     try {
       const instance = await createRenderer(book.value.format)
+      const bookId = book.value.id
       instance.onLocationChange((next) => {
         locator.value = next
+        if (saveTimer) clearTimeout(saveTimer)
+        saveTimer = setTimeout(() => {
+          void readingSavePosition(bookId, next)
+          saveTimer = null
+        }, 500)
       })
       await instance.mount(container)
       instance.applyStyle(readingStyle())
-      await instance.load(bookResourceUrl(book.value.id))
+      await instance.load(bookResourceUrl(bookId))
       toc.value = instance.toc()
       canZoom.value = isZoomable(instance)
       renderer.value = instance
+      const saved = await readingGetPosition(bookId)
+      if (saved) {
+        await instance.goToLocator(saved.locator)
+      }
     } catch (cause) {
       error.value = cause instanceof Error ? cause.message : 'Failed to open this book.'
     } finally {
@@ -69,6 +81,10 @@ export function useReader(book: Ref<BookDto>) {
   }
 
   function teardown() {
+    if (saveTimer) {
+      clearTimeout(saveTimer)
+      saveTimer = null
+    }
     renderer.value?.destroy()
     renderer.value = null
   }

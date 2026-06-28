@@ -9,7 +9,9 @@
 use serde::{Deserialize, Serialize};
 
 use crate::domain::error::DomainError;
-use crate::domain::model::{Book, Format, LibraryEntry, LibraryQuery, Settings, SortKey, Theme};
+use crate::domain::model::{
+    Book, Format, LibraryEntry, LibraryQuery, Locator, Progress, Settings, SortKey, Theme,
+};
 use crate::domain::settings::{ReadingStylePatch, SettingsPatch};
 
 /// The full settings, flattened: the nested reading typography is lifted to the
@@ -158,6 +160,46 @@ impl TryFrom<LibraryQueryDto> for LibraryQuery {
             sort,
             descending: dto.descending,
         })
+    }
+}
+
+/// The format-neutral reading position, mirroring the domain [`Locator`].
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LocatorDto {
+    pub payload: String,
+    pub progression: f32,
+}
+
+impl From<Locator> for LocatorDto {
+    fn from(l: Locator) -> Self {
+        LocatorDto {
+            payload: l.payload,
+            progression: l.progression,
+        }
+    }
+}
+
+impl From<LocatorDto> for Locator {
+    fn from(d: LocatorDto) -> Self {
+        Locator::new(d.payload, d.progression)
+    }
+}
+
+/// The saved reading position with its timestamp, returned by position commands.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProgressDto {
+    pub locator: LocatorDto,
+    pub updated_at: i64,
+}
+
+impl From<Progress> for ProgressDto {
+    fn from(p: Progress) -> Self {
+        ProgressDto {
+            locator: LocatorDto::from(p.locator),
+            updated_at: p.updated_at,
+        }
     }
 }
 

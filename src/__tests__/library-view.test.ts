@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/vue'
 import PrimeVue from 'primevue/config'
-import Library from '../views/Library.vue'
+import Library from '../views/LibraryView.vue'
 import { initLibraryStore } from '../stores/library'
 
 vi.mock('@tauri-apps/api/core', () => ({

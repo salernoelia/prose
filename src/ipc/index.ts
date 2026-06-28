@@ -2,6 +2,7 @@
 // wrappers and event listeners are re-exported here as each feature lands.
 export { getSettings, patchSettings } from './settings'
 export { libraryImportBook, libraryList, libraryRemove } from './library'
+export { readingSavePosition, readingGetPosition } from './reading'
 export { onSettingsChanged, onLibraryChanged, onImportProgress } from './events'
 export type {
   SettingsDto,
@@ -14,4 +15,6 @@ export type {
   SortKey,
   LibraryQueryDto,
   ImportProgressPayload,
+  LocatorDto,
+  ProgressDto,
 } from './types'

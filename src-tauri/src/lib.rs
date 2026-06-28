@@ -74,6 +74,8 @@ pub fn run() {
             ipc::library::library_import_book,
             ipc::library::library_list,
             ipc::library::library_remove,
+            ipc::reading::reading_save_position,
+            ipc::reading::reading_get_position,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

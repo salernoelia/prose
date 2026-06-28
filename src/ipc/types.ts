@@ -96,6 +96,20 @@ export interface LibraryQueryDto {
   descending: boolean
 }
 
+// Reading
+
+/** Format-neutral reading position, mirroring the Rust `LocatorDto`. */
+export interface LocatorDto {
+  payload: string
+  progression: number
+}
+
+/** Saved reading position with its timestamp, returned by position commands. */
+export interface ProgressDto {
+  locator: LocatorDto
+  updatedAt: number
+}
+
 // Event name constants
 
 /** Mirrors the Rust `ipc::event` constants so listeners use the same strings. */

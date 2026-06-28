@@ -277,7 +277,8 @@ Goal: stream book resources to the renderer with range support (architecture sec
 - [x] Read from the stored file; honor `Range` headers for PDF partial loads (architecture section 4.3, 9).
 - [x] Resource listing comes from the `ReaderAdapter`; 404/scoped access so only library books resolve.
 - [x] Register the protocol in `run()`; add a test or manual check that a known resource streams.
-- [ ] `feat(protocol): prose:// resource streaming`
+- [ x] `feat(protocol): prose:// resource streaming`
+> verified by user
 
 ---
 
@@ -290,28 +291,34 @@ Goal: open and render books, navigate, with a page turn off the IPC hot path (ar
 - [x] `src/readers/Renderer.ts`: the `BookRenderer` interface (architecture section 6). Implemented as `src/readers/types.ts`.
 - [x] A renderer registry selecting by the `Format` Rust reports (`src/readers/registry.ts`, lazy-loaded).
 - [x] `views/Reader.vue` shell + `composables/useReader.ts`; opens a book by id, resolves its `prose://` base URL (`ipc/protocol.ts`). Shell is the existing `ReaderView.vue`, componentized.
-- [ ] `feat(reader): renderer interface and reader shell`
+- [ x] `feat(reader): renderer interface and reader shell`
 
 ### Commit 6.2: ePub rendering with foliate-js
 
 - [x] Vendor/add foliate-js; `src/readers/EpubRenderer.ts` implementing `BookRenderer` over a `prose://` source.
 - [x] `load`, `next`, `prev`, `onLocationChange` (FR-READ-01, FR-READ-04).
 - [x] Render the first ePub page within budget (NFR-P-02); page turn is renderer-local (NFR-P-03).
-- [ ] `feat(reader): epub rendering`
+- [ x] `feat(reader): epub rendering`
+> verified by user
 
 ### Commit 6.3: PDF rendering with pdf.js
 
 - [x] Add pdf.js; `src/readers/PdfRenderer.ts` implementing `BookRenderer`, fetching pages via `prose://` with range (FR-READ-02).
 - [x] Zoom and fit, default fit-to-width (FR-READ-05); `applyStyle` is a no-op for PDF (architecture section 6).
-- [ ] `feat(reader): pdf rendering`
+- [ x] `feat(reader): pdf rendering`
+
+> verified by user
+
 
 ### Commit 6.4: Table of contents navigation
 
 - [x] Extract the TOC (from the renderer) and render it in a PrimeVue `Drawer` (FR-READ-03, architecture section 5.1).
 - [x] Navigate to a selected entry via `goToHref` (the renderer-neutral destination on `TocItem`).
-- [ ] `feat(reader): table of contents navigation`
+- [x ] `feat(reader): table of contents navigation`
 
 > Checkpoint: open both formats, turn pages, navigate by TOC. Verify NFR-P-02 and NFR-P-03 by hand.
+>
+> verified by user
 
 ---
 
@@ -321,17 +328,17 @@ Goal: persist and resume position; show progress (FR-READ-06, FR-READ-07).
 
 ### Commit 7.1: Position commands and capture
 
-- [ ] `ipc/reading.rs`: `reading_save_position`, `reading_get_position`; typed `src/ipc/reading.ts`.
-- [ ] Renderer reports the current `Locator` on change; UI saves it asynchronously after the turn paints (architecture section 9).
-- [ ] Reopen resumes at the stored position.
-- [ ] Tests: payload shape; domain resume already covered in 1.4.
-- [ ] `feat(reading): save and resume position`
+- [x] `ipc/reading.rs`: `reading_save_position`, `reading_get_position`; typed `src/ipc/reading.ts`.
+- [x] Renderer reports the current `Locator` on change; UI saves it asynchronously after the turn paints (architecture section 9).
+- [x] Reopen resumes at the stored position.
+- [x] Tests: payload shape; domain resume already covered in 1.4.
+- [x] `feat(reading): save and resume position`
 
 ### Commit 7.2: Progress display
 
-- [ ] Progress percentage in the reader chrome and on library cards, fed by `ReadingService` (FR-READ-07).
-- [ ] Last-read time updates feed the library sort (FR-LIB-06).
-- [ ] `feat(reading): progress display`
+- [x] Progress percentage in the reader chrome and on library cards, fed by `ReadingService` (FR-READ-07).
+- [x] Last-read time updates feed the library sort (FR-LIB-06).
+- [x] `feat(reading): progress display`
 
 ---
 
