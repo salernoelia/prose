@@ -62,10 +62,10 @@ Goal: a clean skeleton, both test harnesses running, CI green, before any featur
 - [x] `chore(ui): vitest harness and folder skeleton`
 
 ### Commit 0.4: Continuous integration
-- [ ] CI job: `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test` (in `src-tauri`).
-- [ ] CI job: `bun install`, `bun run build` (type-check), `bun run test`, lint.
-- [ ] Cache cargo and bun; run on push and PR.
-- [ ] `ci: rust and frontend pipelines`
+- [x] CI job: `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test` (in `src-tauri`).
+- [x] CI job: `bun install`, `bun run build` (type-check), `bun run test`, lint.
+- [x] Cache cargo and bun; run on push and PR.
+- [x] `ci: rust and frontend pipelines`
 
 ### Commit 0.5: Strip the scaffold demo
 - [ ] Remove the `greet` command and the demo UI from `App.vue` and `lib.rs`.
