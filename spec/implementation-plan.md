@@ -144,6 +144,8 @@ Goal: model and ports exist and are unit-tested with fakes. No `tauri`, `rusqlit
 > Measured 2026-06-28 with `cargo llvm-cov --lib`: 96.82% line coverage on `domain/`
 > (45 tests), well above the 80% target. Per file: annotation 100%, reading 100%,
 > testing 99.6%, settings 98.4%, model 96.9%, sync 94.6%, library 94.2%.
+>
+> verified by user
 
 ---
 
@@ -178,6 +180,8 @@ pattern every later feature copies (architecture section 4).
 - [x] `feat(ipc): settings command round-trip`
 
 > Checkpoint: the full stack works end to end for one command. Every later vertical mirrors this.
+>
+> verified by user
 
 ---
 
@@ -208,6 +212,8 @@ Goal: the real local store behind the repository port (architecture section 8).
 - [x] `feat(ui): settings store and panel`
 
 > Checkpoint: settings persist to SQLite and round-trip through the typed boundary, reactively.
+>
+> verified by user
 
 ---
 
@@ -255,6 +261,8 @@ Goal: import books, see them, manage them (FR-LIB).
 
 > Checkpoint: import a real ePub and PDF, see covers, search, sort, remove. FR-LIB done.
 > Manual validation (2026-06-28): imported `book_sample.epub` via the Library view native picker and verified it appears in catalog, is searchable/sortable, and can be removed.
+
+> verified by user
 
 ---
 
