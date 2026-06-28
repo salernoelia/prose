@@ -172,23 +172,23 @@ pattern every later feature copies (architecture section 4).
 Goal: the real local store behind the repository port (architecture section 8).
 
 ### Commit 3.1: SQLite store and migrations
-- [ ] Add `rusqlite` (bundled) to `Cargo.toml`.
-- [ ] `adapters/storage/`: schema and a migration runner; tables for books, progress, bookmarks,
+- [x] Add `rusqlite` (bundled) to `Cargo.toml`.
+- [x] `adapters/storage/`: schema and a migration runner; tables for books, progress, bookmarks,
       highlights, settings, sync state.
-- [ ] Resolve the app data directory via Tauri path APIs; open/create the db there.
-- [ ] Integration test against a temp-file db (architecture section 10).
-- [ ] `feat(storage): sqlite store and migrations`
+- [x] Resolve the app data directory via Tauri path APIs; open/create the db there.
+- [x] Integration test against a temp-file db (architecture section 10).
+- [x] `feat(storage): sqlite store and migrations`
 
 ### Commit 3.2: Repository implementation
-- [ ] Implement `BookRepository` (and settings persistence) over SQLite with atomic transactions (NFR-R-02).
-- [ ] Swap the in-memory adapter in `run()` for the SQLite one; settings now persist across launches.
-- [ ] Integration tests for insert/list/query/remove and atomicity.
-- [ ] `feat(storage): repository over sqlite`
+- [x] Implement `BookRepository` (and settings persistence) over SQLite with atomic transactions (NFR-R-02).
+- [x] Swap the in-memory adapter in `run()` for the SQLite one; settings now persist across launches.
+- [x] Integration tests for insert/list/query/remove and atomicity.
+- [x] `feat(storage): repository over sqlite`
 
 ### Commit 3.3: Settings UI store and panel
-- [ ] `stores/settings.ts`: seed from `settings_get` on startup, update on `settings:changed`.
-- [ ] `composables/useSettings.ts`; a minimal `views/Settings.vue` exercising one real setting.
-- [ ] `feat(ui): settings store and panel`
+- [x] `stores/settings.ts`: seed from `settings_get` on startup, update on `settings:changed`.
+- [x] `composables/useSettings.ts`; a minimal `views/Settings.vue` exercising one real setting.
+- [x] `feat(ui): settings store and panel`
 
 > Checkpoint: settings persist to SQLite and round-trip through the typed boundary, reactively.
 

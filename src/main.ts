@@ -27,6 +27,9 @@ const app = createApp(App)
 app.use(PrimeVue, {
   theme: {
     preset: Preset,
+    options: {
+      darkModeSelector: '.dark',
+    },
   },
 })
 app.mount('#app')
