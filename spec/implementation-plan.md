@@ -90,11 +90,11 @@ Goal: model and ports exist and are unit-tested with fakes. No `tauri`, `rusqlit
 - [x] `feat(core): domain model types`
 
 ### Commit 1.2: Ports
-- [ ] `domain/ports.rs`: `BookRepository`, `ReaderAdapter`, `RemoteStore`, `CredentialStore`,
+- [x] `domain/ports.rs`: `BookRepository`, `ReaderAdapter`, `RemoteStore`, `CredentialStore`,
       `Clock` traits (all `Send + Sync`), return `Result<_, DomainError>`.
-- [ ] Flesh out `DomainError` variants (not found, invalid format, conflict, storage, remote, etc.).
-- [ ] In-memory fakes for each port under `#[cfg(test)]` (or a `domain/testing` module) for service tests.
-- [ ] `feat(core): ports and test fakes`
+- [x] Flesh out `DomainError` variants (not found, invalid format, conflict, storage, remote, etc.).
+- [x] In-memory fakes for each port under `#[cfg(test)]` (or a `domain/testing` module) for service tests.
+- [x] `feat(core): ports and test fakes`
 
 ### Commit 1.3: LibraryService
 - [ ] `domain/library.rs`: `LibraryService` over `BookRepository` + a `ReaderRegistry`.

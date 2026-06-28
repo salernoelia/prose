@@ -72,6 +72,40 @@ impl Book {
     }
 }
 
+/// How the library list is ordered.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SortKey {
+    #[default]
+    Title,
+    Author,
+    LastRead,
+    Progress,
+}
+
+/// A request to list the library: free-text search plus sort order. Filtering
+/// and sorting are applied by `LibraryService`, not the store, so the logic is
+/// pure and unit-tested.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct LibraryQuery {
+    /// Case-insensitive substring matched against title and author.
+    pub search: Option<String>,
+    pub sort: SortKey,
+    pub descending: bool,
+}
+
+/// A book as it appears in the library list: the book plus the derived fields
+/// the list sorts by. The store returns these in one pass so there is no
+/// per-book lookup.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct LibraryEntry {
+    pub book: Book,
+    /// Furthest progression recorded for the book, `0.0` if unread.
+    pub progress: f32,
+    /// When the book was last read, epoch milliseconds, if ever.
+    pub last_read: Option<i64>,
+}
+
 /// A format-neutral reading position. `payload` is opaque to the domain (a CFI
 /// for ePub, a page index plus offset for PDF); only `progression` is
 /// interpreted, and only for the furthest-position comparison.
