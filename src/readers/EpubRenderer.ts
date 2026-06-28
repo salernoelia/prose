@@ -50,18 +50,29 @@ interface FoliateLandmark {
   type?: string | string[]
 }
 
+// Theme token maps: background color and text color injected directly into the
+// ePub iframe so the reading surface matches the app shell's active theme.
+const THEME_TOKENS = {
+  light: { bg: '#faf9f5', fg: '#18181b' },
+  dark: { bg: '#121212', fg: '#e4e4e7' },
+  sepia: { bg: '#d0b580', fg: '#36291b' },
+} as const
+
 /**
  * Foliate injects this stylesheet into each section. It does two jobs: apply the
- * reader's typography, and normalize away author styling that hurts legibility
- * (hard-coded colors, embedded fonts, exaggerated spacing, artificial centering
- * and indents). The `!important` rules win over all but author `!important`.
+ * reader's typography and theme, and normalize away author styling that hurts
+ * legibility (hard-coded colors, embedded fonts, exaggerated spacing, artificial
+ * centering and indents). The `!important` rules win over all but author `!important`.
  */
 function readingCss(style: ReadingStyle): string {
   const font = style.fontFamily
+  const { bg, fg } = THEME_TOKENS[style.theme]
   return `
     html {
-      color-scheme: light dark;
+      color-scheme: ${style.theme === 'dark' ? 'dark' : 'light'};
       font-size: ${style.fontSize}px;
+      background-color: ${bg} !important;
+      color: ${fg} !important;
     }
     /* Force the reader's font everywhere, overriding embedded fonts, but leave
        genuine monospace content (which a more specific rule re-asserts). */
@@ -71,12 +82,13 @@ function readingCss(style: ReadingStyle): string {
     }
     /* Collapse author colors to one readable color: many ePubs hard-code dark
        text that is unreadable on a dark background. Inheriting from the root lets
-       color-scheme pick a legible color; links stay marked by an underline. */
+       the theme color set above propagate; links stay marked by an underline. */
     body, p, li, blockquote, dd, dt, div, span, h1, h2, h3, h4, h5, h6,
     a, em, strong, b, i, u, small, sub, sup, td, th, figcaption, cite, q, mark {
       color: inherit !important;
       background-color: transparent !important;
     }
+    body { background-color: ${bg} !important; }
     a { text-decoration: underline; }
     /* Normalize spacing and layout the author may have exaggerated: collapse odd
        letter/word spacing, left-align body text some books center across the

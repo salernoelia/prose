@@ -45,15 +45,14 @@ function onSelectBook(book: BookDto) {
 
 <template>
     <div
-        class="min-h-screen flex flex-col relative overflow-x-hidden bg-(--bg-app) text-(--text-primary)"
-        :class="{ 'h-screen overflow-hidden': currentView === 'reader' }"
+        class="h-screen overflow-hidden flex flex-col relative bg-(--bg-app) text-(--text-primary)"
     >
         <main
-            class="flex-1 transition-all duration-300 flex justify-center w-full"
+            class="flex-1 min-h-0 transition-all duration-300 flex justify-center w-full"
             :class="currentView === 'reader'
                 ? 'h-full px-6 pb-6 md:px-12 md:pb-8 overflow-hidden items-stretch'
-                : 'min-h-screen p-8 pt-12 pb-24 items-start'
-                "
+                : 'overflow-y-auto p-8 pt-12 pb-24 items-start scroll-smooth'"
+            style="touch-action: pan-y; -webkit-overflow-scrolling: touch;"
         >
             <div :class="currentView === 'reader' ? 'w-full max-w-4xl mx-auto h-full' : 'w-full max-w-3xl'">
                 <div

@@ -159,7 +159,7 @@ const fontOptions = [
             </div>
 
             <!-- Click Zone Slider -->
-            <div class="flex flex-col gap-1.5">
+            <div class="flex flex-col gap-1.5 pb-8">
                 <div
                     class="flex justify-between items-center text-xs font-medium uppercase tracking-wider text-(--text-secondary)">
                     <label for="click-zone-slider">Page-Turn Zone</label>

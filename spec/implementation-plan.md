@@ -348,18 +348,18 @@ Goal: ePub typography controls and the three themes (FR-CUST).
 
 ### Commit 8.1: Reading style controls
 
-- [ ] Extend `Settings` and the settings panel: font family from a bundled set, font size, line spacing, margins (FR-CUST-01..03).
-- [ ] Bundle the reading fonts; expose them to the ePub renderer.
-- [ ] `EpubRenderer.applyStyle` applies them live; PDF ignores them (architecture section 7).
-- [ ] Settings persist and reapply across sessions and books (FR-CUST-05).
-- [ ] `feat(custom): epub reading style controls`
+- [x] Extend `Settings` and the settings panel: font family from a bundled set, font size, line spacing, margins (FR-CUST-01..03).
+- [x] Bundle the reading fonts; expose them to the ePub renderer.
+- [x] `EpubRenderer.applyStyle` applies them live; PDF ignores them (architecture section 7).
+- [x] Settings persist and reapply across sessions and books (FR-CUST-05).
+- [x] `feat(custom): epub reading style controls`
 
 ### Commit 8.2: Themes (light, dark, sepia)
 
-- [ ] One Rust-owned `theme` setting drives everything (architecture section 5.3).
-- [ ] PrimeVue `darkModeSelector` + Tailwind dark variant point at one root attribute; `App.vue` sets it on `settings:changed`.
-- [ ] Sepia as a third token set selected by the same attribute; the ePub renderer style reacts too (FR-CUST-04).
-- [ ] `feat(custom): light dark sepia themes`
+- [x] One Rust-owned `theme` setting drives everything (architecture section 5.3).
+- [x] PrimeVue `darkModeSelector` + Tailwind dark variant point at one root attribute; `App.vue` sets it on `settings:changed`.
+- [x] Sepia as a third token set selected by the same attribute; the ePub renderer style reacts too (FR-CUST-04).
+- [x] `feat(custom): light dark sepia themes`
 
 ---
 

@@ -28,6 +28,8 @@ export interface ReadingStyle {
   fontSize: number
   lineHeight: number
   margin: number
+  /** Active reading theme; drives background and text color inside the ePub iframe. */
+  theme: 'light' | 'dark' | 'sepia'
 }
 
 /** Renders a single book and reports its position. */

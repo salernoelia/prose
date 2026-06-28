@@ -42,6 +42,7 @@ export function useReader(book: Ref<BookDto>) {
       fontSize: settings.value.fontSize,
       lineHeight: settings.value.lineHeight,
       margin: settings.value.margin,
+      theme: settings.value.theme,
     }
   }
 
@@ -117,13 +118,14 @@ export function useReader(book: Ref<BookDto>) {
     void open()
   })
 
-  // Reflow ePub typography when reading settings change; PDF ignores this.
+  // Reflow ePub typography and theme when reading settings change; PDF ignores this.
   watch(
     () => [
       settings.value.fontFamily,
       settings.value.fontSize,
       settings.value.lineHeight,
       settings.value.margin,
+      settings.value.theme,
     ],
     () => renderer.value?.applyStyle(readingStyle()),
   )
