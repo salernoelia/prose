@@ -3,7 +3,21 @@
 export { getSettings, patchSettings } from './settings'
 export { libraryImportBook, libraryList, libraryRemove } from './library'
 export { readingSavePosition, readingGetPosition } from './reading'
-export { onSettingsChanged, onLibraryChanged, onImportProgress } from './events'
+export {
+  syncConfigure,
+  syncStatus,
+  syncDisconnect,
+  syncTrigger,
+  syncListRemote,
+  syncDownloadBook,
+} from './sync'
+export {
+  onSettingsChanged,
+  onLibraryChanged,
+  onImportProgress,
+  onSyncProgress,
+  onSyncFinished,
+} from './events'
 export type {
   SettingsDto,
   SettingsPatchDto,
@@ -17,4 +31,8 @@ export type {
   ImportProgressPayload,
   LocatorDto,
   ProgressDto,
+  SyncStatusDto,
+  RemoteBookDto,
+  SyncProgressPayload,
+  SyncFinishedPayload,
 } from './types'

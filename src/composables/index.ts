@@ -3,3 +3,5 @@
 export { useLibrary } from './useLibrary'
 export { useSettings } from './useSettings'
 export { useReader } from './useReader'
+export { useSync } from './useSync'
+

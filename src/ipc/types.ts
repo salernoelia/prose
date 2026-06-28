@@ -110,6 +110,21 @@ export interface ProgressDto {
   updatedAt: number
 }
 
+// Sync
+
+/** Current sync configuration (no secrets). */
+export interface SyncStatusDto {
+  configured: boolean
+  url: string | null
+  username: string | null
+}
+
+/** A book file available on the remote server. */
+export interface RemoteBookDto {
+  path: string
+  etag: string | null
+}
+
 // Event name constants
 
 /** Mirrors the Rust `ipc::event` constants so listeners use the same strings. */

@@ -8,6 +8,7 @@ import { useReader } from '../composables/useReader'
 import ReaderClickZones from '../components/reader/ReaderClickZones.vue'
 import ReaderDock from '../components/reader/ReaderDock.vue'
 import ReaderTocDrawer from '../components/reader/ReaderTocDrawer.vue'
+import { useSync } from '../composables/useSync'
 import type { BookDto } from '../ipc/types'
 
 const props = defineProps<{
@@ -42,12 +43,21 @@ const isBookmarked = ref(false)
 const canPrev = computed(() => progress.value > 0)
 const canNext = computed(() => progress.value < 100)
 
+const { configured, syncing, triggerSync } = useSync()
+
 function toggleDock() {
     showDock.value = !showDock.value
 }
 
 function onSelectToc(href: string) {
     void goToHref(href)
+}
+
+function handleBack() {
+    emit('back-to-library')
+    if (configured.value && !syncing.value) {
+        void triggerSync()
+    }
 }
 </script>
 
@@ -108,7 +118,7 @@ function onSelectToc(href: string) {
             :bookmarked="isBookmarked"
             :has-toc="hasToc"
             :can-zoom="canZoom"
-            @back="emit('back-to-library')"
+            @back="handleBack"
             @toc="showToc = true"
             @toggle-bookmark="isBookmarked = !isBookmarked"
             @prev="prev"

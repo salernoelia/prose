@@ -29,6 +29,10 @@ impl AppError {
     pub fn from_internal(message: String) -> Self {
         AppError::new("internal", message)
     }
+
+    pub fn from_message(code: &str, message: impl Into<String>) -> Self {
+        AppError::new(code, message.into())
+    }
 }
 
 impl From<DomainError> for AppError {

@@ -2,9 +2,16 @@
     setup
     lang="ts"
 >
+import { onMounted, ref } from 'vue'
 import { useSettings } from '../composables/useSettings'
+import { syncConfigure, syncDisconnect, syncStatus } from '../ipc/sync'
+import { refreshSyncConfig } from '../stores/sync'
+import type { SyncStatusDto } from '../ipc/types'
 import Select from 'primevue/select'
 import Slider from 'primevue/slider'
+import InputText from 'primevue/inputtext'
+import Password from 'primevue/password'
+import Button from 'primevue/button'
 import type { Theme } from '../ipc/types'
 
 const { settings, loaded, theme, fontFamily, fontSize, lineHeight, margin, clickZoneSize } =
@@ -22,6 +29,62 @@ const fontOptions = [
     { label: 'Inter', value: 'Inter' },
     { label: 'Outfit', value: 'Outfit' },
 ]
+
+// --- Sync ---
+
+const syncConfig = ref<SyncStatusDto>({ configured: false, url: null, username: null })
+const syncUrl = ref('')
+const syncUsername = ref('')
+const syncPassword = ref('')
+const syncWorking = ref(false)
+const syncMessage = ref<{ text: string; ok: boolean } | null>(null)
+
+onMounted(async () => {
+    try {
+        syncConfig.value = await syncStatus()
+        if (syncConfig.value.url) syncUrl.value = syncConfig.value.url
+        if (syncConfig.value.username) syncUsername.value = syncConfig.value.username
+    } catch {
+        // not configured yet
+    }
+})
+
+async function handleSyncSave() {
+    if (!syncUrl.value.trim() || !syncUsername.value.trim() || !syncPassword.value) {
+        syncMessage.value = { text: 'URL, username and password are required.', ok: false }
+        return
+    }
+    syncWorking.value = true
+    syncMessage.value = null
+    try {
+        await syncConfigure(syncUrl.value.trim(), syncUsername.value.trim(), syncPassword.value)
+        syncConfig.value = await syncStatus()
+        await refreshSyncConfig()
+        syncPassword.value = ''
+        syncMessage.value = { text: 'Connected successfully.', ok: true }
+    } catch (e: unknown) {
+        const msg = e && typeof e === 'object' && 'message' in e ? String((e as { message: string }).message) : String(e)
+        syncMessage.value = { text: msg, ok: false }
+    } finally {
+        syncWorking.value = false
+    }
+}
+
+async function handleSyncDisconnect() {
+    syncWorking.value = true
+    syncMessage.value = null
+    try {
+        await syncDisconnect()
+        syncConfig.value = { configured: false, url: null, username: null }
+        await refreshSyncConfig()
+        syncUrl.value = ''
+        syncUsername.value = ''
+        syncPassword.value = ''
+        syncMessage.value = { text: 'Disconnected.', ok: true }
+    } finally {
+        syncWorking.value = false
+    }
+}
 </script>
 
 <template>
@@ -159,7 +222,7 @@ const fontOptions = [
             </div>
 
             <!-- Click Zone Slider -->
-            <div class="flex flex-col gap-1.5 pb-8">
+            <div class="flex flex-col gap-1.5">
                 <div
                     class="flex justify-between items-center text-xs font-medium uppercase tracking-wider text-(--text-secondary)">
                     <label for="click-zone-slider">Page-Turn Zone</label>
@@ -176,6 +239,92 @@ const fontOptions = [
                 </div>
             </div>
 
+            <!-- Sync -->
+            <div class="flex flex-col gap-4 pt-4 pb-8 border-t border-(--border-color)">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-medium uppercase tracking-wider text-(--text-secondary)">
+                        WebDAV Sync
+                    </span>
+                    <span
+                        v-if="syncConfig.configured"
+                        class="text-xs font-medium text-green-600 dark:text-green-400"
+                    >
+                        Connected
+                    </span>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <div class="flex flex-col gap-1.5">
+                        <label
+                            for="sync-url"
+                            class="text-xs font-medium text-(--text-secondary)"
+                        >Server URL</label>
+                        <InputText
+                            id="sync-url"
+                            v-model="syncUrl"
+                            placeholder="https://dav.example.com/remote.php/dav/files/user"
+                            class="w-full text-sm"
+                            :disabled="syncWorking"
+                        />
+                    </div>
+
+                    <div class="flex flex-col gap-1.5">
+                        <label
+                            for="sync-username"
+                            class="text-xs font-medium text-(--text-secondary)"
+                        >Username</label>
+                        <InputText
+                            id="sync-username"
+                            v-model="syncUsername"
+                            placeholder="username"
+                            class="w-full text-sm"
+                            :disabled="syncWorking"
+                        />
+                    </div>
+
+                    <div class="flex flex-col gap-1.5">
+                        <label
+                            for="sync-password"
+                            class="text-xs font-medium text-(--text-secondary)"
+                        >Password</label>
+                        <Password
+                            id="sync-password"
+                            v-model="syncPassword"
+                            :feedback="false"
+                            toggle-mask
+                            :placeholder="syncConfig.configured ? 'Leave blank to keep existing' : 'password'"
+                            class="w-full text-sm"
+                            input-class="w-full"
+                            :disabled="syncWorking"
+                        />
+                    </div>
+
+                    <p
+                        v-if="syncMessage"
+                        class="text-xs"
+                        :class="syncMessage.ok ? 'text-green-600 dark:text-green-400' : 'text-red-500'"
+                    >
+                        {{ syncMessage.text }}
+                    </p>
+
+                    <div class="flex gap-2 pt-1">
+                        <Button
+                            :label="syncWorking ? 'Connecting...' : syncConfig.configured ? 'Update' : 'Connect'"
+                            :loading="syncWorking"
+                            :disabled="syncWorking"
+                            class="flex-1"
+                            @click="handleSyncSave"
+                        />
+                        <Button
+                            v-if="syncConfig.configured"
+                            label="Disconnect"
+                            severity="secondary"
+                            :disabled="syncWorking"
+                            @click="handleSyncDisconnect"
+                        />
+                    </div>
+                </div>
+            </div>
 
         </div>
 

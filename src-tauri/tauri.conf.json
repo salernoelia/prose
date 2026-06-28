@@ -41,7 +41,19 @@
         ],
         "iOS": {
             "developmentTeam": "9LKY7MBW4C"
-        }
+        },
+        "fileAssociations": [
+            {
+                "ext": ["epub"],
+                "name": "EPUB Book",
+                "role": "Viewer"
+            },
+            {
+                "ext": ["pdf"],
+                "name": "PDF Document",
+                "role": "Viewer"
+            }
+        ]
     },
     "plugins": {
         "core": {

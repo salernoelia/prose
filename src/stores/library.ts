@@ -2,6 +2,7 @@ import { reactive, readonly } from 'vue'
 import type { LibraryEntryDto, LibraryQueryDto, BookDto } from '../ipc/types'
 import { libraryList, libraryImportBook, libraryRemove } from '../ipc/library'
 import { onLibraryChanged, onImportProgress } from '../ipc/events'
+import { syncState, triggerSync } from './sync'
 
 const defaultQuery: LibraryQueryDto = {
   search: null,
@@ -83,6 +84,9 @@ export async function importBook(filePath: string): Promise<BookDto> {
   try {
     const book = await libraryImportBook(filePath)
     state.importing = false
+    if (syncState.configured) {
+      void triggerSync()
+    }
     return book
   } catch (err) {
     state.importing = false
@@ -94,6 +98,9 @@ export async function importBook(filePath: string): Promise<BookDto> {
 export async function removeBook(id: string): Promise<void> {
   try {
     await libraryRemove(id)
+    if (syncState.configured) {
+      void triggerSync()
+    }
   } catch (err) {
     console.error('Failed to remove book:', err)
     throw err

@@ -48,6 +48,15 @@ export function initSettingsStore(): Promise<void> {
 
 export const settingsState = readonly(state)
 
+export async function reloadSettings(): Promise<void> {
+  try {
+    const stored = await getSettings()
+    Object.assign(state.settings, stored)
+  } catch (err) {
+    console.error('Failed to reload settings:', err)
+  }
+}
+
 export async function updateSettings(patch: SettingsPatchDto): Promise<void> {
   try {
     const updated = await patchSettings(patch)

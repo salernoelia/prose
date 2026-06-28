@@ -44,6 +44,10 @@ impl LibraryService {
         LibraryService { repo, readers }
     }
 
+    pub fn repo(&self) -> Arc<dyn BookRepository> {
+        Arc::clone(&self.repo)
+    }
+
     /// Import a book from its raw bytes (FR-LIB-01..03).
     ///
     /// Identity is the content hash, so re-importing the same file returns the

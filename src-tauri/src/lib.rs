@@ -8,12 +8,14 @@ pub mod ipc;
 pub mod protocol;
 pub mod state;
 
+use crate::adapters::credentials::KeyringCredentialStore;
 use crate::adapters::memory::{InMemoryRemoteStore, WallClock};
 use crate::adapters::storage::SqliteBookRepository;
 use crate::domain::{
     AnnotationService, LibraryService, ReaderRegistry, ReadingService, SettingsService, SyncService,
 };
-use crate::state::AppState;
+use crate::domain::ports::CredentialStore;
+use crate::state::{AppState, SyncConfig};
 use std::sync::Arc;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -46,6 +48,22 @@ pub fn run() {
                 )),
             ]);
 
+            let credentials: Arc<dyn CredentialStore> =
+                Arc::new(KeyringCredentialStore::new("prose", app_data.clone()));
+
+            // Restore sync configuration from keychain if previously saved.
+            let sync_config = {
+                let url = credentials
+                    .retrieve("prose_webdav_url")
+                    .ok()
+                    .flatten();
+                let username = credentials
+                    .retrieve("prose_webdav_username")
+                    .ok()
+                    .flatten();
+                SyncConfig { url, username }
+            };
+
             let app_state = AppState {
                 settings: SettingsService::new(
                     Arc::clone(&repo) as Arc<dyn domain::ports::BookRepository>
@@ -63,6 +81,9 @@ pub fn run() {
                     Arc::clone(&clock) as Arc<dyn domain::ports::Clock>,
                 ),
                 sync: SyncService::new(Arc::clone(&remote) as Arc<dyn domain::ports::RemoteStore>),
+                credentials,
+                sync_config: std::sync::Mutex::new(sync_config),
+                sync_dirs_created: std::sync::atomic::AtomicBool::new(false),
             };
 
             app.manage(app_state);
@@ -76,7 +97,31 @@ pub fn run() {
             ipc::library::library_remove,
             ipc::reading::reading_save_position,
             ipc::reading::reading_get_position,
+            ipc::sync::sync_configure,
+            ipc::sync::sync_status,
+            ipc::sync::sync_disconnect,
+            ipc::sync::sync_list_remote,
+            ipc::sync::sync_download_book,
+            ipc::sync::sync_trigger,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            if let tauri::RunEvent::Opened { urls } = event {
+                let app = app_handle.clone();
+                tauri::async_runtime::spawn(async move {
+                    for url in urls {
+                        if let Ok(path) = url.to_file_path() {
+                            if let Some(path_str) = path.to_str() {
+                                let _ = ipc::library::import_book_from_path(
+                                    &app,
+                                    path_str.to_string(),
+                                )
+                                .await;
+                            }
+                        }
+                    }
+                });
+            }
+        });
 }

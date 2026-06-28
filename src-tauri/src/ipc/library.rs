@@ -6,12 +6,28 @@ use crate::ipc::error::AppError;
 use crate::ipc::event::{ImportProgressPayload, IMPORT_PROGRESS, LIBRARY_CHANGED};
 use crate::state::AppState;
 
-#[tauri::command]
-pub async fn library_import_book(
-    app: AppHandle,
-    state: tauri::State<'_, AppState>,
-    path: String,
-) -> Result<BookDto, AppError> {
+/// Resolve an incoming location into a real filesystem path.
+///
+/// Desktop dialogs hand back plain paths, but iOS (and `file://` open-in-place
+/// URLs) return a percent-encoded `file://` URL. `PathBuf::from` does not decode
+/// those, so parse them as a URL and convert to a path first.
+fn resolve_file_path(path: &str) -> Result<std::path::PathBuf, AppError> {
+    if path.starts_with("file://") {
+        return tauri::Url::parse(path)
+            .ok()
+            .and_then(|url| url.to_file_path().ok())
+            .ok_or_else(|| AppError {
+                code: "invalid_path".to_string(),
+                message: format!("Could not resolve file URL: {}", path),
+            });
+    }
+
+    Ok(std::path::PathBuf::from(path))
+}
+
+pub async fn import_book_from_path(app: &AppHandle, path: String) -> Result<BookDto, AppError> {
+    let state = app.state::<AppState>();
+
     app.emit(
         IMPORT_PROGRESS,
         ImportProgressPayload {
@@ -26,14 +42,18 @@ pub async fn library_import_book(
         .app_data_dir()
         .map_err(|e| AppError::from_internal(e.to_string()))?;
 
-    let path_clone = path.clone();
+    // On iOS (and when handling `prose://`/`file://` open-in-place URLs) the
+    // dialog plugin returns a percent-encoded `file://` URL rather than a plain
+    // filesystem path. Resolve it to a real path before touching the disk.
+    let path_buf = resolve_file_path(&path)?;
+
+    let display_path = path_buf.display().to_string();
     let (bytes, format, _, _) =
         tauri::async_runtime::spawn_blocking(move || -> Result<_, AppError> {
-            let path_buf = std::path::PathBuf::from(&path_clone);
             if !path_buf.exists() {
                 return Err(AppError {
                     code: "file_not_found".to_string(),
-                    message: format!("File not found at: {}", path_clone),
+                    message: format!("File not found at: {}", display_path),
                 });
             }
 
@@ -63,7 +83,6 @@ pub async fn library_import_book(
                 }
             };
 
-            // Copy file to app_data/books/{hash}.{ext}
             let dest_filename = format!("{}.{}", id.as_str(), ext);
             let dest_path = app_data_dir.join("books").join(&dest_filename);
 
@@ -91,7 +110,6 @@ pub async fn library_import_book(
     )
     .map_err(|e| AppError::from_internal(e.to_string()))?;
 
-    // Call domain service to probe metadata and store to database
     let book = state.library.import(&bytes, format)?;
 
     app.emit(
@@ -103,11 +121,18 @@ pub async fn library_import_book(
     )
     .map_err(|e| AppError::from_internal(e.to_string()))?;
 
-    // Emit library changed event
     app.emit(LIBRARY_CHANGED, ())
         .map_err(|e| AppError::from_internal(e.to_string()))?;
 
     Ok(BookDto::from(book))
+}
+
+#[tauri::command]
+pub async fn library_import_book(
+    app: AppHandle,
+    path: String,
+) -> Result<BookDto, AppError> {
+    import_book_from_path(&app, path).await
 }
 
 #[tauri::command]

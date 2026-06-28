@@ -5,6 +5,8 @@
 //! `domain::ports`, so the core never depends on a concrete technology.
 //! Submodules are added as each adapter lands.
 
+pub mod credentials;
 pub mod memory;
 pub mod readers;
 pub mod storage;
+pub mod webdav;

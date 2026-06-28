@@ -6,7 +6,13 @@
  * listen to raw events.
  */
 import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-import { EventNames, type SettingsChangedPayload, type ImportProgressPayload } from './types'
+import {
+  EventNames,
+  type ImportProgressPayload,
+  type SettingsChangedPayload,
+  type SyncFinishedPayload,
+  type SyncProgressPayload,
+} from './types'
 
 /** Subscribe to settings changes pushed from the Rust core. */
 export function onSettingsChanged(
@@ -27,6 +33,24 @@ export function onImportProgress(
   callback: (payload: ImportProgressPayload) => void,
 ): Promise<UnlistenFn> {
   return listen<ImportProgressPayload>(EventNames.IMPORT_PROGRESS, (event) =>
+    callback(event.payload),
+  )
+}
+
+/** Subscribe to sync progress updates during an active sync run. */
+export function onSyncProgress(
+  callback: (payload: SyncProgressPayload) => void,
+): Promise<UnlistenFn> {
+  return listen<SyncProgressPayload>(EventNames.SYNC_PROGRESS, (event) =>
+    callback(event.payload),
+  )
+}
+
+/** Subscribe to sync completion (success or error). */
+export function onSyncFinished(
+  callback: (payload: SyncFinishedPayload) => void,
+): Promise<UnlistenFn> {
+  return listen<SyncFinishedPayload>(EventNames.SYNC_FINISHED, (event) =>
     callback(event.payload),
   )
 }

@@ -9,6 +9,7 @@ import { convertFileSrc } from '@tauri-apps/api/core'
 import DataView from 'primevue/dataview'
 import Dialog from 'primevue/dialog'
 import { useLibrary } from '../composables/useLibrary'
+import { useSync } from '../composables/useSync'
 import type { BookDto } from '../ipc/types'
 
 const emit = defineEmits<{
@@ -27,6 +28,17 @@ const {
     removeBook,
 } = useLibrary()
 
+const {
+    configured,
+    syncing,
+    progressMessage,
+    progressFraction,
+    lastFinishedResult,
+    triggerSync,
+    refreshSyncConfig,
+    dismissSyncResult,
+} = useSync()
+
 const dataViewEntries = computed(() => [...entries.value])
 
 const layout = ref<'grid' | 'list'>('grid')
@@ -39,6 +51,11 @@ onMounted(async () => {
         appDataPath.value = await appDataDir()
     } catch (err) {
         console.error('Failed to get app data directory:', err)
+    }
+    try {
+        await refreshSyncConfig()
+    } catch (err) {
+        console.error('Failed to refresh sync status:', err)
     }
 })
 
@@ -104,14 +121,66 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
         <header class="pb-6 border-b border-(--border-color) flex justify-between items-center">
             <h1 class="text-xl font-semibold tracking-tight text-(--text-primary)">Library</h1>
 
-            <!-- Import Trigger (Typographic Pill Button) -->
-            <button
-                @click="handleImport"
-                class="px-4 py-1.5 text-xs font-semibold rounded border border-(--border-color) text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer focus-ring-minimal"
-            >
-                Import Book
-            </button>
+            <div class="flex items-center gap-3">
+                <!-- Sync Button -->
+                <button
+                    v-if="configured"
+                    @click="triggerSync"
+                    :disabled="syncing"
+                    class="px-4 py-1.5 text-xs font-semibold rounded border border-(--border-color) text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer focus-ring-minimal flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <span v-if="syncing" class="inline-block animate-spin w-3 h-3 border border-current border-t-transparent rounded-full"></span>
+                    <span>{{ syncing ? 'Syncing...' : 'Sync' }}</span>
+                </button>
+                <button
+                    v-else
+                    disabled
+                    title="Configure WebDAV sync in settings"
+                    class="px-4 py-1.5 text-xs font-semibold rounded border border-(--border-color) text-(--text-tertiary) opacity-50 cursor-not-allowed"
+                >
+                    Sync (Not Configured)
+                </button>
+
+                <!-- Import Trigger (Typographic Pill Button) -->
+                <button
+                    @click="handleImport"
+                    class="px-4 py-1.5 text-xs font-semibold rounded border border-(--border-color) text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer focus-ring-minimal"
+                >
+                    Import Book
+                </button>
+            </div>
         </header>
+
+        <!-- Sync Progress Indicator -->
+        <div
+            v-if="syncing"
+            class="mt-6 mb-2 p-4 border border-(--border-color) rounded bg-(--accent-color-light) text-sm text-(--text-primary)"
+        >
+            <div class="flex justify-between items-center mb-1">
+                <span>{{ progressMessage || 'Syncing library...' }}</span>
+                <span class="tabular-nums font-semibold">{{ Math.round(progressFraction * 100) }}%</span>
+            </div>
+            <div class="w-full h-1 bg-(--border-color) rounded overflow-hidden">
+                <div
+                    class="h-full bg-(--text-primary) transition-all duration-300"
+                    :style="{ width: progressFraction * 100 + '%' }"
+                ></div>
+            </div>
+        </div>
+
+        <!-- Sync Error Alert -->
+        <div
+            v-if="lastFinishedResult && !lastFinishedResult.success"
+            class="mt-6 mb-2 p-4 border border-red-200 dark:border-red-950/40 rounded bg-red-50 dark:bg-red-950/10 text-sm text-red-700 dark:text-red-400 flex justify-between items-center"
+        >
+            <span>Sync failed: {{ lastFinishedResult.message }}</span>
+            <button
+                @click="dismissSyncResult"
+                class="text-xs font-semibold hover:underline cursor-pointer border-0 bg-transparent text-red-700 dark:text-red-400"
+            >
+                Dismiss
+            </button>
+        </div>
 
         <!-- Import Progress Indicator (Zero Icon) -->
         <div

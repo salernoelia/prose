@@ -10,3 +10,4 @@ pub mod event;
 pub mod library;
 pub mod reading;
 pub mod settings;
+pub mod sync;

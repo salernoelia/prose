@@ -22,6 +22,10 @@ impl ReadingService {
         ReadingService { repo, clock }
     }
 
+    pub fn clock(&self) -> Arc<dyn crate::domain::ports::Clock> {
+        Arc::clone(&self.clock)
+    }
+
     /// Save the current position for a book, stamped with the current time so
     /// later writes and sync can order it (FR-READ-06).
     pub fn save_position(&self, id: &BookId, locator: Locator) -> Result<Progress, DomainError> {

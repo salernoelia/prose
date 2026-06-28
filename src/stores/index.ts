@@ -1,6 +1,6 @@
 // Reactive state, seeded from Rust on startup and updated by IPC events. Stores
 // hold a display copy only; the authority is always the Rust core.
-export { settingsState, initSettingsStore, updateSettings } from './settings'
+export { settingsState, initSettingsStore, reloadSettings, updateSettings } from './settings'
 export {
   libraryState,
   initLibraryStore,
@@ -9,4 +9,5 @@ export {
   importBook,
   removeBook,
 } from './library'
-export {}
+export { syncState, initSyncStore, triggerSync, refreshSyncConfig, dismissSyncResult } from './sync'
+
