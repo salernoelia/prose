@@ -41,7 +41,11 @@ impl ReaderAdapter for EpubReader {
                 "png"
             };
             let cover_filename = format!("{}.{}", id.as_str(), ext);
-            let cover_path = self.app_data_dir.join("covers").join(&cover_filename);
+            let covers_dir = self.app_data_dir.join("covers");
+            
+            std::fs::create_dir_all(&covers_dir).ok();
+
+            let cover_path = covers_dir.join(&cover_filename);
 
             if let Err(e) = std::fs::write(&cover_path, cover_bytes) {
                 eprintln!("Failed to write cover image to {:?}: {}", cover_path, e);

@@ -45,7 +45,7 @@ onMounted(async () => {
 // Return absolute cover source URL if cover exists
 const getCoverUrl = (coverPath: string | null) => {
     if (!coverPath || !appDataPath.value) return ''
-    const absolutePath = `${appDataPath.value}/${coverPath}`
+    const absolutePath = `${appDataPath.value}/${coverPath}`.replace(/\/+/g, '/')
     return convertFileSrc(absolutePath)
 }
 
@@ -266,7 +266,7 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                         <div
                             class="aspect-3/4 w-full bg-(--bg-card) border border-(--border-color) rounded overflow-hidden relative shadow-sm group-hover:shadow transition-shadow flex items-center justify-center">
                             <img
-                                v-if="entry.book.cover"
+                                v-if="entry.book.cover && appDataPath"
                                 :src="getCoverUrl(entry.book.cover)"
                                 alt="Book cover"
                                 class="w-full h-full object-cover"

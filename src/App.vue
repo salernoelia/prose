@@ -52,7 +52,8 @@ function onSelectBook(book: BookDto) {
             class="flex-1 transition-all duration-300 flex justify-center w-full"
             :class="currentView === 'reader'
                 ? 'h-full p-6 md:p-12 overflow-hidden items-stretch'
-                : 'min-h-screen p-8 pt-12 pb-24 items-start'"
+                : 'min-h-screen p-8 pt-12 pb-24 items-start'
+                "
         >
             <div :class="currentView === 'reader' ? 'w-full max-w-4xl mx-auto h-full' : 'w-full max-w-3xl'">
                 <div
