@@ -9,6 +9,7 @@ Tailwind CSS for styling.
 - `spec/software-requirements.typ` defines what Prose does (requirements, scope, NFRs).
 - `spec/architecture.md` defines how it is built (patterns, module layout, the TS <-> Rust
   IPC contract, reader adapters, settings, sync). Follow it before adding code.
+- `spec/implementation-plan.md` for the implementation progress. Tick off implemented and verified parts.
 
 ## The one rule
 
