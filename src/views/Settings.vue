@@ -14,12 +14,18 @@ const {
 
 <template>
   <div class="p-6 max-w-md mx-auto">
-    <h1 class="text-xl font-bold mb-4">Settings</h1>
+    <h1 class="text-xl font-bold mb-4 flex items-center">
+      <span class="material-symbols-outlined mr-2">settings</span>
+      Settings
+    </h1>
     
     <div v-if="loaded" class="flex flex-col gap-4">
       <!-- Theme Setting -->
       <div class="flex flex-col gap-1">
-        <label for="theme-select" class="font-medium">Theme</label>
+        <label for="theme-select" class="font-medium flex items-center gap-1">
+          <span class="material-symbols-outlined text-lg">palette</span>
+          Theme
+        </label>
         <select id="theme-select" v-model="theme" class="border p-1 rounded">
           <option value="light">Light</option>
           <option value="dark">Dark</option>
@@ -29,7 +35,10 @@ const {
 
       <!-- Font Family Setting -->
       <div class="flex flex-col gap-1">
-        <label for="font-family-select" class="font-medium">Font Family</label>
+        <label for="font-family-select" class="font-medium flex items-center gap-1">
+          <span class="material-symbols-outlined text-lg">font_download</span>
+          Font Family
+        </label>
         <select id="font-family-select" v-model="fontFamily" class="border p-1 rounded">
           <option value="Literata">Literata</option>
           <option value="Georgia">Georgia</option>
@@ -40,7 +49,10 @@ const {
 
       <!-- Font Size Setting -->
       <div class="flex flex-col gap-1">
-        <label for="font-size-input" class="font-medium">Font Size ({{ fontSize }}px)</label>
+        <label for="font-size-input" class="font-medium flex items-center gap-1">
+          <span class="material-symbols-outlined text-lg">format_size</span>
+          Font Size ({{ fontSize }}px)
+        </label>
         <input
           id="font-size-input"
           type="range"
@@ -53,7 +65,10 @@ const {
 
       <!-- Line Height Setting -->
       <div class="flex flex-col gap-1">
-        <label for="line-height-input" class="font-medium">Line Spacing ({{ lineHeight }}x)</label>
+        <label for="line-height-input" class="font-medium flex items-center gap-1">
+          <span class="material-symbols-outlined text-lg">format_line_spacing</span>
+          Line Spacing ({{ lineHeight }}x)
+        </label>
         <input
           id="line-height-input"
           type="range"
@@ -67,7 +82,10 @@ const {
 
       <!-- Margin Setting -->
       <div class="flex flex-col gap-1">
-        <label for="margin-input" class="font-medium">Page Margin ({{ margin }}x)</label>
+        <label for="margin-input" class="font-medium flex items-center gap-1">
+          <span class="material-symbols-outlined text-lg">margin</span>
+          Page Margin ({{ margin }}x)
+        </label>
         <input
           id="margin-input"
           type="range"
