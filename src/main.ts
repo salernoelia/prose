@@ -5,7 +5,7 @@ import { definePreset } from '@primeuix/themes'
 import Aura from '@primeuix/themes/aura'
 import './assets/main.css'
 
-const MyPreset = definePreset(Aura, {
+const Preset = definePreset(Aura, {
   semantic: {
     primary: {
       50: '{sky.50}',
@@ -26,7 +26,7 @@ const MyPreset = definePreset(Aura, {
 const app = createApp(App)
 app.use(PrimeVue, {
   theme: {
-    preset: MyPreset,
+    preset: Preset,
   },
 })
 app.mount('#app')

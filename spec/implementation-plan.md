@@ -55,11 +55,11 @@ Goal: a clean skeleton, both test harnesses running, CI green, before any featur
 - [x] `chore(core): module skeleton and test harness`
 
 ### Commit 0.3: Frontend test harness and folder skeleton
-- [ ] Add Vitest + `@vue/test-utils` + `@testing-library/vue` + `jsdom`; add `bun run test`.
-- [ ] Create the frontend folders per architecture section 5: `ipc/`, `readers/`, `stores/`,
+- [x] Add Vitest + `@vue/test-utils` + `@testing-library/vue` + `jsdom`; add `bun run test`.
+- [x] Create the frontend folders per architecture section 5: `ipc/`, `readers/`, `stores/`,
       `composables/`, `views/`, `components/`, each with an index or placeholder.
-- [ ] Add one trivial component test so `bun run test` runs green.
-- [ ] `chore(ui): vitest harness and folder skeleton`
+- [x] Add one trivial component test so `bun run test` runs green.
+- [x] `chore(ui): vitest harness and folder skeleton`
 
 ### Commit 0.4: Continuous integration
 - [ ] CI job: `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test` (in `src-tauri`).
