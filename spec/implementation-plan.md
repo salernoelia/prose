@@ -129,7 +129,9 @@ Goal: model and ports exist and are unit-tested with fakes. No `tauri`, `rusqlit
 - [x] `feat(core): sync conflict resolution`
 
 > Checkpoint: `cargo test` covers the core with fakes only. Target NFR-M-04 (>=80% on `domain/`).
-> Measure with `cargo llvm-cov` and record the number.
+> Measured 2026-06-28 with `cargo llvm-cov --lib`: 96.82% line coverage on `domain/`
+> (45 tests), well above the 80% target. Per file: annotation 100%, reading 100%,
+> testing 99.6%, settings 98.4%, model 96.9%, sync 94.6%, library 94.2%.
 
 ---
 
