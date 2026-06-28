@@ -11,6 +11,7 @@ pub mod library;
 pub mod model;
 pub mod ports;
 pub mod reading;
+pub mod settings;
 
 #[cfg(test)]
 pub mod testing;
@@ -24,3 +25,4 @@ pub use model::{
 };
 pub use ports::{BookRepository, Clock, CredentialStore, ReaderAdapter, RemoteEntry, RemoteStore};
 pub use reading::ReadingService;
+pub use settings::{ReadingStylePatch, SettingsPatch, SettingsService};

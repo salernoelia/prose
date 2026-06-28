@@ -117,9 +117,9 @@ Goal: model and ports exist and are unit-tested with fakes. No `tauri`, `rusqlit
 - [x] `feat(core): annotation service`
 
 ### Commit 1.6: SettingsService
-- [ ] `domain/settings.rs`: get, patch (partial update of changed fields only), validate, version tolerance.
-- [ ] Unknown/missing fields fall back to default; tests for forward/backward tolerance (architecture section 7).
-- [ ] `feat(core): settings service`
+- [x] `domain/settings.rs`: get, patch (partial update of changed fields only), validate, version tolerance.
+- [x] Unknown/missing fields fall back to default; tests for forward/backward tolerance (architecture section 7).
+- [x] `feat(core): settings service`
 
 ### Commit 1.7: SyncService conflict logic (pure)
 - [ ] `domain/sync.rs`: conflict resolution only, against the `RemoteStore` port and a fake.
