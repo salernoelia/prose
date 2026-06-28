@@ -1,9 +1,10 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use lopdf::{Dictionary, Document, Object};
 use prose_lib::adapters::readers::epub::EpubReader;
 use prose_lib::adapters::readers::pdf::PdfReader;
+use prose_lib::domain::error::DomainError;
 use prose_lib::domain::model::Format;
 use prose_lib::domain::ports::ReaderAdapter;
 
@@ -14,7 +15,7 @@ fn fixtures_dir() -> PathBuf {
     fixtures_dir
 }
 
-fn ensure_pdf_fixture(fixtures_dir: &PathBuf) -> PathBuf {
+fn ensure_pdf_fixture(fixtures_dir: &Path) -> PathBuf {
     let pdf_path = fixtures_dir.join("sample.pdf");
     if !pdf_path.exists() {
         let mut doc = Document::new();
@@ -97,4 +98,35 @@ fn test_pdf_metadata_extraction() {
     assert_eq!(meta.author, Some("Test Author".to_string()));
 
     let _ = fs::remove_dir_all(&temp_app_data);
+}
+
+#[test]
+fn test_epub_read_resource_whole_file_and_missing() {
+    let epub_path = fixtures_dir().join("book_sample.epub");
+    assert!(
+        epub_path.exists(),
+        "missing fixture: tests/fixtures/book_sample.epub"
+    );
+    let epub_bytes = fs::read(&epub_path).unwrap();
+    let reader = EpubReader::new(std::env::temp_dir());
+
+    // An empty path serves the container itself, what foliate-js loads.
+    let whole = reader.read_resource(&epub_bytes, "").unwrap();
+    assert_eq!(whole.mime, "application/epub+zip");
+    assert_eq!(whole.bytes, epub_bytes);
+
+    // A path the container does not hold is a clean not-found.
+    let missing = reader.read_resource(&epub_bytes, "does/not/exist.xhtml");
+    assert!(matches!(missing, Err(DomainError::ResourceNotFound(_))));
+}
+
+#[test]
+fn test_pdf_read_resource_serves_whole_document() {
+    let pdf_path = ensure_pdf_fixture(&fixtures_dir());
+    let pdf_bytes = fs::read(&pdf_path).unwrap();
+    let reader = PdfReader::new(std::env::temp_dir());
+
+    let content = reader.read_resource(&pdf_bytes, "").unwrap();
+    assert_eq!(content.mime, "application/pdf");
+    assert_eq!(content.bytes, pdf_bytes);
 }

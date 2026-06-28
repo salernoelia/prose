@@ -28,6 +28,7 @@ rusqlite = { version = "0.31.0", features = ["bundled"] }
 epub = "2.1.5"
 lopdf = "0.42.0"
 tauri-plugin-dialog = "2"
+percent-encoding = "2"
 
 [dev-dependencies]
 zip = "8.6.0"

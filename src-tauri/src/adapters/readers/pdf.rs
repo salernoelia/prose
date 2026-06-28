@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use crate::domain::error::DomainError;
 use crate::domain::model::{BookId, BookMetadata, Format};
-use crate::domain::ports::ReaderAdapter;
+use crate::domain::ports::{ReaderAdapter, ResourceContent};
 
 /// A reader adapter that parses PDF metadata and extracts a cover thumbnail.
 pub struct PdfReader {
@@ -98,6 +98,19 @@ impl ReaderAdapter for PdfReader {
             title,
             author,
             cover,
+        })
+    }
+
+    fn read_resource(
+        &self,
+        bytes: &[u8],
+        _resource_path: &str,
+    ) -> Result<ResourceContent, DomainError> {
+        // A PDF is a single file with no addressable sub-resources; pdf.js
+        // fetches the whole document and reads pages with Range requests.
+        Ok(ResourceContent {
+            bytes: bytes.to_vec(),
+            mime: "application/pdf".to_string(),
         })
     }
 }

@@ -272,11 +272,11 @@ Goal: stream book resources to the renderer with range support (architecture sec
 
 ### Commit 5.1: prose:// protocol handler
 
-- [ ] `protocol.rs`: register `prose://book/{book_id}/{resource_path}` with
+- [x] `protocol.rs`: register `prose://book/{book_id}/{resource_path}` with
       `register_asynchronous_uri_scheme_protocol`.
-- [ ] Read from the stored file; honor `Range` headers for PDF partial loads (architecture section 4.3, 9).
-- [ ] Resource listing comes from the `ReaderAdapter`; 404/scoped access so only library books resolve.
-- [ ] Register the protocol in `run()`; add a test or manual check that a known resource streams.
+- [x] Read from the stored file; honor `Range` headers for PDF partial loads (architecture section 4.3, 9).
+- [x] Resource listing comes from the `ReaderAdapter`; 404/scoped access so only library books resolve.
+- [x] Register the protocol in `run()`; add a test or manual check that a known resource streams.
 - [ ] `feat(protocol): prose:// resource streaming`
 
 ---

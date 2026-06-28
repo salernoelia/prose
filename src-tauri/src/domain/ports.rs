@@ -37,6 +37,14 @@ pub trait BookRepository: Send + Sync {
     fn save_settings(&self, settings: &Settings) -> Result<(), DomainError>;
 }
 
+/// A single resource served to the renderer through the `prose://` protocol:
+/// the bytes plus the MIME type the WebView should treat them as.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResourceContent {
+    pub bytes: Vec<u8>,
+    pub mime: String,
+}
+
 /// A per-format reader: parses a book enough to extract metadata. Adding a
 /// format is a new implementation of this trait plus one registry entry, with
 /// no change to the domain core or the UI.
@@ -45,6 +53,23 @@ pub trait ReaderAdapter: Send + Sync {
     fn supports(&self, format: Format) -> bool;
     /// Extract title, author, and cover from the book bytes.
     fn probe(&self, bytes: &[u8]) -> Result<BookMetadata, DomainError>;
+    /// Read a single resource from a book, returning its bytes and MIME type.
+    ///
+    /// An empty `resource_path` means the whole book file; a non-empty one
+    /// names a resource inside the container (an ePub entry). The `prose://`
+    /// protocol calls this so only the reader adapter knows a format's
+    /// internals. The default serves the whole file as opaque bytes, which
+    /// suits a single-file format; container formats override it.
+    fn read_resource(
+        &self,
+        bytes: &[u8],
+        _resource_path: &str,
+    ) -> Result<ResourceContent, DomainError> {
+        Ok(ResourceContent {
+            bytes: bytes.to_vec(),
+            mime: "application/octet-stream".to_string(),
+        })
+    }
 }
 
 /// A file on the remote WebDAV server, with its current ETag for change

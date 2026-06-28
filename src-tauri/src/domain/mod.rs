@@ -24,7 +24,10 @@ pub use model::{
     Book, BookId, BookMetadata, Bookmark, Format, Highlight, LibraryEntry, LibraryQuery, Locator,
     Progress, ReadingStyle, Settings, SortKey, Theme, SETTINGS_SCHEMA_VERSION,
 };
-pub use ports::{BookRepository, Clock, CredentialStore, ReaderAdapter, RemoteEntry, RemoteStore};
+pub use ports::{
+    BookRepository, Clock, CredentialStore, ReaderAdapter, RemoteEntry, RemoteStore,
+    ResourceContent,
+};
 pub use reading::ReadingService;
 pub use settings::{ReadingStylePatch, SettingsPatch, SettingsService};
 pub use sync::{merge_by_id, resolve_last_write, resolve_progress, Outbox, SyncOp, SyncService};

@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 use crate::domain::error::DomainError;
 use crate::domain::model::{Book, BookId, Format, LibraryEntry, LibraryQuery, SortKey};
-use crate::domain::ports::{BookRepository, ReaderAdapter};
+use crate::domain::ports::{BookRepository, ReaderAdapter, ResourceContent};
 
 /// Selects the reader adapter for a format. Adding a format is one more adapter
 /// registered here, with no change to the service or the rest of the core.
@@ -83,6 +83,26 @@ impl LibraryService {
     /// Remove a book and its derived data from the library (FR-LIB-07).
     pub fn remove(&self, id: &BookId) -> Result<(), DomainError> {
         self.repo.remove_book(id)
+    }
+
+    /// Look up a single catalog entry by id, used by the `prose://` protocol to
+    /// scope access so only books the library knows about resolve.
+    pub fn get_book(&self, id: &BookId) -> Result<Option<Book>, DomainError> {
+        self.repo.get_book(id)
+    }
+
+    /// Read a resource from a book through its format's reader adapter. The
+    /// `prose://` protocol supplies the stored file bytes and the requested
+    /// resource path.
+    pub fn read_resource(
+        &self,
+        format: Format,
+        bytes: &[u8],
+        resource_path: &str,
+    ) -> Result<ResourceContent, DomainError> {
+        self.readers
+            .for_format(format)?
+            .read_resource(bytes, resource_path)
     }
 }
 

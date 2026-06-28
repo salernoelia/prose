@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use crate::domain::error::DomainError;
 use crate::domain::model::{BookId, BookMetadata, Format};
-use crate::domain::ports::ReaderAdapter;
+use crate::domain::ports::{ReaderAdapter, ResourceContent};
 
 /// A reader adapter that parses ePub metadata and extracts cover images.
 pub struct EpubReader {
@@ -42,7 +42,7 @@ impl ReaderAdapter for EpubReader {
             };
             let cover_filename = format!("{}.{}", id.as_str(), ext);
             let covers_dir = self.app_data_dir.join("covers");
-            
+
             std::fs::create_dir_all(&covers_dir).ok();
 
             let cover_path = covers_dir.join(&cover_filename);
@@ -62,5 +62,31 @@ impl ReaderAdapter for EpubReader {
             author,
             cover,
         })
+    }
+
+    fn read_resource(
+        &self,
+        bytes: &[u8],
+        resource_path: &str,
+    ) -> Result<ResourceContent, DomainError> {
+        // An empty path means the container itself, which foliate-js unzips.
+        if resource_path.is_empty() {
+            return Ok(ResourceContent {
+                bytes: bytes.to_vec(),
+                mime: "application/epub+zip".to_string(),
+            });
+        }
+
+        let cursor = Cursor::new(bytes);
+        let mut doc = EpubDoc::from_reader(cursor).map_err(|_| DomainError::InvalidFormat)?;
+
+        let data = doc
+            .get_resource_by_path(resource_path)
+            .ok_or_else(|| DomainError::ResourceNotFound(resource_path.to_string()))?;
+        let mime = doc
+            .get_resource_mime_by_path(resource_path)
+            .unwrap_or_else(|| "application/octet-stream".to_string());
+
+        Ok(ResourceContent { bytes: data, mime })
     }
 }

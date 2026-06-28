@@ -3145,6 +3145,7 @@ dependencies = [
  "blake3",
  "epub",
  "lopdf",
+ "percent-encoding",
  "rusqlite",
  "serde",
  "serde_json",
