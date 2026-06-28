@@ -68,9 +68,9 @@ Goal: a clean skeleton, both test harnesses running, CI green, before any featur
 - [x] `ci: rust and frontend pipelines`
 
 ### Commit 0.5: Strip the scaffold demo
-- [ ] Remove the `greet` command and the demo UI from `App.vue` and `lib.rs`.
-- [ ] Reduce `App.vue` to a bare shell (no `invoke`), confirm app still launches.
-- [ ] `chore: remove scaffold demo`
+- [x] Remove the `greet` command and the demo UI from `App.vue` and `lib.rs`.
+- [x] Reduce `App.vue` to a bare shell (no `invoke`), confirm app still launches.
+- [x] `chore: remove scaffold demo`
 
 ---
 
