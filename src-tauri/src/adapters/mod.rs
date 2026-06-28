@@ -6,3 +6,4 @@
 //! Submodules are added as each adapter lands.
 
 pub mod memory;
+pub mod storage;
