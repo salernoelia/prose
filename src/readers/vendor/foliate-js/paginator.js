@@ -823,6 +823,18 @@ export class Paginator extends HTMLElement {
             })
         })
     }
+    #hasSelection() {
+        const isPhone = /Android|iPhone|iPod|iPad/i.test(navigator.userAgent) || 
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
+            window.matchMedia('(max-width: 768px)').matches
+        if (!isPhone) return false
+
+        const docSelection = document.getSelection()
+        if (docSelection && !docSelection.isCollapsed) return true
+        const viewSelection = this.#view?.document?.getSelection()
+        if (viewSelection && !viewSelection.isCollapsed) return true
+        return false
+    }
     #onTouchStart(e) {
         const touch = e.changedTouches[0]
         this.#touchState = {
@@ -832,6 +844,7 @@ export class Paginator extends HTMLElement {
         }
     }
     #onTouchMove(e) {
+        if (this.#hasSelection()) return
         const state = this.#touchState
         if (state.pinched) return
         state.pinched = globalThis.visualViewport.scale > 1
