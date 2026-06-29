@@ -2,7 +2,7 @@
     setup
     lang="ts"
 >
-type ViewType = 'library' | 'settings' | 'reader'
+type ViewType = 'library' | 'settings' | 'reader' | 'stats'
 
 interface NavItem {
     label: string
@@ -20,13 +20,14 @@ const emit = defineEmits<{
 
 const navItems: NavItem[] = [
     { label: 'Library', value: 'library', icon: 'local_library' },
+    { label: 'Stats', value: 'stats', icon: 'bar_chart' },
     { label: 'Settings', value: 'settings', icon: 'settings' },
 ]
 </script>
 
 <template>
     <nav
-        class="fixed z-40 flex items-center justify-around bg-(--bg-app) border border-(--border-color) shadow-lg transition-all duration-300 bottom-0 left-0 right-0 h-18 px-6 border-x-0 border-b-0 safe-bottom md:bottom-6 md:left-1/2 md:right-auto md:-translate-x-1/2 md:h-16 md:w-64 md:grid md:grid-cols-2 md:justify-items-center md:rounded-full md:px-4 md:border">
+        class="fixed z-40 flex items-center justify-around bg-(--bg-app) border border-(--border-color) shadow-lg transition-all duration-300 bottom-0 left-0 right-0 h-18 px-6 border-x-0 border-b-0 safe-bottom md:bottom-6 md:left-1/2 md:right-auto md:-translate-x-1/2 md:h-16 md:w-80 md:grid md:grid-cols-3 md:justify-items-center md:rounded-full md:px-4 md:border">
         <button
             v-for="item in navItems"
             :key="item.value"

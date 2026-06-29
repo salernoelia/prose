@@ -2,7 +2,12 @@
 // wrappers and event listeners are re-exported here as each feature lands.
 export { getSettings, patchSettings } from './settings'
 export { libraryImportBook, libraryList, libraryRemove } from './library'
-export { readingSavePosition, readingGetPosition } from './reading'
+export {
+  readingSavePosition,
+  readingGetPosition,
+  readingLogSession,
+  readingListSessions,
+} from './reading'
 export {
   annotationAddBookmark,
   annotationListBookmarks,
@@ -40,6 +45,7 @@ export type {
   ImportProgressPayload,
   LocatorDto,
   ProgressDto,
+  ReadingSessionDto,
   BookmarkDto,
   HighlightDto,
   DefinitionDto,

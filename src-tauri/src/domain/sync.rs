@@ -18,7 +18,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::domain::error::DomainError;
-use crate::domain::model::{Bookmark, Highlight, Progress};
+use crate::domain::model::{Bookmark, Highlight, Progress, ReadingSession};
 use crate::domain::ports::{RemoteEntry, RemoteStore};
 
 /// A record that can be synchronized: it carries a stable id for idempotent
@@ -43,6 +43,15 @@ impl Syncable for Highlight {
     }
     fn last_modified(&self) -> i64 {
         self.created_at
+    }
+}
+
+impl Syncable for ReadingSession {
+    fn sync_id(&self) -> &str {
+        &self.id
+    }
+    fn last_modified(&self) -> i64 {
+        self.started_at
     }
 }
 

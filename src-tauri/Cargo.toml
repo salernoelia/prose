@@ -28,10 +28,18 @@ rusqlite = { version = "0.31.0", features = ["bundled"] }
 epub = "2.1.5"
 lopdf = "0.42.0"
 tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
 percent-encoding = "2"
 keyring = "3"
-reqwest = { version = "0.12", features = ["blocking"] }
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
 quick-xml = "0.37"
+
+# iOS hands Share / "Open in place" files to us as security-scoped URLs that
+# `std::fs` cannot read until the scope is started. We reach for that scope
+# through Foundation's NSURL, which needs the objc2 bindings.
+[target.'cfg(target_os = "ios")'.dependencies]
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", features = ["NSURL", "NSString", "NSData"] }
 
 [dev-dependencies]
 zip = "8.6.0"

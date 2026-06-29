@@ -130,6 +130,21 @@ export interface HighlightDto {
   createdAt: number
 }
 
+// Reading sessions
+
+/**
+ * A reading session, mirroring the Rust `ReadingSessionDto`. The calendar day
+ * used for streaks is derived from `startedAt` in local time; book title and
+ * author are looked up from the library. No aggregate (reading time, streaks,
+ * charts) is stored, all are derived from these records.
+ */
+export interface ReadingSessionDto {
+  id: string
+  bookId: string
+  startedAt: number
+  durationSeconds: number
+}
+
 // Dictionary
 
 /** One dictionary sense, mirroring the Rust `DefinitionDto` (FR-NOTE-03). */

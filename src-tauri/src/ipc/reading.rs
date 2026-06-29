@@ -7,7 +7,7 @@
 use tauri::{AppHandle, Emitter};
 
 use crate::domain::model::BookId;
-use crate::ipc::dto::{LocatorDto, ProgressDto};
+use crate::ipc::dto::{LocatorDto, ProgressDto, ReadingSessionDto};
 use crate::ipc::error::AppError;
 use crate::ipc::event::LIBRARY_CHANGED;
 use crate::state::AppState;
@@ -34,4 +34,29 @@ pub async fn reading_get_position(
     let id = BookId::from_hash(&book_id);
     let progress = state.reading.get_position(&id)?;
     Ok(progress.map(ProgressDto::from))
+}
+
+/// Record a finished reading session for a book. `started_at` is epoch
+/// milliseconds; the calendar day used for streaks is derived from it on the
+/// client. Returns the stored session.
+#[tauri::command]
+pub async fn reading_log_session(
+    state: tauri::State<'_, AppState>,
+    book_id: String,
+    started_at: i64,
+    duration_seconds: i64,
+) -> Result<ReadingSessionDto, AppError> {
+    let id = BookId::from_hash(&book_id);
+    let session = state.reading.log_session(&id, started_at, duration_seconds)?;
+    Ok(ReadingSessionDto::from(session))
+}
+
+/// Every recorded reading session across the library, newest first. The
+/// statistics view derives all aggregates from these.
+#[tauri::command]
+pub async fn reading_list_sessions(
+    state: tauri::State<'_, AppState>,
+) -> Result<Vec<ReadingSessionDto>, AppError> {
+    let sessions = state.reading.list_sessions()?;
+    Ok(sessions.into_iter().map(ReadingSessionDto::from).collect())
 }

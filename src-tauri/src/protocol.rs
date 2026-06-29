@@ -38,6 +38,15 @@ pub fn handle<R: Runtime>(
         .and_then(|value| value.to_str().ok())
         .map(str::to_string);
 
+    // On Android the scheme is tunneled through `http://prose.localhost`, a real
+    // cross-origin context. pdf.js sends a `Range` header, which is not a simple
+    // CORS header, so the WebView fires a preflight `OPTIONS` first. Answer it
+    // without touching disk; the headers `with_cors` adds satisfy the check.
+    if request.method() == tauri::http::Method::OPTIONS {
+        responder.respond(with_cors(status(StatusCode::NO_CONTENT)));
+        return;
+    }
+
     // File reading is blocking; keep it off the async executor.
     tauri::async_runtime::spawn_blocking(move || {
         let response = with_cors(build_response(&app, &uri, range.as_deref()));
@@ -54,6 +63,15 @@ fn with_cors(mut response: Response<Vec<u8>>) -> Response<Vec<u8>> {
     headers.insert(
         header::ACCESS_CONTROL_ALLOW_ORIGIN,
         header::HeaderValue::from_static("*"),
+    );
+    headers.insert(
+        header::ACCESS_CONTROL_ALLOW_METHODS,
+        header::HeaderValue::from_static("GET, OPTIONS"),
+    );
+    // pdf.js range reads send a `Range` header; the preflight asks to allow it.
+    headers.insert(
+        header::ACCESS_CONTROL_ALLOW_HEADERS,
+        header::HeaderValue::from_static("Range"),
     );
     headers.insert(
         header::ACCESS_CONTROL_EXPOSE_HEADERS,
@@ -113,12 +131,17 @@ fn build_response<R: Runtime>(
 fn parse_request(uri: &str) -> Option<(BookId, String)> {
     let parsed: tauri::http::Uri = uri.parse().ok()?;
 
-    // The scheme renders differently per platform (a `book` host on macOS, a
-    // `prose.localhost` host with a `book` path prefix on Windows/Android), so
-    // gather both into one segment list and require `book` to lead.
+    // The scheme renders differently per platform: macOS delivers a real
+    // `prose://book/{id}` URL where `book` is the host, while Windows, iOS, and
+    // Android tunnel the scheme through `http://prose.localhost/book/{id}` (or
+    // reconstruct it as `prose://localhost/book/{id}`), where `book` is the
+    // first path segment and the host is some `*.localhost` form. The host is
+    // therefore only meaningful when it is `book` itself; in every tunneled
+    // form it is noise. Keep it only in that case, so the `book` lead is found
+    // regardless of how the platform spells the host.
     let mut segments: Vec<String> = Vec::new();
     if let Some(host) = parsed.host() {
-        if !host.is_empty() && host != "prose.localhost" {
+        if host == BOOK_HOST {
             segments.push(host.to_string());
         }
     }
@@ -268,6 +291,22 @@ mod tests {
         let (id, path) = parse_request("http://prose.localhost/book/abc123/style.css").unwrap();
         assert_eq!(id.as_str(), "abc123");
         assert_eq!(path, "style.css");
+    }
+
+    #[test]
+    fn parses_tunneled_host_forms_with_empty_resource() {
+        // Android/Windows/iOS tunnel the scheme through a `*.localhost` host
+        // with `book` as the first path segment. The container request carries
+        // no resource path. Every spelling must resolve to the same id.
+        for uri in [
+            "http://prose.localhost/book/abc123",
+            "https://prose.localhost/book/abc123",
+            "prose://localhost/book/abc123",
+        ] {
+            let (id, path) = parse_request(uri).unwrap();
+            assert_eq!(id.as_str(), "abc123", "uri: {uri}");
+            assert_eq!(path, "", "uri: {uri}");
+        }
     }
 
     #[test]

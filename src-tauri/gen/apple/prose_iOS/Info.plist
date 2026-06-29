@@ -51,12 +51,16 @@
 			<array>
 				<string>epub</string>
 			</array>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>org.idpf.epub-container</string>
+			</array>
 			<key>CFBundleTypeName</key>
 			<string>EPUB Book</string>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 			<key>LSHandlerRank</key>
-			<string>Default</string>
+			<string>Owner</string>
 		</dict>
 		<dict>
 			<key>CFBundleTypeExtensions</key>
@@ -72,10 +76,12 @@
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 			<key>LSHandlerRank</key>
-			<string>Default</string>
+			<string>Alternate</string>
 		</dict>
 	</array>
 	<key>UIPrerenderedIcon</key>
+	<false/>
+	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 </dict>
 </plist>

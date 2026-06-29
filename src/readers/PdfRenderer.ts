@@ -1,10 +1,12 @@
 /**
  * PDF rendering over pdf.js (architecture section 6, FR-READ-02/05).
  *
- * pdf.js fetches pages from the book's `prose://` URL with HTTP range requests,
- * so only the bytes a page needs are streamed. One page is painted at a time,
- * fit to width by default, with a renderer-local zoom. `applyStyle` is a no-op:
- * PDF is fixed-layout (architecture section 6).
+ * The document is fetched once from the book's `prose://` URL and handed to
+ * pdf.js as a buffer. pdf.js only uses `fetch` for `http(s)` URLs; for a custom
+ * scheme it falls back to an XHR stream the WebView rejects ("Failed to fetch"),
+ * so we fetch the bytes ourselves the same way the ePub renderer does. One page
+ * is painted at a time, fit to width by default, with a renderer-local zoom.
+ * `applyStyle` is a no-op: PDF is fixed-layout (architecture section 6).
  */
 import * as pdfjs from 'pdfjs-dist'
 import type {
@@ -98,7 +100,10 @@ export class PdfRenderer implements BookRenderer, Zoomable {
   }
 
   async load(source: string): Promise<void> {
-    this.#loadingTask = pdfjs.getDocument({ url: source })
+    const response = await fetch(source)
+    if (!response.ok) throw new Error(`Failed to load PDF (${response.status}).`)
+    const data = new Uint8Array(await response.arrayBuffer())
+    this.#loadingTask = pdfjs.getDocument({ data })
     this.#doc = await this.#loadingTask.promise
     this.#pageCount = this.#doc.numPages
     this.#toc = await this.#buildToc()

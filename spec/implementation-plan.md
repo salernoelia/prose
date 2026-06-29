@@ -413,7 +413,7 @@ Goal: optional sourcing and background sync, resumable, non-blocking (FR-SYNC, N
 
 ### Commit 10.4: Background sync engine
 
-- [x] `sync_trigger` spawns a background task; `run_full_sync` syncs settings, progress, bookmarks, highlights, book files (FR-SYNC-03).
+- [x] `sync_trigger` spawns a background task; `run_full_sync` syncs settings, progress, bookmarks, highlights, reading sessions, book files (FR-SYNC-03).
 - [x] Conflict resolution uses domain `resolve_progress` and `merge_by_id` (FR-SYNC-04).
 - [x] `sync:progress` and `sync:finished` events emitted throughout; reading never blocks (FR-SYNC-05).
 - [x] App stays fully usable with no server configured — commands return `not_configured` error (FR-SYNC-05).

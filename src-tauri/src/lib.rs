@@ -25,6 +25,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_fs::init())
         .register_asynchronous_uri_scheme_protocol("prose", protocol::handle)
         .setup(|app| {
             use tauri::Manager;
@@ -107,6 +108,8 @@ pub fn run() {
             ipc::library::library_remove,
             ipc::reading::reading_save_position,
             ipc::reading::reading_get_position,
+            ipc::reading::reading_log_session,
+            ipc::reading::reading_list_sessions,
             ipc::annotation::annotation_add_bookmark,
             ipc::annotation::annotation_list_bookmarks,
             ipc::annotation::annotation_delete_bookmark,
@@ -125,15 +128,34 @@ pub fn run() {
         .expect("error while building tauri application")
         .run(|app_handle, event| {
             if let tauri::RunEvent::Opened { urls } = event {
+                use tauri::Emitter;
                 let app = app_handle.clone();
                 tauri::async_runtime::spawn(async move {
                     for url in urls {
-                        if let Ok(path) = url.to_file_path() {
-                            if let Some(path_str) = path.to_str() {
-                                let _ =
-                                    ipc::library::import_book_from_path(&app, path_str.to_string())
-                                        .await;
-                            }
+                        // Desktop and iOS deliver `file://` URLs; Android's VIEW
+                        // intents deliver `content://` URIs that have no file
+                        // path. Hand the raw URI to the importer, which resolves
+                        // `content://` through the Android content resolver.
+                        let location = match url.to_file_path() {
+                            Ok(path) => path.to_string_lossy().into_owned(),
+                            Err(_) => url.to_string(),
+                        };
+                        if let Err(err) = ipc::library::import_book_from_path(&app, location).await
+                        {
+                            // The import emits its own progress events that the
+                            // library store listens to. Without a terminal event
+                            // on failure the UI sticks at the last fraction (it
+                            // treats anything below 1.0 as still importing), so
+                            // emit a final event to clear that spinner and report
+                            // the reason.
+                            eprintln!("Failed to import opened file: {}", err.message);
+                            let _ = app.emit(
+                                ipc::event::IMPORT_PROGRESS,
+                                ipc::event::ImportProgressPayload {
+                                    message: format!("Import failed: {}", err.message),
+                                    fraction: 1.0,
+                                },
+                            );
                         }
                     }
                 });

@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use crate::domain::error::DomainError;
 use crate::domain::model::{
     Book, BookId, BookMetadata, Bookmark, Definition, Format, Highlight, LibraryEntry, Progress,
-    Settings,
+    ReadingSession, Settings,
 };
 
 /// The single local persistence port: catalog, reading position, annotations,
@@ -33,6 +33,14 @@ pub trait BookRepository: Send + Sync {
     fn add_highlight(&self, highlight: &Highlight) -> Result<(), DomainError>;
     fn list_highlights(&self, id: &BookId) -> Result<Vec<Highlight>, DomainError>;
     fn delete_highlight(&self, highlight_id: &str) -> Result<(), DomainError>;
+
+    /// Record a reading session. Idempotent on `id`, so replaying a sync never
+    /// duplicates a session.
+    fn add_reading_session(&self, session: &ReadingSession) -> Result<(), DomainError>;
+    /// The sessions for one book, the unit `sync_collection` operates on.
+    fn list_reading_sessions(&self, id: &BookId) -> Result<Vec<ReadingSession>, DomainError>;
+    /// Every session across the whole library, for the statistics view.
+    fn list_all_reading_sessions(&self) -> Result<Vec<ReadingSession>, DomainError>;
 
     fn get_settings(&self) -> Result<Option<Settings>, DomainError>;
     fn save_settings(&self, settings: &Settings) -> Result<(), DomainError>;

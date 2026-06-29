@@ -9,7 +9,9 @@ use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::domain::error::DomainError;
-use crate::domain::model::{Book, BookId, Bookmark, Highlight, LibraryEntry, Progress, Settings};
+use crate::domain::model::{
+    Book, BookId, Bookmark, Highlight, LibraryEntry, Progress, ReadingSession, Settings,
+};
 use crate::domain::ports::{BookRepository, Clock, RemoteEntry, RemoteStore};
 
 /// In-memory implementation of [`BookRepository`].
@@ -24,6 +26,7 @@ struct RepoState {
     progress: HashMap<BookId, Progress>,
     bookmarks: Vec<Bookmark>,
     highlights: Vec<Highlight>,
+    sessions: Vec<ReadingSession>,
     settings: Option<Settings>,
     sync_state: HashMap<String, String>,
     deleted_books: Vec<String>,
@@ -73,6 +76,7 @@ impl BookRepository for InMemoryBookRepository {
         state.progress.remove(id);
         state.bookmarks.retain(|b| &b.book_id != id);
         state.highlights.retain(|h| &h.book_id != id);
+        state.sessions.retain(|s| &s.book_id != id);
         Ok(())
     }
 
@@ -123,6 +127,30 @@ impl BookRepository for InMemoryBookRepository {
     fn delete_highlight(&self, highlight_id: &str) -> Result<(), DomainError> {
         self.lock().highlights.retain(|h| h.id != highlight_id);
         Ok(())
+    }
+
+    fn add_reading_session(&self, session: &ReadingSession) -> Result<(), DomainError> {
+        let mut state = self.lock();
+        if let Some(existing) = state.sessions.iter_mut().find(|s| s.id == session.id) {
+            *existing = session.clone();
+        } else {
+            state.sessions.push(session.clone());
+        }
+        Ok(())
+    }
+
+    fn list_reading_sessions(&self, id: &BookId) -> Result<Vec<ReadingSession>, DomainError> {
+        Ok(self
+            .lock()
+            .sessions
+            .iter()
+            .filter(|s| &s.book_id == id)
+            .cloned()
+            .collect())
+    }
+
+    fn list_all_reading_sessions(&self) -> Result<Vec<ReadingSession>, DomainError> {
+        Ok(self.lock().sessions.clone())
     }
 
     fn get_settings(&self) -> Result<Option<Settings>, DomainError> {

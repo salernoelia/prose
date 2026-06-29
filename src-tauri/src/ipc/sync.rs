@@ -241,6 +241,7 @@ fn run_full_sync(
             "prose/progress/",
             "prose/bookmarks/",
             "prose/highlights/",
+            "prose/sessions/",
             "prose/books/",
             "prose/tombstones/",
         ] {
@@ -262,6 +263,9 @@ fn run_full_sync(
 
     emit_progress(app, "syncing_highlights", 0.7);
     sync_highlights(store.as_ref(), &repo)?;
+
+    emit_progress(app, "syncing_sessions", 0.8);
+    sync_sessions(store.as_ref(), &repo)?;
 
     emit_progress(app, "syncing_books", 0.9);
     sync_books(store.as_ref(), &repo, &app_data, app)?;
@@ -470,7 +474,20 @@ fn sync_highlights(
     )
 }
 
-/// Sync one id-keyed collection (bookmarks, highlights) for every local book.
+fn sync_sessions(
+    store: &dyn RemoteStore,
+    repo: &Arc<dyn BookRepository>,
+) -> Result<(), crate::domain::error::DomainError> {
+    sync_collection(
+        store,
+        repo,
+        "sessions",
+        |book_id| repo.list_reading_sessions(book_id),
+        |record| repo.add_reading_session(record),
+    )
+}
+
+/// Sync one id-keyed collection (bookmarks, highlights, sessions) for every local book.
 ///
 /// The shape is identical across kinds: list the remote folder once to avoid
 /// per-book 404 round trips, then for each book take the etag fast path when
@@ -674,6 +691,7 @@ fn sync_books(
             let _ = store.delete(&format!("prose/progress/{}.json", id_str));
             let _ = store.delete(&format!("prose/bookmarks/{}.json", id_str));
             let _ = store.delete(&format!("prose/highlights/{}.json", id_str));
+            let _ = store.delete(&format!("prose/sessions/{}.json", id_str));
         }
     }
 
@@ -888,5 +906,58 @@ mod tests {
         let local_bookmarks = repo.list_bookmarks(&book_id).unwrap();
         assert!(local_bookmarks.iter().any(|b| b.id == "bm1"));
         assert!(local_bookmarks.iter().any(|b| b.id == "bm2"));
+    }
+
+    #[test]
+    fn test_sync_sessions_merges_by_id_across_devices() {
+        use crate::domain::model::{Book, BookId, BookMetadata, Format, ReadingSession};
+        use crate::domain::testing::{InMemoryBookRepository, InMemoryRemoteStore};
+        use std::sync::Arc;
+
+        let repo: Arc<dyn BookRepository> = Arc::new(InMemoryBookRepository::new());
+        let store = InMemoryRemoteStore::new();
+
+        let book_id = BookId::from_content(b"test-book");
+        let book = Book::new(
+            book_id.clone(),
+            Format::Epub,
+            BookMetadata {
+                title: "Test".to_string(),
+                author: None,
+                cover: None,
+            },
+        );
+        repo.insert_book(&book).unwrap();
+
+        // 1. A local session, pushed up on first sync.
+        let s1 = ReadingSession {
+            id: "s1".to_string(),
+            book_id: book_id.clone(),
+            started_at: 1_000,
+            duration_seconds: 60,
+        };
+        repo.add_reading_session(&s1).unwrap();
+        sync_sessions(&store, &repo).unwrap();
+
+        // 2. Another device records a session and uploads the merged set.
+        let s2 = ReadingSession {
+            id: "s2".to_string(),
+            book_id: book_id.clone(),
+            started_at: 2_000,
+            duration_seconds: 120,
+        };
+        let remote_sessions = vec![s1.clone(), s2.clone()];
+        let remote_path = format!("prose/sessions/{}.json", book_id.as_str());
+        store
+            .upload(&remote_path, &serde_json::to_vec(&remote_sessions).unwrap())
+            .unwrap();
+
+        // 3. This device syncs again and converges on both sessions.
+        sync_sessions(&store, &repo).unwrap();
+
+        let local = repo.list_reading_sessions(&book_id).unwrap();
+        assert_eq!(local.len(), 2);
+        assert!(local.iter().any(|s| s.id == "s1"));
+        assert!(local.iter().any(|s| s.id == "s2"));
     }
 }

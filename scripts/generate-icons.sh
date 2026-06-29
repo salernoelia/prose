@@ -26,4 +26,12 @@ cp -r temp-icons/ios/*.png src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconse
 echo "Cleaning up temporary files..."
 rm -rf temp-icons
 
+# `tauri icon` writes a full-bleed square .icns; macOS does not mask app icons,
+# so rebuild it on Apple's icon grid (rounded squircle + padding). macOS only.
+if [ "$(uname)" = "Darwin" ]; then
+  echo "Applying macOS icon grid to icon.icns..."
+  python3 -c "import PIL" 2>/dev/null || python3 -m pip install --quiet --user Pillow
+  python3 scripts/macos-icns.py
+fi
+
 echo "Icons generated successfully!"

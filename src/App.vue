@@ -8,6 +8,7 @@ import SettingsView from './views/SettingsView.vue'
 import LibraryView from './views/LibraryView.vue'
 import ReaderView from './views/ReaderView.vue'
 import BottomNavigationBar from './components/BottomNavigationBar.vue'
+import StatsView from './views/StatsView.vue'
 import type { BookDto } from './ipc/types'
 
 const { theme, loaded, showClickZonePreview, clickZoneSize } = useSettings()
@@ -25,7 +26,7 @@ watchEffect(() => {
     }
 })
 
-type ViewType = 'library' | 'settings' | 'reader'
+type ViewType = 'library' | 'settings' | 'reader' | 'stats'
 
 const currentView = ref<ViewType>('library')
 const selectedBook = ref<BookDto | null>(null)
@@ -68,6 +69,13 @@ function onSelectBook(book: BookDto) {
                     class="w-full"
                 >
                     <LibraryView v-model:layout="libraryLayout" @select-book="onSelectBook" />
+                </div>
+
+                <div
+                    v-else-if="currentView === 'stats'"
+                    class="w-full"
+                >
+                    <StatsView />
                 </div>
 
                 <div

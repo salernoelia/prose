@@ -9,7 +9,7 @@ use std::sync::Mutex;
 use crate::domain::error::DomainError;
 use crate::domain::model::{
     Book, BookId, BookMetadata, Bookmark, Format, Highlight, LibraryEntry, Locator, Progress,
-    ReadingStyle, Settings, Theme,
+    ReadingSession, ReadingStyle, Settings, Theme,
 };
 use crate::domain::ports::BookRepository;
 
@@ -131,6 +131,20 @@ impl SqliteBookRepository {
                     id TEXT PRIMARY KEY,
                     deleted_at INTEGER NOT NULL
                 );
+                "#,
+            ],
+            // Migration 3: Reading sessions (statistics atoms)
+            vec![
+                r#"
+                CREATE TABLE reading_sessions (
+                    id TEXT PRIMARY KEY,
+                    book_id TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+                    started_at INTEGER NOT NULL,
+                    duration_seconds INTEGER NOT NULL
+                );
+                "#,
+                r#"
+                CREATE INDEX idx_reading_sessions_book_id ON reading_sessions(book_id);
                 "#,
             ],
         ];
@@ -434,6 +448,62 @@ impl BookRepository for SqliteBookRepository {
         Ok(())
     }
 
+    fn add_reading_session(&self, session: &ReadingSession) -> Result<(), DomainError> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT OR REPLACE INTO reading_sessions (id, book_id, started_at, duration_seconds) VALUES (?1, ?2, ?3, ?4);",
+            (
+                &session.id,
+                session.book_id.as_str(),
+                session.started_at,
+                session.duration_seconds,
+            ),
+        )
+        .map_err(|e| DomainError::Storage(e.to_string()))?;
+        Ok(())
+    }
+
+    fn list_reading_sessions(&self, id: &BookId) -> Result<Vec<ReadingSession>, DomainError> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn
+            .prepare("SELECT id, started_at, duration_seconds FROM reading_sessions WHERE book_id = ?1 ORDER BY started_at ASC;")
+            .map_err(|e| DomainError::Storage(e.to_string()))?;
+        let entries = stmt
+            .query_map([id.as_str()], |row| {
+                Ok(ReadingSession {
+                    id: row.get(0)?,
+                    book_id: id.clone(),
+                    started_at: row.get(1)?,
+                    duration_seconds: row.get(2)?,
+                })
+            })
+            .map_err(|e| DomainError::Storage(e.to_string()))?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| DomainError::Storage(e.to_string()))?;
+        Ok(entries)
+    }
+
+    fn list_all_reading_sessions(&self) -> Result<Vec<ReadingSession>, DomainError> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn
+            .prepare("SELECT id, book_id, started_at, duration_seconds FROM reading_sessions ORDER BY started_at DESC;")
+            .map_err(|e| DomainError::Storage(e.to_string()))?;
+        let entries = stmt
+            .query_map([], |row| {
+                let book_id: String = row.get(1)?;
+                Ok(ReadingSession {
+                    id: row.get(0)?,
+                    book_id: BookId::from_hash(book_id),
+                    started_at: row.get(2)?,
+                    duration_seconds: row.get(3)?,
+                })
+            })
+            .map_err(|e| DomainError::Storage(e.to_string()))?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| DomainError::Storage(e.to_string()))?;
+        Ok(entries)
+    }
+
     fn get_settings(&self) -> Result<Option<Settings>, DomainError> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn
@@ -713,6 +783,52 @@ mod tests {
     }
 
     #[test]
+    fn test_reading_sessions_and_cascade() {
+        let repo = repo();
+        let book = Book::new(
+            BookId::from_content(b"sessions-test"),
+            Format::Epub,
+            BookMetadata {
+                title: "Sessions Book".to_string(),
+                author: None,
+                cover: None,
+            },
+        );
+        repo.insert_book(&book).unwrap();
+
+        let s1 = ReadingSession {
+            id: "s1".to_string(),
+            book_id: book.id.clone(),
+            started_at: 1_000,
+            duration_seconds: 60,
+        };
+        let s2 = ReadingSession {
+            id: "s2".to_string(),
+            book_id: book.id.clone(),
+            started_at: 2_000,
+            duration_seconds: 120,
+        };
+        repo.add_reading_session(&s1).unwrap();
+        repo.add_reading_session(&s2).unwrap();
+
+        // Idempotent on id: re-adding s1 does not duplicate it.
+        repo.add_reading_session(&s1).unwrap();
+
+        let per_book = repo.list_reading_sessions(&book.id).unwrap();
+        assert_eq!(per_book.len(), 2);
+        assert_eq!(per_book[0].id, "s1");
+
+        let all = repo.list_all_reading_sessions().unwrap();
+        assert_eq!(all.len(), 2);
+        // Newest first.
+        assert_eq!(all[0].id, "s2");
+
+        // Deleting the book cascade-removes its sessions.
+        repo.remove_book(&book.id).unwrap();
+        assert!(repo.list_all_reading_sessions().unwrap().is_empty());
+    }
+
+    #[test]
     fn test_settings() {
         let repo = repo();
         assert!(repo.get_settings().unwrap().is_none());
@@ -721,7 +837,7 @@ mod tests {
             schema_version: 1,
             theme: Theme::Sepia,
             reading: ReadingStyle {
-                font_family: "Literata".to_string(),
+                font_family: "Georgia".to_string(),
                 font_size: 19.0,
                 line_height: 1.6,
                 margin: 1.2,
@@ -732,7 +848,7 @@ mod tests {
         let loaded = repo.get_settings().unwrap().unwrap();
         assert_eq!(loaded.schema_version, 1);
         assert_eq!(loaded.theme, Theme::Sepia);
-        assert_eq!(loaded.reading.font_family, "Literata");
+        assert_eq!(loaded.reading.font_family, "Georgia");
         assert_eq!(loaded.reading.font_size, 19.0);
     }
 

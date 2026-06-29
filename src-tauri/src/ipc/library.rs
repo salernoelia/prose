@@ -25,6 +25,140 @@ fn resolve_file_path(path: &str) -> Result<std::path::PathBuf, AppError> {
     Ok(std::path::PathBuf::from(path))
 }
 
+/// Read the picked file into memory along with its detected format.
+///
+/// Desktop and iOS dialogs return real paths (or `file://` URLs) that `std::fs`
+/// can open directly. Android's Storage Access Framework instead returns a
+/// `content://` URI, which `std::fs` cannot open: it must be resolved through
+/// the Android content resolver. The fs plugin's `open` handles both, resolving
+/// `content://` URIs to a file descriptor, so route those through it.
+async fn read_book_bytes(app: &AppHandle, path: &str) -> Result<(Vec<u8>, Format), AppError> {
+    // `content://` URIs (Android SAF) have no usable filesystem path or
+    // extension, so read them via the fs plugin and detect the format by
+    // sniffing the file's magic bytes.
+    if path.starts_with("content://") {
+        use std::io::Read;
+        use tauri_plugin_fs::{FilePath, FsExt, OpenOptions};
+
+        let file_path = path
+            .parse::<FilePath>()
+            .map_err(|e| AppError::from_internal(e.to_string()))?;
+        // Resolving the content URI to a file descriptor is a quick platform
+        // call; the actual read is blocking, so hand the descriptor to a
+        // blocking task like the filesystem path below.
+        let file = app
+            .fs()
+            .open(file_path, OpenOptions::new().read(true).clone())
+            .map_err(|e| AppError::from_internal(format!("Failed to open file: {}", e)))?;
+
+        let bytes = tauri::async_runtime::spawn_blocking(move || -> Result<Vec<u8>, AppError> {
+            let mut file = file;
+            let mut bytes = Vec::new();
+            file.read_to_end(&mut bytes)
+                .map_err(|e| AppError::from_internal(format!("Failed to read file: {}", e)))?;
+            Ok(bytes)
+        })
+        .await
+        .map_err(|e| AppError::from_internal(e.to_string()))??;
+
+        let format = detect_format(&bytes, None)?;
+        return Ok((bytes, format));
+    }
+
+    let path_buf = resolve_file_path(path)?;
+    let ext = path_buf
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_lowercase());
+
+    tauri::async_runtime::spawn_blocking(move || -> Result<(Vec<u8>, Format), AppError> {
+        let bytes = read_file_bytes(&path_buf)?;
+        let format = detect_format(&bytes, ext.as_deref())?;
+        Ok((bytes, format))
+    })
+    .await
+    .map_err(|e| AppError::from_internal(e.to_string()))?
+}
+
+/// Read a filesystem path into memory.
+///
+/// On most platforms this is a plain `std::fs::read`. iOS is the exception:
+/// files handed to us through Share or "Open in place" live outside our sandbox
+/// behind a security-scoped URL. `std::fs::read` fails with a permission error
+/// until the scope is opened, so route iOS reads through Foundation, which knows
+/// how to claim that scope. (Android never reaches here; its `content://` URIs
+/// are read earlier through the fs plugin.)
+#[cfg(not(target_os = "ios"))]
+fn read_file_bytes(path: &std::path::Path) -> Result<Vec<u8>, AppError> {
+    if !path.exists() {
+        return Err(AppError {
+            code: "file_not_found".to_string(),
+            message: format!("File not found at: {}", path.display()),
+        });
+    }
+
+    std::fs::read(path)
+        .map_err(|e| AppError::from_internal(format!("Failed to read file: {}", e)))
+}
+
+#[cfg(target_os = "ios")]
+fn read_file_bytes(path: &std::path::Path) -> Result<Vec<u8>, AppError> {
+    use objc2_foundation::{NSData, NSString, NSURL};
+
+    objc2::rc::autoreleasepool(|_| {
+        let ns_path = NSString::from_str(&path.to_string_lossy());
+        let url = NSURL::fileURLWithPath(&ns_path);
+
+        // Claim the security scope before reading. It returns `false` for files
+        // already inside our sandbox (e.g. copied into Documents/Inbox), which
+        // read fine without it, so a `false` is not itself an error: only stop
+        // accessing when we actually started.
+        let scoped = unsafe { url.startAccessingSecurityScopedResource() };
+        let data = NSData::dataWithContentsOfURL(&url);
+        if scoped {
+            unsafe { url.stopAccessingSecurityScopedResource() };
+        }
+
+        match data {
+            Some(data) => Ok(data.to_vec()),
+            None => Err(AppError {
+                code: "file_not_found".to_string(),
+                message: format!("Could not read file at: {}", path.display()),
+            }),
+        }
+    })
+}
+
+/// Determine the book format from the file extension when available, falling
+/// back to the file's magic bytes (needed for Android `content://` URIs, which
+/// carry no extension): PDFs begin with `%PDF`, ePubs are ZIP archives (`PK\x03\x04`).
+fn detect_format(bytes: &[u8], ext: Option<&str>) -> Result<Format, AppError> {
+    match ext {
+        Some("epub") => return Ok(Format::Epub),
+        Some("pdf") => return Ok(Format::Pdf),
+        _ => {}
+    }
+
+    if bytes.starts_with(b"%PDF") {
+        Ok(Format::Pdf)
+    } else if bytes.starts_with(b"PK\x03\x04") {
+        Ok(Format::Epub)
+    } else {
+        Err(AppError {
+            code: "invalid_format".to_string(),
+            message: "Unsupported file format. Only ePub and PDF are supported.".to_string(),
+        })
+    }
+}
+
+/// On-disk extension for a stored book, mirroring `protocol::stored_file_path`.
+fn stored_extension(format: Format) -> &'static str {
+    match format {
+        Format::Epub => "epub",
+        Format::Pdf => "pdf",
+    }
+}
+
 pub async fn import_book_from_path(app: &AppHandle, path: String) -> Result<BookDto, AppError> {
     let state = app.state::<AppState>();
 
@@ -42,64 +176,37 @@ pub async fn import_book_from_path(app: &AppHandle, path: String) -> Result<Book
         .app_data_dir()
         .map_err(|e| AppError::from_internal(e.to_string()))?;
 
-    // On iOS (and when handling `prose://`/`file://` open-in-place URLs) the
-    // dialog plugin returns a percent-encoded `file://` URL rather than a plain
-    // filesystem path. Resolve it to a real path before touching the disk.
-    let path_buf = resolve_file_path(&path)?;
+    // Desktop and iOS hand back real paths or `file://` URLs; Android's Storage
+    // Access Framework hands back a `content://` URI that std::fs cannot open.
+    // `read_book_bytes` reads the file into memory through the right channel for
+    // each platform and detects the format.
+    let (bytes, format) = read_book_bytes(app, &path).await?;
 
-    let display_path = path_buf.display().to_string();
-    let (bytes, format, _, _) =
-        tauri::async_runtime::spawn_blocking(move || -> Result<_, AppError> {
-            if !path_buf.exists() {
-                return Err(AppError {
-                    code: "file_not_found".to_string(),
-                    message: format!("File not found at: {}", display_path),
-                });
-            }
+    // Persist the bytes into the library store. The on-disk name is derived from
+    // the content hash and format so `protocol::stored_file_path` can locate it
+    // later. We write the in-memory bytes rather than copy the source, which also
+    // works for `content://` URIs that have no plain filesystem path.
+    {
+        let bytes = bytes.clone();
+        let id = BookId::from_content(&bytes);
+        let dest_path = app_data_dir
+            .join("books")
+            .join(format!("{}.{}", id.as_str(), stored_extension(format)));
 
-            let bytes = std::fs::read(&path_buf)
-                .map_err(|e| AppError::from_internal(format!("Failed to read file: {}", e)))?;
-
-            let id = BookId::from_content(&bytes);
-
-            let ext = path_buf
-                .extension()
-                .and_then(|e| e.to_str())
-                .map(|e| e.to_lowercase())
-                .ok_or_else(|| AppError {
-                    code: "invalid_format".to_string(),
-                    message: "Missing file extension".to_string(),
-                })?;
-
-            let format = match ext.as_str() {
-                "epub" => Format::Epub,
-                "pdf" => Format::Pdf,
-                _ => {
-                    return Err(AppError {
-                        code: "invalid_format".to_string(),
-                        message: "Unsupported file format. Only ePub and PDF are supported."
-                            .to_string(),
-                    })
-                }
-            };
-
-            let dest_filename = format!("{}.{}", id.as_str(), ext);
-            let dest_path = app_data_dir.join("books").join(&dest_filename);
-
+        tauri::async_runtime::spawn_blocking(move || -> Result<(), AppError> {
             std::fs::create_dir_all(dest_path.parent().unwrap()).map_err(|e| {
                 AppError::from_internal(format!("Failed to create books directory: {}", e))
             })?;
-
             if !dest_path.exists() {
-                std::fs::copy(&path_buf, &dest_path).map_err(|e| {
-                    AppError::from_internal(format!("Failed to copy file to library: {}", e))
+                std::fs::write(&dest_path, &bytes).map_err(|e| {
+                    AppError::from_internal(format!("Failed to write file to library: {}", e))
                 })?;
             }
-
-            Ok((bytes, format, ext, id))
+            Ok(())
         })
         .await
         .map_err(|e| AppError::from_internal(e.to_string()))??;
+    }
 
     app.emit(
         IMPORT_PROGRESS,

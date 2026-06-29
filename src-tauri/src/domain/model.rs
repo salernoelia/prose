@@ -157,6 +157,23 @@ pub struct Highlight {
     pub created_at: i64,
 }
 
+/// A single reading session: a continuous span spent in one book. Sessions are
+/// the atoms reading statistics derive from; reading time, streaks, and the
+/// activity charts are all pure functions of the session set, so none of those
+/// aggregates are stored or synced, only these records. `id` is stable and
+/// unique so sync stays idempotent, and sessions are immutable once written, so
+/// last-write-wins by `started_at` only ever picks between identical copies.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct ReadingSession {
+    pub id: String,
+    pub book_id: BookId,
+    /// When the session began, epoch milliseconds. The calendar day (for
+    /// streaks) is derived from this in the reader's local time, never stored.
+    pub started_at: i64,
+    /// How long the session lasted, in seconds.
+    pub duration_seconds: i64,
+}
+
 /// One sense of a word from the offline dictionary (FR-NOTE-03). `synonyms` are
 /// the other words sharing this sense, and `examples` are usage sentences when
 /// the data set provides them.
@@ -191,7 +208,7 @@ pub struct ReadingStyle {
 
 impl ReadingStyle {
     fn default_font_family() -> String {
-        "Literata".to_string()
+        "Georgia".to_string()
     }
     fn default_font_size() -> f32 {
         18.0

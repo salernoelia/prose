@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use crate::domain::error::DomainError;
 use crate::domain::model::{
     Book, Bookmark, Definition, Format, Highlight, LibraryEntry, LibraryQuery, Locator, Progress,
-    Settings, SortKey, Theme,
+    ReadingSession, Settings, SortKey, Theme,
 };
 use crate::domain::settings::{ReadingStylePatch, SettingsPatch};
 
@@ -246,6 +246,28 @@ impl From<Highlight> for HighlightDto {
             text: h.text,
             color: h.color,
             created_at: h.created_at,
+        }
+    }
+}
+
+/// A reading session, returned by the session commands. Aggregate statistics
+/// (reading time, streaks, charts) are derived on the client from these.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReadingSessionDto {
+    pub id: String,
+    pub book_id: String,
+    pub started_at: i64,
+    pub duration_seconds: i64,
+}
+
+impl From<ReadingSession> for ReadingSessionDto {
+    fn from(s: ReadingSession) -> Self {
+        ReadingSessionDto {
+            id: s.id,
+            book_id: s.book_id.as_str().to_string(),
+            started_at: s.started_at,
+            duration_seconds: s.duration_seconds,
         }
     }
 }

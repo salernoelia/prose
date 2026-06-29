@@ -116,6 +116,8 @@ function formatProgressStage(stage: string): string {
       return 'Syncing bookmarks...'
     case 'syncing_highlights':
       return 'Syncing highlights...'
+    case 'syncing_sessions':
+      return 'Syncing reading sessions...'
     case 'syncing_books':
       return 'Syncing book files...'
     case 'uploading_book':

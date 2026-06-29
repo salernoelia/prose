@@ -29,7 +29,7 @@ the **WebView** (the system WebKit/WebView2 running Vue). The split is deliberat
 | --------------------------------------- | --------------------------------- | ----------------------------------------------------- |
 | Library catalog, metadata, IDs          | Rust                              | Single source of truth, fast queries, atomic writes   |
 | Book file storage and import            | Rust                              | Filesystem access, content hashing, offline guarantee |
-| Reading position, bookmarks, highlights | Rust                              | Persisted, synced, conflict-resolved in one place     |
+| Reading position, bookmarks, highlights, sessions | Rust                    | Persisted, synced, conflict-resolved in one place     |
 | Settings persistence                    | Rust                              | One authority, atomic, emitted to every window        |
 | WebDAV sync engine                      | Rust                              | Background task, TLS, resumability, conflict rules    |
 | Credential storage                      | Rust                              | OS keychain via a single port                         |

@@ -24,8 +24,8 @@ const themeOptions = [
 ]
 
 const fontOptions = [
-    { label: 'Literata', value: 'Literata' },
     { label: 'Georgia', value: 'Georgia' },
+    { label: 'Literata', value: 'Literata' },
     { label: 'Inter', value: 'Inter' },
     { label: 'Outfit', value: 'Outfit' },
 ]
@@ -302,7 +302,7 @@ async function handleSyncDisconnect() {
                     <p
                         v-if="syncMessage"
                         class="text-xs"
-                        :class="syncMessage.ok ? 'text-green-600 dark:text-green-400' : 'text-red-500'"
+                        :class="syncMessage.ok ? 'text-green-800 dark:text-green-600' : 'text-red-500'"
                     >
                         {{ syncMessage.text }}
                     </p>
@@ -312,7 +312,7 @@ async function handleSyncDisconnect() {
                             :label="syncWorking ? 'Connecting...' : syncConfig.configured ? 'Update' : 'Connect'"
                             :loading="syncWorking"
                             :disabled="syncWorking"
-                            class="flex-1"
+                            class="flex-1 bg-green-800 dark:bg-green-600"
                             @click="handleSyncSave"
                         />
                         <Button
@@ -321,6 +321,7 @@ async function handleSyncDisconnect() {
                             severity="secondary"
                             :disabled="syncWorking"
                             @click="handleSyncDisconnect"
+                            class="bg-red-800 dark:bg-red-700"
                         />
                     </div>
                 </div>

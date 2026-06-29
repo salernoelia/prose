@@ -14,6 +14,7 @@ import ReaderAnnotationPopover from '../components/reader/ReaderAnnotationPopove
 import ReaderDefinitionPopover from '../components/reader/ReaderDefinitionPopover.vue'
 import { useDictionary } from '../composables/useDictionary'
 import { useSync } from '../composables/useSync'
+import { startSession, endSession } from '../composables/useReadingTracker'
 import type { BookDto, BookmarkDto, HighlightDto } from '../ipc/types'
 
 const props = defineProps<{
@@ -213,11 +214,13 @@ const handleOutsideClick = (e: MouseEvent) => {
 onMounted(() => {
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('click', handleOutsideClick)
+    startSession(props.book)
 })
 
 onUnmounted(() => {
     window.removeEventListener('keydown', handleKeyDown)
     window.removeEventListener('click', handleOutsideClick)
+    endSession()
 })
 </script>
 

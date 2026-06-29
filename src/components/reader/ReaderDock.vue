@@ -41,8 +41,7 @@ const emit = defineEmits<{
         <!-- Small Border Card (Rounded Pill on Desktop, Flat bar on Mobile) -->
         <div
             class="w-full h-full flex items-center justify-around gap-4 px-4
-                   md:w-auto md:bg-(--bg-card) md:border md:border-(--border-color) md:rounded-full md:shadow-md md:justify-start md:py-2 md:px-4"
-        >
+                   md:w-auto md:bg-(--bg-card) md:border md:border-(--border-color) md:rounded-full md:shadow-md md:justify-start md:py-2 md:px-4">
             <!-- Back to Library -->
             <button
                 @click="emit('back')"
@@ -52,9 +51,9 @@ const emit = defineEmits<{
             >
                 <span class="material-symbols-outlined text-xl leading-none select-none">arrow_back</span>
             </button>
- 
+
             <span class="w-px h-4 bg-(--border-color)"></span>
- 
+
             <!-- Outline / TOC -->
             <button
                 @click="emit('toc')"
@@ -65,7 +64,7 @@ const emit = defineEmits<{
             >
                 <span class="material-symbols-outlined text-xl leading-none select-none">toc</span>
             </button>
- 
+
             <!-- Bookmark Toggler -->
             <button
                 @click="emit('toggle-bookmark')"
@@ -89,7 +88,7 @@ const emit = defineEmits<{
                 title="Annotations"
                 aria-label="Annotations"
             >
-                <span class="material-symbols-outlined text-xl leading-none select-none">format_list_bulleted</span>
+                <span class="material-symbols-outlined text-xl leading-none select-none">developer_guide</span>
             </button>
 
             <!-- Zoom controls (fixed-layout formats only) -->
@@ -114,9 +113,9 @@ const emit = defineEmits<{
                     </button>
                 </div>
             </template>
- 
+
             <span class="w-px h-4 bg-(--border-color)"></span>
- 
+
             <!-- Page turn indicators in dock -->
             <div class="flex items-center gap-2 text-xs text-(--text-secondary) select-none">
                 <button
@@ -135,9 +134,9 @@ const emit = defineEmits<{
                     <span class="material-symbols-outlined text-base">chevron_right</span>
                 </button>
             </div>
- 
+
             <span class="w-px h-4 bg-(--border-color)"></span>
- 
+
             <!-- Hide Dock Action -->
             <button
                 @click="emit('hide')"

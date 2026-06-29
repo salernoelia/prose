@@ -7,8 +7,10 @@
 
 use std::sync::Arc;
 
+use std::sync::atomic::{AtomicU64, Ordering};
+
 use crate::domain::error::DomainError;
-use crate::domain::model::{BookId, Locator, Progress};
+use crate::domain::model::{BookId, Locator, Progress, ReadingSession};
 use crate::domain::ports::{BookRepository, Clock};
 
 /// Saves and resumes reading positions and derives progress.
@@ -50,6 +52,44 @@ impl ReadingService {
             .get_position(id)?
             .map_or(0, |progress| percent(progress.locator.progression)))
     }
+
+    /// Record a reading session for a book: a span that began at `started_at`
+    /// (epoch milliseconds) and lasted `duration_seconds`. The session gets a
+    /// stable, unique id so it syncs idempotently. Returns the stored session.
+    pub fn log_session(
+        &self,
+        id: &BookId,
+        started_at: i64,
+        duration_seconds: i64,
+    ) -> Result<ReadingSession, DomainError> {
+        let session = ReadingSession {
+            id: new_session_id(id, started_at),
+            book_id: id.clone(),
+            started_at,
+            duration_seconds,
+        };
+        self.repo.add_reading_session(&session)?;
+        Ok(session)
+    }
+
+    /// Every recorded reading session across the library, newest first. The
+    /// statistics view derives reading time, streaks, and the activity charts
+    /// from these; no aggregate is stored.
+    pub fn list_sessions(&self) -> Result<Vec<ReadingSession>, DomainError> {
+        let mut sessions = self.repo.list_all_reading_sessions()?;
+        sessions.sort_by(|a, b| b.started_at.cmp(&a.started_at));
+        Ok(sessions)
+    }
+}
+
+/// Derive a stable, unique session id. The content (book, start instant) plus a
+/// process-monotonic counter guarantees uniqueness even when two sessions share
+/// a millisecond, and the hash keeps ids opaque and fixed-width like book ids.
+fn new_session_id(book_id: &BookId, started_at: i64) -> String {
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+    let nonce = COUNTER.fetch_add(1, Ordering::Relaxed);
+    let seed = format!("{}:{}:{}", book_id.as_str(), started_at, nonce);
+    blake3::hash(seed.as_bytes()).to_hex()[..32].to_string()
 }
 
 /// Convert a progression fraction to a whole percentage, rounded to nearest.
@@ -114,6 +154,32 @@ mod tests {
             .save_position(&book, Locator::new("p", 1.0))
             .unwrap();
         assert_eq!(service.progress_percent(&book).unwrap(), 100);
+    }
+
+    #[test]
+    fn log_session_records_a_unique_session_per_call() {
+        let (repo, service) = service(0);
+        let book = BookId::from_content(b"book");
+        repo.insert_book(&crate::domain::model::Book::new(
+            book.clone(),
+            crate::domain::model::Format::Epub,
+            crate::domain::model::BookMetadata {
+                title: "T".to_string(),
+                author: None,
+                cover: None,
+            },
+        ))
+        .unwrap();
+
+        let a = service.log_session(&book, 1_000, 60).unwrap();
+        let b = service.log_session(&book, 1_000, 90).unwrap();
+
+        // Same book and start instant still yield distinct ids.
+        assert_ne!(a.id, b.id);
+
+        let sessions = service.list_sessions().unwrap();
+        assert_eq!(sessions.len(), 2);
+        assert_eq!(sessions.iter().map(|s| s.duration_seconds).sum::<i64>(), 150);
     }
 
     #[test]

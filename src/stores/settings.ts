@@ -6,7 +6,7 @@ import { onSettingsChanged } from '../ipc/events'
 const defaults: SettingsDto = {
   schemaVersion: 1,
   theme: 'light',
-  fontFamily: 'Literata',
+  fontFamily: 'Georgia',
   fontSize: 18,
   lineHeight: 1.5,
   margin: 1.0,
