@@ -143,7 +143,7 @@ async function handleSyncDisconnect() {
                     :style="{ height: '300px' }"
                 >
                     <div
-                        class="h-full overflow-y-auto select-none p-6"
+                        class="h-full overflow-hidden select-none p-6"
                         :style="{
                             fontFamily: settings.fontFamily,
                             fontSize: settings.fontSize + 'px',

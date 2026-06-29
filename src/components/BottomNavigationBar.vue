@@ -31,7 +31,7 @@ const navItems: NavItem[] = [
             v-for="item in navItems"
             :key="item.value"
             @click="emit('navigate', item.value)"
-            class="flex flex-col items-center justify-center gap-1 min-w-16 h-full text-xs transition-colors focus-ring-minimal md:flex-row md:gap-2 md:px-3 md:rounded-full"
+            class="flex flex-col items-center justify-center gap-1 min-w-16 h-full text-xs transition-all duration-100 active:scale-95 active:opacity-80 focus-ring-minimal md:flex-row md:gap-2 md:px-3 md:rounded-full"
             :class="currentView === item.value || (item.value === 'library' && currentView === 'reader')
                     ? 'text-(--text-primary) font-semibold'
                     : 'text-(--text-secondary)'

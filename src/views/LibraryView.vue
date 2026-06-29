@@ -41,7 +41,7 @@ const {
 
 const dataViewEntries = computed(() => [...entries.value])
 
-const layout = ref<'grid' | 'list'>('grid')
+const layout = defineModel<'grid' | 'list'>('layout', { default: 'grid' })
 const showDeleteDialog = ref(false)
 const bookToDelete = ref<BookDto | null>(null)
 const appDataPath = ref('')
@@ -199,70 +199,47 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
             </div>
         </div>
 
-        <!-- Toolbar: Search, Filters & View Switcher (Zero Icons, Typographic) -->
-        <div class="flex flex-col gap-4 justify-between items-start mb-8">
-            <!-- Search Input -->
-            <div class="flex-1 w-full">
+        <!-- Search & Filter Bar -->
+        <div class="flex flex-col gap-4 mb-8">
+            <!-- Search bar with Icon -->
+            <div class="relative w-full">
+                <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-(--text-tertiary) text-lg select-none">search</span>
                 <input
                     :value="query.search || ''"
                     @input="
                         (e) => updateLibraryQuery({ search: (e.target as HTMLInputElement).value || null })
                     "
                     type="text"
-                    placeholder="Search by title or author"
-                    class="w-full bg-(--bg-card) border border-(--border-color) text-(--text-primary) text-sm rounded px-4 py-2 focus-ring-minimal focus:outline-none transition-all placeholder:text-(--text-tertiary)"
+                    placeholder="Search by title or author..."
+                    class="w-full bg-(--bg-card) border border-(--border-color) text-(--text-primary) text-sm rounded-full pl-10 pr-4 py-2.5 focus-ring-minimal focus:outline-none focus:border-(--border-color-hover) transition-all placeholder:text-(--text-tertiary) shadow-sm"
                 />
             </div>
 
-            <!-- Filters & Toggle links -->
-            <div class="flex lg:flex-row flex-col items-start gap-4 text-xs text-(--text-secondary)">
-                <!-- Sort links -->
-                <div class="flex items-center gap-2">
-                    <span class="text-(--text-tertiary) uppercase tracking-wider font-medium">Sort:</span>
-                    <div class="flex gap-1.5">
-                        <button
-                            v-for="opt in ['title', 'author', 'last_read', 'progress'] as const"
-                            :key="opt"
-                            @click="handleSortChange(opt)"
-                            class="px-2 py-0.5 capitalize transition-all rounded"
-                            :class="query.sort === opt
-                                ? 'text-(--text-primary) font-semibold bg-(--accent-color-light)'
-                                : 'hover:text-(--text-primary)'
-                                "
-                        >
-                            {{ opt.replace('_', ' ') }}
-                            <span v-if="query.sort === opt">{{ query.descending ? '↓' : '↑' }}</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Layout switcher links -->
-                <div class="flex items-center gap-2">
-                    <span class="text-(--text-tertiary) uppercase tracking-wider font-medium">Layout:</span>
-                    <div class="flex gap-1.5">
-
-                        <button
-                            @click="layout = 'grid'"
-                            class="px-2 py-0.5 transition-all rounded"
-                            :class="layout === 'grid'
-                                ? 'text-(--text-primary) font-semibold bg-(--accent-color-light)'
-                                : 'hover:text-(--text-primary)'
-                                "
-                        >
-                            Grid
-                        </button>
-
-                        <button
-                            @click="layout = 'list'"
-                            class="px-2 py-0.5 transition-all rounded"
-                            :class="layout === 'list'
-                                ? 'text-(--text-primary) font-semibold bg-(--accent-color-light)'
-                                : 'hover:text-(--text-primary)'
-                                "
-                        >
-                            List
-                        </button>
-                    </div>
+            <!-- Filter Chips Row -->
+            <div class="flex items-center justify-between gap-3 w-full">
+                <!-- Sort options horizontally scrollable on mobile, flex-wrap on desktop -->
+                <div class="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth flex-1 py-1 -my-1">
+                    <button
+                        v-for="opt in [
+                            { key: 'progress', label: 'Progress', icon: 'percent' },
+                            { key: 'title', label: 'Title', icon: 'sort_by_alpha' },
+                            { key: 'author', label: 'Author', icon: 'person' },
+                            { key: 'last_read', label: 'Recent', icon: 'history' }
+                        ] as const"
+                        :key="opt.key"
+                        @click="handleSortChange(opt.key)"
+                        class="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-full border transition-all duration-100 whitespace-nowrap cursor-pointer active:scale-95 select-none shrink-0"
+                        :class="query.sort === opt.key
+                            ? 'bg-(--text-primary) border-(--text-primary) text-(--bg-app)'
+                            : 'bg-(--bg-card) border-(--border-color) text-(--text-secondary) hover:text-(--text-primary) hover:border-(--border-color-hover)'
+                            "
+                    >
+                        <span class="material-symbols-outlined text-sm leading-none select-none">{{ opt.icon }}</span>
+                        <span>{{ opt.label }}</span>
+                        <span v-if="query.sort === opt.key" class="text-[10px] leading-none ml-0.5">
+                            {{ query.descending ? '↓' : '↑' }}
+                        </span>
+                    </button>
                 </div>
             </div>
         </div>

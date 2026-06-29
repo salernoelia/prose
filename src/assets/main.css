@@ -194,11 +194,39 @@
   touch-action: manipulation;
 }
 
+/* Prevent iOS tap highlights and hold-menus on UI components for native feel */
+button,
+a,
+[role="button"],
+.cursor-pointer,
+.p-component {
+  -webkit-tap-highlight-color: transparent;
+}
+
+nav,
+button,
+header,
+.select-none,
+.material-symbols-outlined {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 html,
-body {
+body,
+#app {
   height: 100%;
   margin: 0;
   padding: 0;
+}
+
+html,
+body {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  overscroll-behavior: none;
 }
 
 html {
@@ -258,4 +286,14 @@ html {
 /* Global PrimeVue Font Override */
 .p-component {
   font-family: var(--font-serif) !important;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }

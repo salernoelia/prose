@@ -29,6 +29,7 @@ type ViewType = 'library' | 'settings' | 'reader'
 
 const currentView = ref<ViewType>('library')
 const selectedBook = ref<BookDto | null>(null)
+const libraryLayout = ref<'grid' | 'list'>('grid')
 
 function setView(view: ViewType) {
     currentView.value = view
@@ -45,13 +46,13 @@ function onSelectBook(book: BookDto) {
 
 <template>
     <div
-        class="h-screen overflow-hidden flex flex-col relative bg-(--bg-app) text-(--text-primary)"
+        class="h-full overflow-hidden flex flex-col relative bg-(--bg-app) text-(--text-primary)"
     >
         <main
             class="flex-1 min-h-0 transition-all duration-300 flex justify-center w-full"
             :class="currentView === 'reader'
-                ? 'h-full px-6 pb-6 md:px-12 md:pb-8 overflow-hidden items-stretch'
-                : 'overflow-y-auto p-8 pt-12 pb-24 items-start scroll-smooth'"
+                ? 'h-full md:px-12 md:pb-8 overflow-hidden items-stretch'
+                : 'overflow-y-auto p-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-28 items-start scroll-smooth md:p-8 md:pt-12 md:pb-24'"
             style="touch-action: pan-y; -webkit-overflow-scrolling: touch;"
         >
             <div :class="currentView === 'reader' ? 'w-full max-w-4xl mx-auto h-full' : 'w-full max-w-3xl'">
@@ -66,7 +67,7 @@ function onSelectBook(book: BookDto) {
                     v-else-if="currentView === 'library'"
                     class="w-full"
                 >
-                    <LibraryView @select-book="onSelectBook" />
+                    <LibraryView v-model:layout="libraryLayout" @select-book="onSelectBook" />
                 </div>
 
                 <div
@@ -86,6 +87,31 @@ function onSelectBook(book: BookDto) {
             :current-view="currentView"
             @navigate="setView"
         />
+
+        <!-- Floating Layout Switcher (Bottom Right) -->
+        <div
+            v-if="currentView === 'library'"
+            class="fixed bottom-24 right-6 z-40 md:bottom-8 md:right-8 border border-(--border-color) bg-(--bg-card) rounded-full p-1 flex items-center shadow-lg transition-all duration-300 animate-fade-in"
+        >
+            <button
+                @click="libraryLayout = 'grid'"
+                class="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-100 active:scale-90 cursor-pointer text-(--text-secondary)"
+                :class="libraryLayout === 'grid' ? 'bg-(--accent-color-light) !text-(--text-primary) font-semibold' : 'hover:text-(--text-primary)'"
+                title="Grid Layout"
+                aria-label="Grid Layout"
+            >
+                <span class="material-symbols-outlined text-lg leading-none select-none">grid_view</span>
+            </button>
+            <button
+                @click="libraryLayout = 'list'"
+                class="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-100 active:scale-90 cursor-pointer text-(--text-secondary)"
+                :class="libraryLayout === 'list' ? 'bg-(--accent-color-light) !text-(--text-primary) font-semibold' : 'hover:text-(--text-primary)'"
+                title="List Layout"
+                aria-label="List Layout"
+            >
+                <span class="material-symbols-outlined text-lg leading-none select-none">view_list</span>
+            </button>
+        </div>
 
         <div
             v-if="showClickZonePreview"
