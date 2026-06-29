@@ -213,6 +213,14 @@ header,
   user-select: none;
 }
 
+.material-symbols-outlined.text-xs { font-size: 12px !important; }
+.material-symbols-outlined.text-sm { font-size: 14px !important; }
+.material-symbols-outlined.text-base { font-size: 16px !important; }
+.material-symbols-outlined.text-lg { font-size: 18px !important; }
+.material-symbols-outlined.text-xl { font-size: 20px !important; }
+.material-symbols-outlined.text-2xl { font-size: 24px !important; }
+.material-symbols-outlined.text-3xl { font-size: 30px !important; }
+
 html,
 body,
 #app {
