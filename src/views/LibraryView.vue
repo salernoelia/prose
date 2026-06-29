@@ -130,26 +130,28 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                     class="px-4 py-1.5 text-xs font-semibold rounded border border-(--border-color) text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer focus-ring-minimal flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <span
-                        v-if="syncing"
-                        class="inline-block animate-spin w-3 h-3 border border-current border-t-transparent rounded-full"
-                    ></span>
+                        class="material-symbols-outlined text-xs select-none"
+                        :class="{ 'animate-spin': syncing }"
+                    >sync</span>
                     <span>{{ syncing ? 'Syncing...' : 'Sync' }}</span>
                 </button>
                 <button
                     v-else
                     disabled
                     title="Configure WebDAV sync in settings"
-                    class="px-4 py-1.5 text-xs font-semibold rounded border border-(--border-color) text-(--text-tertiary) opacity-50 cursor-not-allowed"
+                    class="px-4 py-1.5 text-xs font-semibold rounded border border-(--border-color) text-(--text-tertiary) opacity-50 cursor-not-allowed flex items-center gap-2"
                 >
-                    Sync (Not Configured)
+                    <span class="material-symbols-outlined text-xs select-none">sync</span>
+                    <span>Sync</span>
                 </button>
 
                 <!-- Import Trigger (Typographic Pill Button) -->
                 <button
                     @click="handleImport"
-                    class="px-4 py-1.5 text-xs font-semibold rounded border border-(--border-color) text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer focus-ring-minimal"
+                    class="px-4 py-1.5 text-xs font-semibold rounded border border-(--border-color) text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer focus-ring-minimal flex items-center gap-2"
                 >
-                    Import Book
+                    <span class="material-symbols-outlined text-xs select-none">add</span>
+                    <span>Import Book</span>
                 </button>
             </div>
         </header>
@@ -223,7 +225,7 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
             <!-- Filter Chips Row -->
             <div class="flex items-center justify-between gap-3 w-full">
                 <!-- Sort options horizontally scrollable on mobile, flex-wrap on desktop -->
-                <div class="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth flex-1 py-1 -my-1">
+                <div class="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth flex-1 py-1 -my-1 -mx-6 px-6 md:mx-0 md:px-0">
                     <button
                         v-for="opt in [
                             { key: 'progress', label: 'Progress', icon: 'percent' },
@@ -243,9 +245,9 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                         <span>{{ opt.label }}</span>
                         <span
                             v-if="query.sort === opt.key"
-                            class="text-[10px] leading-none ml-0.5"
+                            class="material-symbols-outlined text-[13px] leading-none ml-0.5 select-none"
                         >
-                            {{ query.descending ? '↓' : '↑' }}
+                            {{ query.descending ? 'arrow_downward' : 'arrow_upward' }}
                         </span>
                     </button>
                 </div>
@@ -295,7 +297,7 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                         <div class="flex justify-between items-center text-xs">
                             <span class="text-(--text-secondary)">{{
                                 entry.book.author || 'Unknown Author'
-                            }}</span>
+                                }}</span>
 
                             <!-- Minimal progress line -->
                             <div class="w-16 h-0.5 overflow-hidden">
@@ -368,7 +370,7 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                                     {{ entry.book.author || 'Unknown Author' }}
                                 </span>
                                 <span class="text-(--text-tertiary) tabular-nums">{{ Math.round(entry.progress * 100)
-                                }}%</span>
+                                    }}%</span>
                             </div>
 
                             <!-- Muted textual remove link -->
