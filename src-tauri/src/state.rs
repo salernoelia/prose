@@ -8,8 +8,8 @@
 use std::sync::{Arc, Mutex};
 
 use crate::domain::{
-    ports::CredentialStore, AnnotationService, LibraryService, ReadingService, SettingsService,
-    SyncService,
+    ports::CredentialStore, AnnotationService, DictionaryService, LibraryService, ReadingService,
+    SettingsService, SyncService,
 };
 
 /// The server URL and username that were last configured by the user. The
@@ -25,6 +25,9 @@ pub struct AppState {
     pub library: LibraryService,
     pub reading: ReadingService,
     pub annotations: AnnotationService,
+    /// Offline dictionary, shared so its lazily built index survives across
+    /// lookups and can move onto a blocking thread for the first, heavy build.
+    pub dictionary: Arc<DictionaryService>,
     pub sync: SyncService,
     pub credentials: Arc<dyn CredentialStore>,
     /// Mutable sync configuration (URL + username). Password stays in keychain.

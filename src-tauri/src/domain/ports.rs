@@ -9,7 +9,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::domain::error::DomainError;
 use crate::domain::model::{
-    Book, BookId, BookMetadata, Bookmark, Format, Highlight, LibraryEntry, Progress, Settings,
+    Book, BookId, BookMetadata, Bookmark, Definition, Format, Highlight, LibraryEntry, Progress,
+    Settings,
 };
 
 /// The single local persistence port: catalog, reading position, annotations,
@@ -110,4 +111,13 @@ pub trait CredentialStore: Send + Sync {
 pub trait Clock: Send + Sync {
     /// The current time as epoch milliseconds.
     fn now_ms(&self) -> i64;
+}
+
+/// The offline dictionary port (FR-NOTE-03). The bundled data set and its
+/// parsing live in the adapter; the domain only asks for a word's senses, so a
+/// test double returns canned definitions without touching the filesystem.
+pub trait Dictionary: Send + Sync {
+    /// The senses of `word`, already normalized by the caller. An unknown word
+    /// yields an empty vector, not an error.
+    fn lookup(&self, word: &str) -> Result<Vec<Definition>, DomainError>;
 }

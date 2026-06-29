@@ -9,7 +9,9 @@
 import { computed, onUnmounted, ref, shallowRef, watch, type Ref } from 'vue'
 import {
   createRenderer,
+  isAnnotatable,
   isZoomable,
+  type Annotatable,
   type BookRenderer,
   type Locator,
   type TocItem,
@@ -28,6 +30,12 @@ export function useReader(book: Ref<BookDto>) {
   const error = ref<string | null>(null)
   const locator = ref<Locator | null>(null)
   const toc = ref<TocItem[]>([])
+  // Bumps once the renderer has loaded and painted, so annotation logic knows it
+  // is safe to draw saved highlights into the freshly created overlayers.
+  const ready = ref(0)
+  // The active renderer narrowed to its highlight capability, or null for
+  // fixed-layout formats (PDF) that do not support highlights.
+  const annotatable = shallowRef<(BookRenderer & Annotatable) | null>(null)
 
   const progress = computed(() => Math.round((locator.value?.progression ?? 0) * 100))
   const hasToc = computed(() => toc.value.length > 0)
@@ -107,6 +115,7 @@ export function useReader(book: Ref<BookDto>) {
       await instance.load(bookResourceUrl(bookId))
       toc.value = instance.toc()
       canZoom.value = isZoomable(instance)
+      annotatable.value = isAnnotatable(instance) ? instance : null
       renderer.value = instance
       if (saved) {
         await instance.goToLocator(saved.locator)
@@ -116,6 +125,8 @@ export function useReader(book: Ref<BookDto>) {
       if (currentLocator) {
         lastSavedPayload = currentLocator.payload
       }
+      // Signal that saved highlights can now be drawn into the live overlayers.
+      ready.value++
     } catch (cause) {
       error.value = cause instanceof Error ? cause.message : 'Failed to open this book.'
     } finally {
@@ -127,6 +138,7 @@ export function useReader(book: Ref<BookDto>) {
     flushPendingSave()
     renderer.value?.destroy()
     renderer.value = null
+    annotatable.value = null
   }
 
   function next() {
@@ -139,6 +151,10 @@ export function useReader(book: Ref<BookDto>) {
 
   async function goToHref(href: string) {
     await renderer.value?.goToHref(href)
+  }
+
+  async function goToLocator(target: Locator) {
+    await renderer.value?.goToLocator(target)
   }
 
   function zoomIn() {
@@ -184,9 +200,12 @@ export function useReader(book: Ref<BookDto>) {
     toc,
     hasToc,
     canZoom,
+    ready,
+    annotatable,
     next,
     prev,
     goToHref,
+    goToLocator,
     zoomIn,
     zoomOut,
   }

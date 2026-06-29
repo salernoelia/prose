@@ -15,6 +15,7 @@ defineProps<{
 const emit = defineEmits<{
     (e: 'back'): void
     (e: 'toc'): void
+    (e: 'annotations'): void
     (e: 'toggle-bookmark'): void
     (e: 'prev'): void
     (e: 'next'): void
@@ -80,7 +81,17 @@ const emit = defineEmits<{
                     {{ bookmarked ? 'bookmark' : 'bookmark_border' }}
                 </span>
             </button>
- 
+
+            <!-- Annotations list (bookmarks and highlights) -->
+            <button
+                @click="emit('annotations')"
+                class="flex items-center justify-center w-8 h-8 rounded-full text-(--text-secondary) hover:text-(--text-primary) transition-all duration-100 active:scale-90 active:opacity-80 focus-ring-minimal"
+                title="Annotations"
+                aria-label="Annotations"
+            >
+                <span class="material-symbols-outlined text-xl leading-none select-none">format_list_bulleted</span>
+            </button>
+
             <!-- Zoom controls (fixed-layout formats only) -->
             <template v-if="canZoom">
                 <span class="w-px h-4 bg-(--border-color)"></span>

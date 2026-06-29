@@ -2,14 +2,19 @@
     setup
     lang="ts"
 >
-import { computed, onMounted, onUnmounted, ref, toRef } from 'vue'
+import { computed, onMounted, onUnmounted, ref, toRef, watch } from 'vue'
 import { useSettings } from '../composables/useSettings'
 import { useReader } from '../composables/useReader'
+import { useAnnotations } from '../composables/useAnnotations'
 import ReaderClickZones from '../components/reader/ReaderClickZones.vue'
 import ReaderDock from '../components/reader/ReaderDock.vue'
 import ReaderTocDrawer from '../components/reader/ReaderTocDrawer.vue'
+import ReaderAnnotationsDrawer from '../components/reader/ReaderAnnotationsDrawer.vue'
+import ReaderAnnotationPopover from '../components/reader/ReaderAnnotationPopover.vue'
+import ReaderDefinitionPopover from '../components/reader/ReaderDefinitionPopover.vue'
+import { useDictionary } from '../composables/useDictionary'
 import { useSync } from '../composables/useSync'
-import type { BookDto } from '../ipc/types'
+import type { BookDto, BookmarkDto, HighlightDto } from '../ipc/types'
 
 const props = defineProps<{
     book: BookDto
@@ -25,20 +30,54 @@ const {
     host,
     loading,
     error,
+    locator,
     progress,
     toc,
     hasToc,
     canZoom,
+    ready,
+    annotatable,
     next,
     prev,
     goToHref,
+    goToLocator,
     zoomIn,
     zoomOut,
 } = useReader(toRef(props, 'book'))
 
+const {
+    bookmarks,
+    highlights,
+    selection,
+    activeHighlight,
+    isBookmarked,
+    toggleBookmark,
+    removeBookmark,
+    highlightSelection,
+    removeHighlight,
+    dismissSelection,
+    dismissActiveHighlight,
+} = useAnnotations(toRef(props, 'book'), locator, annotatable, ready)
+
+const {
+    word: definitionWord,
+    definitions,
+    rect: definitionRect,
+    loading: definitionLoading,
+    lookup: lookupWord,
+    clear: clearDefinition,
+} = useDictionary()
+
+// Offer a definition only for a single selected word; multi-word selections are
+// for highlighting, not lookup.
+const isSingleWord = computed(() => {
+    const text = selection.value?.text.trim() ?? ''
+    return text.length > 0 && !/\s/.test(text)
+})
+
 const showDock = ref(true)
 const showToc = ref(false)
-const isBookmarked = ref(false)
+const showAnnotations = ref(false)
 
 const canPrev = computed(() => progress.value > 0)
 const canNext = computed(() => progress.value < 100)
@@ -51,6 +90,53 @@ function toggleDock() {
 
 function onSelectToc(href: string) {
     void goToHref(href)
+}
+
+function onSelectBookmark(bookmark: BookmarkDto) {
+    void goToLocator(bookmark.locator)
+    showAnnotations.value = false
+}
+
+function onSelectHighlight(highlight: HighlightDto) {
+    void goToLocator(highlight.locator)
+    showAnnotations.value = false
+}
+
+function onHighlight() {
+    void highlightSelection()
+}
+
+const tempHighlightCfi = ref<string | null>(null)
+
+function handleClearDefinition() {
+    if (tempHighlightCfi.value && annotatable.value) {
+        annotatable.value.removeHighlight(tempHighlightCfi.value)
+        tempHighlightCfi.value = null
+    }
+    clearDefinition()
+}
+
+function onDefine() {
+    const current = selection.value
+    if (!current) return
+
+    if (annotatable.value) {
+        tempHighlightCfi.value = current.payload
+        annotatable.value.addHighlight(current.payload, '#3b82f6')
+    }
+
+    void lookupWord(current.text, current.rect)
+    dismissSelection()
+}
+
+// Automatically clear active definition popover and temporary highlights on page navigation
+watch(locator, () => {
+    handleClearDefinition()
+})
+
+function onRemoveActiveHighlight() {
+    const active = activeHighlight.value
+    if (active) void removeHighlight(active.highlight.id)
 }
 
 function handleBack() {
@@ -78,12 +164,41 @@ const handleKeyDown = (e: KeyboardEvent) => {
     }
 }
 
+function handleRendererClick(e: Event) {
+    if (definitionWord.value) {
+        const customEvent = e as CustomEvent<{ target: Node }>
+        const target = customEvent.detail?.target || e.target
+        const popoverEl = document.querySelector('.reader-definition-popover')
+        if (popoverEl && popoverEl.contains(target as Node)) {
+            return
+        }
+        handleClearDefinition()
+    } else {
+        toggleDock()
+    }
+}
+
+const handleOutsideClick = (e: MouseEvent) => {
+    if (!definitionWord.value) return
+    const popoverEl = document.querySelector('.reader-definition-popover')
+    if (popoverEl && popoverEl.contains(e.target as Node)) {
+        return
+    }
+    const defineBtn = (e.target as HTMLElement).closest('[title="Define"]')
+    if (defineBtn) {
+        return
+    }
+    handleClearDefinition()
+}
+
 onMounted(() => {
     window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('click', handleOutsideClick)
 })
 
 onUnmounted(() => {
     window.removeEventListener('keydown', handleKeyDown)
+    window.removeEventListener('click', handleOutsideClick)
 })
 </script>
 
@@ -114,6 +229,7 @@ onUnmounted(() => {
                 <div
                     ref="host"
                     class="absolute inset-0"
+                    @renderer-click="handleRendererClick"
                 ></div>
 
                 <!-- Loading state -->
@@ -146,7 +262,8 @@ onUnmounted(() => {
             :can-zoom="canZoom"
             @back="handleBack"
             @toc="showToc = true"
-            @toggle-bookmark="isBookmarked = !isBookmarked"
+            @annotations="showAnnotations = true"
+            @toggle-bookmark="toggleBookmark"
             @prev="prev"
             @next="next"
             @zoom-in="zoomIn"
@@ -160,5 +277,65 @@ onUnmounted(() => {
             :items="toc"
             @select="onSelectToc"
         />
+
+        <ReaderAnnotationsDrawer
+            v-model:visible="showAnnotations"
+            :bookmarks="bookmarks"
+            :highlights="highlights"
+            @select-bookmark="onSelectBookmark"
+            @delete-bookmark="removeBookmark"
+            @select-highlight="onSelectHighlight"
+            @delete-highlight="removeHighlight"
+        />
+
+        <!-- Floating action over a fresh text selection -->
+        <ReaderAnnotationPopover :rect="selection?.rect ?? null">
+            <button
+                @click="onHighlight"
+                class="flex items-center gap-1.5 px-3 h-8 rounded-full text-sm text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                title="Highlight"
+            >
+                <span class="material-symbols-outlined text-base">format_ink_highlighter</span>
+                Highlight
+            </button>
+            <button
+                v-if="isSingleWord"
+                @click="onDefine"
+                class="flex items-center gap-1.5 px-3 h-8 rounded-full text-sm text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                title="Define"
+            >
+                <span class="material-symbols-outlined text-base">menu_book</span>
+                Define
+            </button>
+        </ReaderAnnotationPopover>
+
+        <!-- Offline dictionary definition card -->
+        <ReaderDefinitionPopover
+            :word="definitionWord"
+            :definitions="definitions"
+            :rect="definitionRect"
+            :loading="definitionLoading"
+            @close="handleClearDefinition"
+        />
+
+        <!-- Floating action over an existing highlight -->
+        <ReaderAnnotationPopover :rect="activeHighlight?.rect ?? null">
+            <button
+                @click="onRemoveActiveHighlight"
+                class="flex items-center gap-1.5 px-3 h-8 rounded-full text-sm text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                title="Remove highlight"
+            >
+                <span class="material-symbols-outlined text-base">delete</span>
+                Remove
+            </button>
+            <button
+                @click="dismissActiveHighlight"
+                class="flex items-center justify-center w-8 h-8 rounded-full text-(--text-tertiary) hover:text-(--text-primary) transition-colors focus-ring-minimal"
+                title="Dismiss"
+                aria-label="Dismiss"
+            >
+                <span class="material-symbols-outlined text-base">close</span>
+            </button>
+        </ReaderAnnotationPopover>
     </div>
 </template>

@@ -72,6 +72,24 @@ export class PdfRenderer implements BookRenderer, Zoomable {
     container.addEventListener('wheel', this.#onWheel, { passive: false })
     container.addEventListener('gesturestart', this.#onGestureStart as EventListener)
     container.addEventListener('gesturechange', this.#onGestureChange as EventListener)
+
+    let startX = 0
+    let startY = 0
+    container.addEventListener('mousedown', (e) => {
+      startX = e.clientX
+      startY = e.clientY
+    })
+    container.addEventListener('click', (e) => {
+      if (e.target !== container && e.target !== canvas) return
+      const diffX = Math.abs(e.clientX - startX)
+      const diffY = Math.abs(e.clientY - startY)
+      if (diffX < 5 && diffY < 5) {
+        container.dispatchEvent(new CustomEvent('renderer-click', {
+          bubbles: true,
+          detail: { target: e.target }
+        }))
+      }
+    })
   }
 
   async load(source: string): Promise<void> {

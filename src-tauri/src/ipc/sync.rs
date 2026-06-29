@@ -12,7 +12,9 @@ use crate::adapters::webdav::WebDavRemoteStore;
 use crate::domain::ports::{BookRepository, RemoteStore};
 use crate::domain::sync::{merge_by_id, resolve_progress, Syncable};
 use crate::ipc::error::AppError;
-use crate::ipc::event::{SyncFinishedPayload, SyncProgressPayload, SYNC_FINISHED, SYNC_PROGRESS, LIBRARY_CHANGED};
+use crate::ipc::event::{
+    SyncFinishedPayload, SyncProgressPayload, LIBRARY_CHANGED, SYNC_FINISHED, SYNC_PROGRESS,
+};
 use crate::state::{AppState, SyncConfig};
 
 const CREDENTIAL_KEY_URL: &str = "prose_webdav_url";
@@ -83,7 +85,9 @@ pub async fn sync_configure(
         username: Some(username),
     };
 
-    state.sync_dirs_created.store(false, std::sync::atomic::Ordering::Relaxed);
+    state
+        .sync_dirs_created
+        .store(false, std::sync::atomic::Ordering::Relaxed);
 
     Ok(())
 }
@@ -106,7 +110,9 @@ pub fn sync_disconnect(state: State<'_, AppState>) -> Result<(), AppError> {
     let _ = state.credentials.delete(CREDENTIAL_KEY_USERNAME);
     let _ = state.credentials.delete(CREDENTIAL_KEY_PASSWORD);
     *state.sync_config.lock().unwrap() = SyncConfig::default();
-    state.sync_dirs_created.store(false, std::sync::atomic::Ordering::Relaxed);
+    state
+        .sync_dirs_created
+        .store(false, std::sync::atomic::Ordering::Relaxed);
     Ok(())
 }
 
@@ -151,8 +157,7 @@ pub async fn sync_download_book(
     let tmp = std::env::temp_dir().join(format!("prose_dl_{}.tmp", uuid_now()));
     std::fs::write(&tmp, &bytes).map_err(|e| AppError::from_message("storage", e.to_string()))?;
 
-    crate::ipc::library::import_book_from_path(&app, tmp.to_string_lossy().to_string())
-        .await?;
+    crate::ipc::library::import_book_from_path(&app, tmp.to_string_lossy().to_string()).await?;
 
     let _ = std::fs::remove_file(&tmp);
     Ok(())
@@ -186,10 +191,7 @@ pub async fn sync_trigger(app: AppHandle, state: State<'_, AppState>) -> Result<
             Err(e) => (false, e.to_string()),
         };
 
-        let _ = app.emit(
-            SYNC_FINISHED,
-            SyncFinishedPayload { success, message },
-        );
+        let _ = app.emit(SYNC_FINISHED, SyncFinishedPayload { success, message });
     });
 
     Ok(())
@@ -230,7 +232,10 @@ fn run_full_sync(
 ) -> Result<(), crate::domain::error::DomainError> {
     // Ensure the directory structure exists.
     let app_state = app.state::<AppState>();
-    if !app_state.sync_dirs_created.load(std::sync::atomic::Ordering::Relaxed) {
+    if !app_state
+        .sync_dirs_created
+        .load(std::sync::atomic::Ordering::Relaxed)
+    {
         for dir in &[
             "prose/",
             "prose/progress/",
@@ -241,7 +246,9 @@ fn run_full_sync(
         ] {
             store.ensure_collection(dir)?;
         }
-        app_state.sync_dirs_created.store(true, std::sync::atomic::Ordering::Relaxed);
+        app_state
+            .sync_dirs_created
+            .store(true, std::sync::atomic::Ordering::Relaxed);
     }
 
     emit_progress(app, "syncing_settings", 0.0);
@@ -275,15 +282,14 @@ fn sync_settings(
     let remote_bytes = match store.download("prose/settings.json") {
         Ok(b) => b,
         Err(_) => {
-            let json =
-                serde_json::to_vec(&local_settings).map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
+            let json = serde_json::to_vec(&local_settings)
+                .map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
             store.upload("prose/settings.json", &json)?;
             return Ok(());
         }
     };
 
-    let remote_settings: Settings = serde_json::from_slice(&remote_bytes)
-        .unwrap_or_default();
+    let remote_settings: Settings = serde_json::from_slice(&remote_bytes).unwrap_or_default();
 
     // Last-write-wins by schema_version (higher version wins; same keeps local).
     let winner = if remote_settings.schema_version > local_settings.schema_version {
@@ -294,7 +300,8 @@ fn sync_settings(
 
     repo.save_settings(&winner)?;
 
-    let json = serde_json::to_vec(&winner).map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
+    let json = serde_json::to_vec(&winner)
+        .map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
     store.upload("prose/settings.json", &json)?;
     Ok(())
 }
@@ -307,10 +314,7 @@ struct StoredSyncState {
 
 fn normalize_remote_path(path: &str) -> String {
     let normalized = path.replace('\\', "/");
-    let segments: Vec<&str> = normalized
-        .split('/')
-        .filter(|s| !s.is_empty())
-        .collect();
+    let segments: Vec<&str> = normalized.split('/').filter(|s| !s.is_empty()).collect();
     if let Some(pos) = segments.iter().position(|&s| s == "prose") {
         let mut best_pos = pos;
         for i in (pos + 1)..segments.len() {
@@ -331,7 +335,7 @@ fn sync_progress(
     use crate::domain::model::Progress;
 
     let books = repo.list_entries()?;
-    
+
     // Fetch remote index once to avoid redundant 404 download round trips
     let remote_entries: std::collections::HashMap<String, Option<String>> = store
         .list("prose/progress/")
@@ -358,8 +362,12 @@ fn sync_progress(
         let remote_exists = remote_entries.contains_key(&remote_path);
 
         let stored_etag = stored_state.as_ref().and_then(|s| s.remote_etag.clone());
-        let remote_etag_matches = remote_exists && current_remote_etag.is_some() && current_remote_etag == stored_etag;
-        let stored_local = stored_state.as_ref().map(|s| s.local_serialized.as_str()).unwrap_or("");
+        let remote_etag_matches =
+            remote_exists && current_remote_etag.is_some() && current_remote_etag == stored_etag;
+        let stored_local = stored_state
+            .as_ref()
+            .map(|s| s.local_serialized.as_str())
+            .unwrap_or("");
 
         if remote_exists && remote_etag_matches && stored_local == local_serialized {
             // BOTH are unchanged. Fast path: do nothing!
@@ -375,7 +383,8 @@ fn sync_progress(
             // so we don't need to download remote. Winner is simply local.
             if let Some(winner_val) = local.clone() {
                 // Upload to remote
-                let json = serde_json::to_vec(&winner_val).map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
+                let json = serde_json::to_vec(&winner_val)
+                    .map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
                 store.upload(&remote_path, &json)?;
                 upload_needed = true;
                 winner_val
@@ -406,7 +415,8 @@ fn sync_progress(
             }
 
             if remote.as_ref() != Some(&winner) {
-                let json = serde_json::to_vec(&winner).map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
+                let json = serde_json::to_vec(&winner)
+                    .map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
                 store.upload(&remote_path, &json)?;
                 upload_needed = true;
             }
@@ -505,8 +515,12 @@ where
         let remote_exists = remote_entries.contains_key(&remote_path);
 
         let stored_etag = stored_state.as_ref().and_then(|s| s.remote_etag.clone());
-        let remote_etag_matches = remote_exists && current_remote_etag.is_some() && current_remote_etag == stored_etag;
-        let stored_local = stored_state.as_ref().map(|s| s.local_serialized.as_str()).unwrap_or("");
+        let remote_etag_matches =
+            remote_exists && current_remote_etag.is_some() && current_remote_etag == stored_etag;
+        let stored_local = stored_state
+            .as_ref()
+            .map(|s| s.local_serialized.as_str())
+            .unwrap_or("");
 
         if remote_exists && remote_etag_matches && stored_local == local_serialized {
             // BOTH are unchanged. Fast path: do nothing!
@@ -518,7 +532,8 @@ where
 
         let winner = if remote_exists && remote_etag_matches {
             // Remote has not changed, but local did. Merged result is simply local.
-            let json = serde_json::to_vec(&local).map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
+            let json = serde_json::to_vec(&local)
+                .map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
             store.upload(&remote_path, &json)?;
             upload_needed = true;
             local.clone()
@@ -545,7 +560,8 @@ where
 
             // Upload only if different from remote
             if winner != remote {
-                let json = serde_json::to_vec(&winner).map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
+                let json = serde_json::to_vec(&winner)
+                    .map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
                 store.upload(&remote_path, &json)?;
                 upload_needed = true;
             }
@@ -615,7 +631,8 @@ fn sync_books(
         .collect();
 
     let local_deleted_ids = repo.get_deleted_books().unwrap_or_default();
-    let local_deleted_set: std::collections::HashSet<String> = local_deleted_ids.iter().cloned().collect();
+    let local_deleted_set: std::collections::HashSet<String> =
+        local_deleted_ids.iter().cloned().collect();
 
     let mut imported_any = false;
     let mut deleted_any = false;
@@ -670,7 +687,10 @@ fn sync_books(
         };
         let remote_path = format!("prose/books/{}.{}", id_str, ext);
 
-        if !remote_ids.contains(&id_str) && !remote_deleted_ids.contains(&id_str) && !local_deleted_set.contains(&id_str) {
+        if !remote_ids.contains(&id_str)
+            && !remote_deleted_ids.contains(&id_str)
+            && !local_deleted_set.contains(&id_str)
+        {
             let local_file = app_data.join("books").join(format!("{}.{}", id_str, ext));
             if let Ok(bytes) = std::fs::read(&local_file) {
                 let _ = store.upload(&remote_path, &bytes);
@@ -682,14 +702,21 @@ fn sync_books(
     // 6. Download remote books that are not present locally (and not deleted)
     for entry in &remote_entries {
         let path = std::path::Path::new(&entry.path);
-        let id_str = path.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_string();
+        let id_str = path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("")
+            .to_string();
         let ext = path.extension().and_then(|s| s.to_str()).unwrap_or("");
 
         if id_str.is_empty() || (ext != "epub" && ext != "pdf") {
             continue;
         }
 
-        if !local_ids.contains(&id_str) && !remote_deleted_ids.contains(&id_str) && !local_deleted_set.contains(&id_str) {
+        if !local_ids.contains(&id_str)
+            && !remote_deleted_ids.contains(&id_str)
+            && !local_deleted_set.contains(&id_str)
+        {
             emit_progress(app, "downloading_book", 0.9);
             if let Ok(bytes) = store.download(&entry.path) {
                 let format = match ext {
@@ -736,16 +763,28 @@ mod tests {
 
     #[test]
     fn test_normalize_remote_path() {
-        assert_eq!(normalize_remote_path("prose/progress/123.json"), "prose/progress/123.json");
-        assert_eq!(normalize_remote_path("/prose/progress/123.json"), "prose/progress/123.json");
-        assert_eq!(normalize_remote_path("/webdav/prose/progress/123.json"), "prose/progress/123.json");
-        assert_eq!(normalize_remote_path("https://example.com/webdav/prose/progress/123.json"), "prose/progress/123.json");
+        assert_eq!(
+            normalize_remote_path("prose/progress/123.json"),
+            "prose/progress/123.json"
+        );
+        assert_eq!(
+            normalize_remote_path("/prose/progress/123.json"),
+            "prose/progress/123.json"
+        );
+        assert_eq!(
+            normalize_remote_path("/webdav/prose/progress/123.json"),
+            "prose/progress/123.json"
+        );
+        assert_eq!(
+            normalize_remote_path("https://example.com/webdav/prose/progress/123.json"),
+            "prose/progress/123.json"
+        );
     }
 
     #[test]
     fn test_sync_progress_downloads_and_merges() {
+        use crate::domain::model::{Book, BookId, BookMetadata, Format, Locator, Progress};
         use crate::domain::testing::{InMemoryBookRepository, InMemoryRemoteStore};
-        use crate::domain::model::{Book, BookId, Format, BookMetadata, Progress, Locator};
         use std::sync::Arc;
 
         let repo: Arc<dyn BookRepository> = Arc::new(InMemoryBookRepository::new());
@@ -799,8 +838,8 @@ mod tests {
 
     #[test]
     fn test_sync_bookmarks_downloads_and_merges() {
+        use crate::domain::model::{Book, BookId, BookMetadata, Bookmark, Format, Locator};
         use crate::domain::testing::{InMemoryBookRepository, InMemoryRemoteStore};
-        use crate::domain::model::{Book, BookId, Format, BookMetadata, Bookmark, Locator};
         use std::sync::Arc;
 
         let repo: Arc<dyn BookRepository> = Arc::new(InMemoryBookRepository::new());

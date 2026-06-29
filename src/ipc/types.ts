@@ -110,6 +110,36 @@ export interface ProgressDto {
   updatedAt: number
 }
 
+// Annotations
+
+/** A bookmark at a saved location, mirroring the Rust `BookmarkDto`. */
+export interface BookmarkDto {
+  id: string
+  bookId: string
+  locator: LocatorDto
+  createdAt: number
+}
+
+/** A highlight over a selected text range, mirroring the Rust `HighlightDto`. */
+export interface HighlightDto {
+  id: string
+  bookId: string
+  locator: LocatorDto
+  text: string
+  color: string | null
+  createdAt: number
+}
+
+// Dictionary
+
+/** One dictionary sense, mirroring the Rust `DefinitionDto` (FR-NOTE-03). */
+export interface DefinitionDto {
+  partOfSpeech: string
+  gloss: string
+  synonyms: string[]
+  examples: string[]
+}
+
 // Sync
 
 /** Current sync configuration (no secrets). */

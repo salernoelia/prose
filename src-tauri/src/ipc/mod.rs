@@ -4,6 +4,8 @@
 //! domain error into the serializable boundary error. Payloads are flat DTOs,
 //! never domain types. Submodules are added per command group.
 
+pub mod annotation;
+pub mod dictionary;
 pub mod dto;
 pub mod error;
 pub mod event;

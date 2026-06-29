@@ -369,21 +369,21 @@ Goal: bookmarks, highlights, dictionary (FR-NOTE).
 
 ### Commit 9.1: Bookmarks
 
-- [ ] `ipc/annotation.rs`: add/list/delete bookmark commands; typed `src/ipc/annotation.ts`.
-- [ ] UI: bookmark the current location, list in a drawer, delete (FR-NOTE-01).
-- [ ] `feat(annotation): bookmarks`
+- [x] `ipc/annotation.rs`: add/list/delete bookmark commands; typed `src/ipc/annotation.ts`.
+- [x] UI: bookmark the current location, list in a drawer, delete (FR-NOTE-01).
+- [x] `feat(annotation): bookmarks`
 
 ### Commit 9.2: Highlights
 
-- [ ] Capture a text selection range from the ePub renderer; persist as a `Highlight` (FR-NOTE-02).
-- [ ] Render existing highlights on load; view and delete; only for content with selectable text.
-- [ ] `feat(annotation): highlights`
+- [x] Capture a text selection range from the ePub renderer; persist as a `Highlight` (FR-NOTE-02).
+- [x] Render existing highlights on load; view and delete; only for content with selectable text.
+- [x] `feat(annotation): highlights`
 
 ### Commit 9.3: Offline dictionary
 
-- [ ] Bundle a dictionary data set; a `DictionaryService` (and port if it needs bundled-file access) in the core.
-- [ ] Select a word, look up the definition, show it in a popover (FR-NOTE-03, external interface in the spec).
-- [ ] `feat(reference): offline dictionary lookup`
+- [x] Bundle a dictionary data set; a `DictionaryService` (and port if it needs bundled-file access) in the core.
+- [x] Select a word, look up the definition, show it in a popover (FR-NOTE-03, external interface in the spec).
+- [x] `feat(reference): offline dictionary lookup`
 
 ---
 

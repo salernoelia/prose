@@ -6,6 +6,7 @@
 //! Submodules are added as each adapter lands.
 
 pub mod credentials;
+pub mod dictionary;
 pub mod memory;
 pub mod readers;
 pub mod storage;

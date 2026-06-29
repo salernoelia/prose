@@ -47,6 +47,7 @@ impl From<DomainError> for AppError {
             DomainError::Storage(_) => "storage_error",
             DomainError::Remote(_) => "remote_error",
             DomainError::Credential(_) => "credential_error",
+            DomainError::Dictionary(_) => "dictionary_error",
         };
         AppError::new(code, error.to_string())
     }

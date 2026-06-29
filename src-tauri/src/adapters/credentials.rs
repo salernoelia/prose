@@ -29,11 +29,9 @@ impl KeyringCredentialStore {
         let path = self.fallback_path();
         let mut map = self.read_fallback_map()?;
         map.insert(key.to_string(), secret.to_string());
-        
-        let json = serde_json::to_vec(&map)
-            .map_err(|e| DomainError::Storage(e.to_string()))?;
-        std::fs::write(&path, &json)
-            .map_err(|e| DomainError::Storage(e.to_string()))?;
+
+        let json = serde_json::to_vec(&map).map_err(|e| DomainError::Storage(e.to_string()))?;
+        std::fs::write(&path, &json).map_err(|e| DomainError::Storage(e.to_string()))?;
         Ok(())
     }
 
@@ -46,10 +44,8 @@ impl KeyringCredentialStore {
         let path = self.fallback_path();
         let mut map = self.read_fallback_map()?;
         if map.remove(key).is_some() {
-            let json = serde_json::to_vec(&map)
-                .map_err(|e| DomainError::Storage(e.to_string()))?;
-            std::fs::write(&path, &json)
-                .map_err(|e| DomainError::Storage(e.to_string()))?;
+            let json = serde_json::to_vec(&map).map_err(|e| DomainError::Storage(e.to_string()))?;
+            std::fs::write(&path, &json).map_err(|e| DomainError::Storage(e.to_string()))?;
         }
         Ok(())
     }
@@ -59,10 +55,9 @@ impl KeyringCredentialStore {
         if !path.exists() {
             return Ok(std::collections::HashMap::new());
         }
-        let bytes = std::fs::read(&path)
-            .map_err(|e| DomainError::Storage(e.to_string()))?;
-        let map: std::collections::HashMap<String, String> = serde_json::from_slice(&bytes)
-            .unwrap_or_default();
+        let bytes = std::fs::read(&path).map_err(|e| DomainError::Storage(e.to_string()))?;
+        let map: std::collections::HashMap<String, String> =
+            serde_json::from_slice(&bytes).unwrap_or_default();
         Ok(map)
     }
 }
@@ -72,7 +67,8 @@ impl CredentialStore for KeyringCredentialStore {
         let _ = keyring::Entry::new(&self.service, key)
             .map_err(|e| DomainError::Storage(e.to_string()))
             .and_then(|entry| {
-                entry.set_password(secret)
+                entry
+                    .set_password(secret)
                     .map_err(|e| DomainError::Storage(e.to_string()))
             });
 

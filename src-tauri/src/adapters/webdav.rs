@@ -20,7 +20,11 @@ pub struct WebDavRemoteStore {
 }
 
 impl WebDavRemoteStore {
-    pub fn new(base_url: impl Into<String>, username: impl Into<String>, password: impl Into<String>) -> Result<Self, DomainError> {
+    pub fn new(
+        base_url: impl Into<String>,
+        username: impl Into<String>,
+        password: impl Into<String>,
+    ) -> Result<Self, DomainError> {
         let client = Client::builder()
             .build()
             .map_err(|e| DomainError::Remote(e.to_string()))?;
@@ -44,14 +48,21 @@ impl WebDavRemoteStore {
         let normalized = path.replace('\\', "/");
 
         // 1. Prevent path traversal
-        if normalized.contains("..") || normalized.contains("%2e%2e") || normalized.contains("%2E%2E") {
-            return Err(DomainError::Remote("Access denied: path traversal detected".into()));
+        if normalized.contains("..")
+            || normalized.contains("%2e%2e")
+            || normalized.contains("%2E%2E")
+        {
+            return Err(DomainError::Remote(
+                "Access denied: path traversal detected".into(),
+            ));
         }
 
         // 2. Parse path part. If it starts with scheme, check it's within base_url.
         let path_part = if normalized.starts_with("http://") || normalized.starts_with("https://") {
             if !normalized.starts_with(&self.base_url) {
-                return Err(DomainError::Remote("Access denied: URL is outside the configured base URL".into()));
+                return Err(DomainError::Remote(
+                    "Access denied: URL is outside the configured base URL".into(),
+                ));
             }
             let parsed_url = reqwest::Url::parse(&normalized)
                 .map_err(|e| DomainError::Remote(format!("Invalid URL: {e}")))?;
@@ -61,10 +72,7 @@ impl WebDavRemoteStore {
         };
 
         // 3. Split into segments
-        let segments: Vec<&str> = path_part
-            .split('/')
-            .filter(|s| !s.is_empty())
-            .collect();
+        let segments: Vec<&str> = path_part.split('/').filter(|s| !s.is_empty()).collect();
 
         // 4. Find the "prose" segment
         let prose_index = segments.iter().position(|&s| s == "prose").ok_or_else(|| {
@@ -341,18 +349,23 @@ mod tests {
 
         // 3. Absolute path on same server/endpoint
         assert_eq!(
-            store.resolve_safe_url("/webdav/prose/books/123.epub").unwrap(),
+            store
+                .resolve_safe_url("/webdav/prose/books/123.epub")
+                .unwrap(),
             "https://example.com/webdav/prose/books/123.epub"
         );
 
         // 4. Absolute URL matching base URL
         assert_eq!(
-            store.resolve_safe_url("https://example.com/webdav/prose/books/123.epub").unwrap(),
+            store
+                .resolve_safe_url("https://example.com/webdav/prose/books/123.epub")
+                .unwrap(),
             "https://example.com/webdav/prose/books/123.epub"
         );
 
         // 5. Base URL ending with prose/ itself
-        let store_prose = WebDavRemoteStore::new("https://example.com/webdav/prose", "user", "pass").unwrap();
+        let store_prose =
+            WebDavRemoteStore::new("https://example.com/webdav/prose", "user", "pass").unwrap();
         assert_eq!(
             store_prose.resolve_safe_url("prose/settings.json").unwrap(),
             "https://example.com/webdav/prose/settings.json"
@@ -360,12 +373,16 @@ mod tests {
 
         // 6. Path traversal rejection
         assert!(store.resolve_safe_url("prose/../../etc/passwd").is_err());
-        assert!(store.resolve_safe_url("prose/%2e%2e/%2e%2e/etc/passwd").is_err());
+        assert!(store
+            .resolve_safe_url("prose/%2e%2e/%2e%2e/etc/passwd")
+            .is_err());
 
         // 7. Path outside prose folder rejection
         assert!(store.resolve_safe_url("outside/settings.json").is_err());
 
         // 8. Attacker URL rejection
-        assert!(store.resolve_safe_url("https://attacker.com/prose/settings.json").is_err());
+        assert!(store
+            .resolve_safe_url("https://attacker.com/prose/settings.json")
+            .is_err());
     }
 }

@@ -143,7 +143,9 @@ impl BookRepository for InMemoryBookRepository {
     }
 
     fn save_sync_state(&self, key: &str, value: &str) -> Result<(), DomainError> {
-        self.lock().sync_state.insert(key.to_string(), value.to_string());
+        self.lock()
+            .sync_state
+            .insert(key.to_string(), value.to_string());
         Ok(())
     }
 

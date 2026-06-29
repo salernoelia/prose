@@ -128,10 +128,7 @@ pub async fn import_book_from_path(app: &AppHandle, path: String) -> Result<Book
 }
 
 #[tauri::command]
-pub async fn library_import_book(
-    app: AppHandle,
-    path: String,
-) -> Result<BookDto, AppError> {
+pub async fn library_import_book(app: AppHandle, path: String) -> Result<BookDto, AppError> {
     import_book_from_path(&app, path).await
 }
 

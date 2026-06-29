@@ -516,8 +516,13 @@ impl BookRepository for SqliteBookRepository {
         let mut rows = stmt
             .query([key])
             .map_err(|e| DomainError::Storage(e.to_string()))?;
-        if let Some(row) = rows.next().map_err(|e| DomainError::Storage(e.to_string()))? {
-            let value: String = row.get(0).map_err(|e| DomainError::Storage(e.to_string()))?;
+        if let Some(row) = rows
+            .next()
+            .map_err(|e| DomainError::Storage(e.to_string()))?
+        {
+            let value: String = row
+                .get(0)
+                .map_err(|e| DomainError::Storage(e.to_string()))?;
             Ok(Some(value))
         } else {
             Ok(None)

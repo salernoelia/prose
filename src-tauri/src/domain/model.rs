@@ -157,6 +157,21 @@ pub struct Highlight {
     pub created_at: i64,
 }
 
+/// One sense of a word from the offline dictionary (FR-NOTE-03). `synonyms` are
+/// the other words sharing this sense, and `examples` are usage sentences when
+/// the data set provides them.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Definition {
+    /// The grammatical class in readable form: "noun", "verb", "adjective", etc.
+    pub part_of_speech: String,
+    /// The definition text.
+    pub gloss: String,
+    /// Other words in the same sense.
+    pub synonyms: Vec<String>,
+    /// Example usage sentences, if any.
+    pub examples: Vec<String>,
+}
+
 /// Typography settings applied to reflowable ePub content. PDF ignores these.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ReadingStyle {

@@ -6,7 +6,19 @@
  * stay renderer-local so they never touch the IPC path (NFR-P-03).
  */
 import './vendor/foliate-js/view.js'
-import type { BookRenderer, Locator, ReadingStyle, TocItem } from './types'
+import { Overlayer } from './vendor/foliate-js/overlayer.js'
+import type {
+  Annotatable,
+  BookRenderer,
+  Locator,
+  ReadingStyle,
+  TextSelection,
+  TocItem,
+  ViewportRect,
+} from './types'
+
+/** Default highlight color, also used as the annotation tint foliate draws. */
+const DEFAULT_HIGHLIGHT_COLOR = '#f6c945'
 
 /** The relocate event payload foliate emits on every position change. */
 interface RelocateDetail {
@@ -26,10 +38,19 @@ interface FoliateView extends HTMLElement {
   goTo(target: string | number): Promise<unknown>
   next(): Promise<void>
   prev(): Promise<void>
+  getCFI(index: number, range: Range): string
+  addAnnotation(annotation: { value: string; color?: string }): Promise<unknown>
+  deleteAnnotation(annotation: { value: string }): Promise<unknown>
   renderer: {
     setStyles?(css: string): void
     setAttribute(name: string, value: string): void
   }
+}
+
+/** Detail of foliate's `draw-annotation` event: we supply the draw call. */
+interface DrawAnnotationDetail {
+  draw(func: unknown, options?: Record<string, unknown>): void
+  annotation: { value: string; color?: string }
 }
 
 interface FoliateTocItem {
@@ -118,10 +139,18 @@ function mapToc(items: FoliateTocItem[] | undefined): TocItem[] {
   }))
 }
 
-export class EpubRenderer implements BookRenderer {
+export class EpubRenderer implements BookRenderer, Annotatable {
   #view: FoliateView | null = null
   #style: ReadingStyle | null = null
   #locationListeners: Array<(locator: Locator) => void> = []
+  #selectionListeners: Array<(selection: TextSelection | null) => void> = []
+  #highlightClickListeners: Array<(payload: string, rect: ViewportRect) => void> = []
+  // Drawn highlights, keyed by their CFI payload, so they can be redrawn each
+  // time foliate creates a fresh overlayer for a (re)rendered section.
+  #highlights = new Map<string, string>()
+  // The currently visible section document, used to read and clear selections.
+  #currentDoc: Document | null = null
+  #clickedHighlight = false
 
   async mount(container: HTMLElement): Promise<void> {
     const view = document.createElement('foliate-view') as FoliateView
@@ -131,8 +160,31 @@ export class EpubRenderer implements BookRenderer {
       const detail = (event as CustomEvent<RelocateDetail>).detail
       this.#emitLocation(detail)
     })
+    // foliate hands back a `draw` callback for each annotation; paint a highlight
+    // in its stored color (falling back to the default tint).
+    view.addEventListener('draw-annotation', (event) => {
+      const { draw, annotation } = (event as CustomEvent<DrawAnnotationDetail>).detail
+      draw(Overlayer.highlight, { color: annotation.color ?? DEFAULT_HIGHLIGHT_COLOR })
+    })
+    // A tap on an existing highlight reports its payload so the UI can offer to
+    // remove it.
+    view.addEventListener('show-annotation', (event) => {
+      const { value, range } = (event as CustomEvent<{ value: string; range?: Range }>).detail
+      const rect = this.#rectInViewport(range)
+      this.#clickedHighlight = true
+      for (const listener of this.#highlightClickListeners) listener(value, rect)
+    })
+    // Each freshly rendered section gets a new overlayer; redraw our highlights
+    // into it. addAnnotation resolves each CFI to its section and only draws the
+    // ones that belong to the section just created.
+    view.addEventListener('create-overlay', () => {
+      for (const [value, color] of this.#highlights) {
+        void this.#view?.addAnnotation({ value, color })
+      }
+    })
     view.addEventListener('load', (event) => {
-      const { doc } = (event as CustomEvent<{ doc: Document }>).detail
+      const { doc, index } = (event as CustomEvent<{ doc: Document; index: number }>).detail
+      this.#watchSelection(doc, index)
       doc.addEventListener('keydown', (e) => {
         const target = e.target as HTMLElement | null
         if (target && (
@@ -148,6 +200,35 @@ export class EpubRenderer implements BookRenderer {
         } else if (e.key === 'ArrowLeft') {
           this.prev()
         }
+      })
+
+      let hadSelection = false
+      doc.addEventListener('pointerdown', () => {
+        const selection = doc.defaultView?.getSelection()
+        hadSelection = selection ? !selection.isCollapsed : false
+      })
+
+      doc.addEventListener('click', (e) => {
+        setTimeout(() => {
+          if (hadSelection) {
+            hadSelection = false
+            return
+          }
+          if (this.#clickedHighlight) {
+            this.#clickedHighlight = false
+            return
+          }
+
+          const selection = doc.defaultView?.getSelection()
+          if (selection && !selection.isCollapsed) return
+
+          if ((e.target as HTMLElement).closest('a, button, input, textarea, select')) return
+
+          container.dispatchEvent(new CustomEvent('renderer-click', {
+            bubbles: true,
+            detail: { target: e.target }
+          }))
+        }, 0)
       })
     })
     container.append(view)
@@ -170,6 +251,9 @@ export class EpubRenderer implements BookRenderer {
     this.#view?.remove()
     this.#view = null
     this.#locationListeners = []
+    this.#selectionListeners = []
+    this.#highlightClickListeners = []
+    this.#highlights.clear()
   }
 
   next(): void {
@@ -196,6 +280,82 @@ export class EpubRenderer implements BookRenderer {
 
   onLocationChange(cb: (locator: Locator) => void): void {
     this.#locationListeners.push(cb)
+  }
+
+  onSelection(cb: (selection: TextSelection | null) => void): void {
+    this.#selectionListeners.push(cb)
+  }
+
+  onHighlightClick(cb: (payload: string, rect: ViewportRect) => void): void {
+    this.#highlightClickListeners.push(cb)
+  }
+
+  addHighlight(payload: string, color: string): void {
+    this.#highlights.set(payload, color)
+    void this.#view?.addAnnotation({ value: payload, color })
+  }
+
+  removeHighlight(payload: string): void {
+    this.#highlights.delete(payload)
+    void this.#view?.deleteAnnotation({ value: payload })
+  }
+
+  clearSelection(): void {
+    this.#currentDoc?.defaultView?.getSelection()?.removeAllRanges()
+  }
+
+  /**
+   * Watch a section document for text selections. On each selection settle, the
+   * range is turned into a CFI (the same payload format used for positions) and
+   * its viewport rect is computed by offsetting the in-iframe rect by the
+   * iframe's own position, so the UI can anchor a popover over the selection.
+   */
+  #watchSelection(doc: Document, index: number): void {
+    this.#currentDoc = doc
+    const report = () => {
+      const view = this.#view
+      const selection = doc.defaultView?.getSelection()
+      if (!view || !selection || selection.rangeCount === 0 || selection.isCollapsed) {
+        this.#emitSelection(null)
+        return
+      }
+      const text = selection.toString().trim()
+      if (!text) {
+        this.#emitSelection(null)
+        return
+      }
+      const range = selection.getRangeAt(0)
+      const payload = view.getCFI(index, range)
+      this.#emitSelection({ payload, text, rect: this.#rectInViewport(range) })
+    }
+    // pointerup catches mouse and touch drags; selectionchange clears the popover
+    // when the user taps away and the selection collapses.
+    doc.addEventListener('pointerup', () => setTimeout(report, 0))
+    doc.addEventListener('selectionchange', () => {
+      const selection = doc.defaultView?.getSelection()
+      if (!selection || selection.isCollapsed) this.#emitSelection(null)
+    })
+  }
+
+  #emitSelection(selection: TextSelection | null): void {
+    for (const listener of this.#selectionListeners) listener(selection)
+  }
+
+  /**
+   * A range's bounding box in the outer viewport. Range rects are relative to
+   * their section iframe; offsetting by the iframe's own position lifts them into
+   * the coordinate space the popover is positioned in.
+   */
+  #rectInViewport(range: Range | undefined): ViewportRect {
+    if (!range) return { x: 0, y: 0, width: 0, height: 0 }
+    const rect = range.getBoundingClientRect()
+    const frame = range.startContainer.ownerDocument?.defaultView?.frameElement?.getBoundingClientRect()
+    return {
+      x: rect.x + (frame?.x ?? 0),
+      y: rect.y + (frame?.y ?? 0),
+      width: rect.width,
+      height: rect.height,
+    }
   }
 
   applyStyle(style: ReadingStyle): void {

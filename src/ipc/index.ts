@@ -4,6 +4,15 @@ export { getSettings, patchSettings } from './settings'
 export { libraryImportBook, libraryList, libraryRemove } from './library'
 export { readingSavePosition, readingGetPosition } from './reading'
 export {
+  annotationAddBookmark,
+  annotationListBookmarks,
+  annotationDeleteBookmark,
+  annotationAddHighlight,
+  annotationListHighlights,
+  annotationDeleteHighlight,
+} from './annotation'
+export { dictionaryLookup } from './dictionary'
+export {
   syncConfigure,
   syncStatus,
   syncDisconnect,
@@ -31,6 +40,9 @@ export type {
   ImportProgressPayload,
   LocatorDto,
   ProgressDto,
+  BookmarkDto,
+  HighlightDto,
+  DefinitionDto,
   SyncStatusDto,
   RemoteBookDto,
   SyncProgressPayload,

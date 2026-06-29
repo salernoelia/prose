@@ -77,11 +77,5 @@ onUnmounted(() => {
         </div>
     </div>
 
-    <!-- CENTER menu toggle zone (between left & right zones) -->
-    <div
-        @click="emit('toggle')"
-        class="fixed top-0 bottom-0 z-10 bg-transparent cursor-pointer"
-        :style="{ left: zoneSize + 'vw', right: zoneSize + 'vw' }"
-        title="Toggle Controls"
-    ></div>
+
 </template>

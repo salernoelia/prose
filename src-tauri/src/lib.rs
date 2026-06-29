@@ -9,12 +9,14 @@ pub mod protocol;
 pub mod state;
 
 use crate::adapters::credentials::KeyringCredentialStore;
+use crate::adapters::dictionary::WordNetDictionary;
 use crate::adapters::memory::{InMemoryRemoteStore, WallClock};
 use crate::adapters::storage::SqliteBookRepository;
-use crate::domain::{
-    AnnotationService, LibraryService, ReaderRegistry, ReadingService, SettingsService, SyncService,
-};
 use crate::domain::ports::CredentialStore;
+use crate::domain::{
+    AnnotationService, DictionaryService, LibraryService, ReaderRegistry, ReadingService,
+    SettingsService, SyncService,
+};
 use crate::state::{AppState, SyncConfig};
 use std::sync::Arc;
 
@@ -51,16 +53,23 @@ pub fn run() {
             let credentials: Arc<dyn CredentialStore> =
                 Arc::new(KeyringCredentialStore::new("prose", app_data.clone()));
 
+            // The bundled WordNet data set ships as a Tauri resource; resolve it
+            // and hand the path to the dictionary, which loads it lazily.
+            let wordnet_path = app
+                .path()
+                .resolve(
+                    "resources/wordnet.json",
+                    tauri::path::BaseDirectory::Resource,
+                )
+                .expect("failed to resolve dictionary resource path");
+            let dictionary = Arc::new(DictionaryService::new(Arc::new(WordNetDictionary::new(
+                wordnet_path,
+            ))));
+
             // Restore sync configuration from keychain if previously saved.
             let sync_config = {
-                let url = credentials
-                    .retrieve("prose_webdav_url")
-                    .ok()
-                    .flatten();
-                let username = credentials
-                    .retrieve("prose_webdav_username")
-                    .ok()
-                    .flatten();
+                let url = credentials.retrieve("prose_webdav_url").ok().flatten();
+                let username = credentials.retrieve("prose_webdav_username").ok().flatten();
                 SyncConfig { url, username }
             };
 
@@ -80,6 +89,7 @@ pub fn run() {
                     Arc::clone(&repo) as Arc<dyn domain::ports::BookRepository>,
                     Arc::clone(&clock) as Arc<dyn domain::ports::Clock>,
                 ),
+                dictionary,
                 sync: SyncService::new(Arc::clone(&remote) as Arc<dyn domain::ports::RemoteStore>),
                 credentials,
                 sync_config: std::sync::Mutex::new(sync_config),
@@ -97,6 +107,13 @@ pub fn run() {
             ipc::library::library_remove,
             ipc::reading::reading_save_position,
             ipc::reading::reading_get_position,
+            ipc::annotation::annotation_add_bookmark,
+            ipc::annotation::annotation_list_bookmarks,
+            ipc::annotation::annotation_delete_bookmark,
+            ipc::annotation::annotation_add_highlight,
+            ipc::annotation::annotation_list_highlights,
+            ipc::annotation::annotation_delete_highlight,
+            ipc::dictionary::dictionary_lookup,
             ipc::sync::sync_configure,
             ipc::sync::sync_status,
             ipc::sync::sync_disconnect,
@@ -113,11 +130,9 @@ pub fn run() {
                     for url in urls {
                         if let Ok(path) = url.to_file_path() {
                             if let Some(path_str) = path.to_str() {
-                                let _ = ipc::library::import_book_from_path(
-                                    &app,
-                                    path_str.to_string(),
-                                )
-                                .await;
+                                let _ =
+                                    ipc::library::import_book_from_path(&app, path_str.to_string())
+                                        .await;
                             }
                         }
                     }

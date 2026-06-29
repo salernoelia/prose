@@ -57,6 +57,47 @@ export interface BookRenderer {
   applyStyle(style: ReadingStyle): void
 }
 
+/** A bounding box in viewport coordinates, used to anchor reader popovers. */
+export interface ViewportRect {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+/** A live text selection reported by an {@link Annotatable} renderer. */
+export interface TextSelection {
+  /** Opaque payload locating the selected range (a CFI for ePub). */
+  payload: string
+  /** The selected text. */
+  text: string
+  /** Bounding box of the selection in viewport coordinates, for popover placement. */
+  rect: ViewportRect
+}
+
+/**
+ * Optional capability for renderers with selectable text that can carry
+ * highlights (FR-NOTE-02). Highlights are keyed by their opaque `payload` (the
+ * same value stored on the `Locator`), so the renderer and the store agree.
+ */
+export interface Annotatable {
+  /** Fire when the user selects text, or `null` when the selection clears. */
+  onSelection(cb: (selection: TextSelection | null) => void): void
+  /** Fire when the user taps an existing highlight, with its `payload` and rect. */
+  onHighlightClick(cb: (payload: string, rect: ViewportRect) => void): void
+  /** Draw a highlight for the given payload and color. Idempotent per payload. */
+  addHighlight(payload: string, color: string): void
+  /** Remove a drawn highlight by its payload. */
+  removeHighlight(payload: string): void
+  /** Clear the current text selection. */
+  clearSelection(): void
+}
+
+/** Narrow a renderer to {@link Annotatable} when it supports highlights. */
+export function isAnnotatable(renderer: BookRenderer): renderer is BookRenderer & Annotatable {
+  return typeof (renderer as Partial<Annotatable>).addHighlight === 'function'
+}
+
 /** Optional capability for fixed-layout renderers that support zoom (FR-READ-05). */
 export interface Zoomable {
   /** Set the zoom multiplier, where 1 is the default fit-to-page. */

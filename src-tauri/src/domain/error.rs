@@ -45,4 +45,8 @@ pub enum DomainError {
     /// The OS credential store failed (flattened from the keychain adapter).
     #[error("credential error: {0}")]
     Credential(String),
+
+    /// The bundled dictionary data set could not be read or parsed.
+    #[error("dictionary error: {0}")]
+    Dictionary(String),
 }

@@ -6,6 +6,7 @@
 //! and is unit-testable without a UI, disk, or network.
 
 pub mod annotation;
+pub mod dictionary;
 pub mod error;
 pub mod library;
 pub mod model;
@@ -18,14 +19,16 @@ pub mod sync;
 pub mod testing;
 
 pub use annotation::AnnotationService;
+pub use dictionary::DictionaryService;
 pub use error::DomainError;
 pub use library::{LibraryService, ReaderRegistry};
 pub use model::{
-    Book, BookId, BookMetadata, Bookmark, Format, Highlight, LibraryEntry, LibraryQuery, Locator,
-    Progress, ReadingStyle, Settings, SortKey, Theme, SETTINGS_SCHEMA_VERSION,
+    Book, BookId, BookMetadata, Bookmark, Definition, Format, Highlight, LibraryEntry,
+    LibraryQuery, Locator, Progress, ReadingStyle, Settings, SortKey, Theme,
+    SETTINGS_SCHEMA_VERSION,
 };
 pub use ports::{
-    BookRepository, Clock, CredentialStore, ReaderAdapter, RemoteEntry, RemoteStore,
+    BookRepository, Clock, CredentialStore, Dictionary, ReaderAdapter, RemoteEntry, RemoteStore,
     ResourceContent,
 };
 pub use reading::ReadingService;

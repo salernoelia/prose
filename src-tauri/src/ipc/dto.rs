@@ -10,7 +10,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::domain::error::DomainError;
 use crate::domain::model::{
-    Book, Format, LibraryEntry, LibraryQuery, Locator, Progress, Settings, SortKey, Theme,
+    Book, Bookmark, Definition, Format, Highlight, LibraryEntry, LibraryQuery, Locator, Progress,
+    Settings, SortKey, Theme,
 };
 use crate::domain::settings::{ReadingStylePatch, SettingsPatch};
 
@@ -199,6 +200,73 @@ impl From<Progress> for ProgressDto {
         ProgressDto {
             locator: LocatorDto::from(p.locator),
             updated_at: p.updated_at,
+        }
+    }
+}
+
+/// A bookmark at a saved location, returned by the bookmark commands.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BookmarkDto {
+    pub id: String,
+    pub book_id: String,
+    pub locator: LocatorDto,
+    pub created_at: i64,
+}
+
+impl From<Bookmark> for BookmarkDto {
+    fn from(b: Bookmark) -> Self {
+        BookmarkDto {
+            id: b.id,
+            book_id: b.book_id.as_str().to_string(),
+            locator: LocatorDto::from(b.locator),
+            created_at: b.created_at,
+        }
+    }
+}
+
+/// A highlight over a selected text range, returned by the highlight commands.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HighlightDto {
+    pub id: String,
+    pub book_id: String,
+    pub locator: LocatorDto,
+    pub text: String,
+    pub color: Option<String>,
+    pub created_at: i64,
+}
+
+impl From<Highlight> for HighlightDto {
+    fn from(h: Highlight) -> Self {
+        HighlightDto {
+            id: h.id,
+            book_id: h.book_id.as_str().to_string(),
+            locator: LocatorDto::from(h.locator),
+            text: h.text,
+            color: h.color,
+            created_at: h.created_at,
+        }
+    }
+}
+
+/// One dictionary sense, returned by the lookup command (FR-NOTE-03).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DefinitionDto {
+    pub part_of_speech: String,
+    pub gloss: String,
+    pub synonyms: Vec<String>,
+    pub examples: Vec<String>,
+}
+
+impl From<Definition> for DefinitionDto {
+    fn from(d: Definition) -> Self {
+        DefinitionDto {
+            part_of_speech: d.part_of_speech,
+            gloss: d.gloss,
+            synonyms: d.synonyms,
+            examples: d.examples,
         }
     }
 }
