@@ -26,6 +26,21 @@ const emit = defineEmits<{
 
 const { clickZoneSize } = useSettings()
 
+const shortAuthor = computed(() => {
+    const author = props.book.author
+    if (!author) return ''
+    const parts = author.trim().split(/\s+/)
+    if (parts.length <= 1) return author
+    
+    // If the last part is a common suffix, try the second-to-last part
+    let surnameIdx = parts.length - 1
+    const suffixes = ['jr', 'jr.', 'sr', 'sr.', 'ii', 'iii', 'iv']
+    if (surnameIdx > 0 && suffixes.includes(parts[surnameIdx].toLowerCase())) {
+        surnameIdx--
+    }
+    return parts[surnameIdx]
+})
+
 const {
     host,
     loading,
@@ -217,11 +232,11 @@ onUnmounted(() => {
         >
             <!-- Book Header Info (Subtle) -->
             <header
-                class="mb-3 pb-2 border-b border-(--border-color) flex justify-between items-center text-xs text-(--text-tertiary) select-none"
+                class="mb-3 pb-2 border-b border-(--border-color) flex justify-between items-center text-xs text-(--text-tertiary) select-none whitespace-nowrap overflow-hidden"
                 :style="{ paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingTop: 'calc(0.5rem + env(safe-area-inset-top, 0px))' }"
             >
-                <span class="truncate pr-4">{{ book.title }}</span>
-                <span>{{ book.author }}</span>
+                <span class="truncate flex-1 min-w-0 pr-4 text-left">{{ book.title }}</span>
+                <span class="shrink-0 text-right">{{ shortAuthor }}</span>
             </header>
 
             <!-- Renderer host: foliate-js (ePub) or pdf.js (PDF) mounts here -->
