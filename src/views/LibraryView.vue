@@ -274,38 +274,39 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                         v-for="entry in slotProps.items"
                         :key="entry.book.id"
                         @click="emit('select-book', entry.book)"
-                        class="group cursor-pointer py-4 border-b border-(--border-color) hover:border-(--text-secondary) transition-all flex flex-col gap-2"
+                        class="group cursor-pointer py-3.5 px-4 rounded-xl hover:bg-(--accent-color-light) transition-all flex flex-col gap-2.5 -mx-4"
                     >
                         <div class="flex justify-between items-start gap-4">
                             <h2
                                 class="text-base font-medium tracking-tight text-(--text-primary) group-hover:translate-x-0.5 transition-transform duration-200">
                                 {{ entry.book.title }}
                             </h2>
-                            <div class="flex items-center gap-3">
-                                <span class="text-xs text-(--text-tertiary) tabular-nums">{{ Math.round(entry.progress *
-                                    100) }}%</span>
-
-                                <!-- Muted textual remove link -->
-                                <button
-                                    @click="(e) => triggerDelete(entry.book, e)"
-                                    class="text-(--text-tertiary) hover:text-red-500 text-xs px-1 hover:underline cursor-pointer"
-                                >
-                                    Remove
-                                </button>
-                            </div>
+                            <!-- Circular Trash Button (top-right) -->
+                            <button
+                                @click="(e) => triggerDelete(entry.book, e)"
+                                class="w-7 h-7 rounded-full flex items-center justify-center text-(--text-tertiary) hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all cursor-pointer shrink-0"
+                                title="Remove Book"
+                                aria-label="Remove Book"
+                            >
+                                <span class="material-symbols-outlined text-base select-none">delete</span>
+                            </button>
                         </div>
                         <div class="flex justify-between items-center text-xs">
                             <span class="text-(--text-secondary)">{{
                                 entry.book.author || 'Unknown Author'
                                 }}</span>
 
-                            <!-- Minimal progress line -->
-                            <div class="w-16 h-0.5 overflow-hidden">
-                                <div
-                                    class="h-full bg-(--text-primary) transition-all duration-300"
-                                    :style="{ width: entry.progress * 100 + '%' }"
-                                ></div>
-                            </div>
+                            <span class="text-xs font-semibold text-(--text-secondary) tabular-nums bg-(--accent-color-light) px-2 py-0.5 rounded shrink-0">
+                                {{ Math.round(entry.progress * 100) }}%
+                            </span>
+                        </div>
+                        
+                        <!-- Full-width progress line at bottom of row -->
+                        <div class="w-full h-1 bg-(--border-color) rounded-full overflow-hidden mt-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                            <div
+                                class="h-full bg-(--text-primary) transition-all duration-300"
+                                :style="{ width: entry.progress * 100 + '%' }"
+                            ></div>
                         </div>
                     </div>
                 </div>
@@ -323,6 +324,17 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                         <!-- Typographic cover container -->
                         <div
                             class="aspect-3/4 w-full bg-(--bg-card) border border-(--border-color) rounded overflow-hidden relative shadow-sm group-hover:shadow transition-shadow flex items-center justify-center">
+                            
+                            <!-- Floating Hover-reveal Trash Button on Card Cover -->
+                            <button
+                                @click="(e) => triggerDelete(entry.book, e)"
+                                class="absolute top-2 right-2 w-7 h-7 rounded-full bg-(--bg-card)/90 backdrop-blur border border-(--border-color) flex items-center justify-center text-(--text-tertiary) hover:text-red-500 shadow-sm opacity-0 group-hover:opacity-100 active:scale-90 transition-all duration-200 cursor-pointer z-10"
+                                title="Remove Book"
+                                aria-label="Remove Book"
+                            >
+                                <span class="material-symbols-outlined text-base select-none">delete</span>
+                            </button>
+
                             <img
                                 v-if="entry.book.cover && appDataPath"
                                 :src="getCoverUrl(entry.book.cover)"
@@ -372,14 +384,6 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                                 <span class="text-(--text-tertiary) tabular-nums">{{ Math.round(entry.progress * 100)
                                     }}%</span>
                             </div>
-
-                            <!-- Muted textual remove link -->
-                            <button
-                                @click="(e) => triggerDelete(entry.book, e)"
-                                class="text-(--text-tertiary) hover:text-red-500 text-left text-xs self-start hover:underline mt-1 cursor-pointer"
-                            >
-                                Remove
-                            </button>
                         </div>
                     </div>
                 </div>
