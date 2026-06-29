@@ -35,6 +35,13 @@ pub trait BookRepository: Send + Sync {
 
     fn get_settings(&self) -> Result<Option<Settings>, DomainError>;
     fn save_settings(&self, settings: &Settings) -> Result<(), DomainError>;
+
+    fn get_sync_state(&self, key: &str) -> Result<Option<String>, DomainError>;
+    fn save_sync_state(&self, key: &str, value: &str) -> Result<(), DomainError>;
+    fn delete_sync_state(&self, key: &str) -> Result<(), DomainError>;
+
+    fn get_deleted_books(&self) -> Result<Vec<String>, DomainError>;
+    fn add_deleted_book(&self, id: &str) -> Result<(), DomainError>;
 }
 
 /// A single resource served to the renderer through the `prose://` protocol:
@@ -87,6 +94,7 @@ pub trait RemoteStore: Send + Sync {
     fn list(&self, dir: &str) -> Result<Vec<RemoteEntry>, DomainError>;
     fn download(&self, path: &str) -> Result<Vec<u8>, DomainError>;
     fn upload(&self, path: &str, bytes: &[u8]) -> Result<(), DomainError>;
+    fn delete(&self, path: &str) -> Result<(), DomainError>;
 }
 
 /// The secure credential port, backed by the OS keychain. Secrets are never

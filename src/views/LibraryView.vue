@@ -129,7 +129,10 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                     :disabled="syncing"
                     class="px-4 py-1.5 text-xs font-semibold rounded border border-(--border-color) text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer focus-ring-minimal flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    <span v-if="syncing" class="inline-block animate-spin w-3 h-3 border border-current border-t-transparent rounded-full"></span>
+                    <span
+                        v-if="syncing"
+                        class="inline-block animate-spin w-3 h-3 border border-current border-t-transparent rounded-full"
+                    ></span>
                     <span>{{ syncing ? 'Syncing...' : 'Sync' }}</span>
                 </button>
                 <button
@@ -154,7 +157,7 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
         <!-- Sync Progress Indicator -->
         <div
             v-if="syncing"
-            class="mt-6 mb-2 p-4 border border-(--border-color) rounded bg-(--accent-color-light) text-sm text-(--text-primary)"
+            class="mb-4 p-4 rounded-2xl border border-(--border-color) bg-(--accent-color-medium) text-sm text-(--text-primary)"
         >
             <div class="flex justify-between items-center mb-1">
                 <span>{{ progressMessage || 'Syncing library...' }}</span>
@@ -203,7 +206,9 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
         <div class="flex flex-col gap-4 mb-8">
             <!-- Search bar with Icon -->
             <div class="relative w-full">
-                <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-(--text-tertiary) text-lg select-none">search</span>
+                <span
+                    class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-(--text-tertiary) text-lg select-none"
+                >search</span>
                 <input
                     :value="query.search || ''"
                     @input="
@@ -236,7 +241,10 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                     >
                         <span class="material-symbols-outlined text-sm leading-none select-none">{{ opt.icon }}</span>
                         <span>{{ opt.label }}</span>
-                        <span v-if="query.sort === opt.key" class="text-[10px] leading-none ml-0.5">
+                        <span
+                            v-if="query.sort === opt.key"
+                            class="text-[10px] leading-none ml-0.5"
+                        >
                             {{ query.descending ? '↓' : '↑' }}
                         </span>
                     </button>

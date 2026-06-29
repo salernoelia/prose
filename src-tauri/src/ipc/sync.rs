@@ -5,14 +5,14 @@
 
 use std::sync::Arc;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, Manager, State};
 
 use crate::adapters::webdav::WebDavRemoteStore;
 use crate::domain::ports::{BookRepository, RemoteStore};
 use crate::domain::sync::{merge_by_id, resolve_progress};
 use crate::ipc::error::AppError;
-use crate::ipc::event::{SyncFinishedPayload, SyncProgressPayload, SYNC_FINISHED, SYNC_PROGRESS};
+use crate::ipc::event::{SyncFinishedPayload, SyncProgressPayload, SYNC_FINISHED, SYNC_PROGRESS, LIBRARY_CHANGED};
 use crate::state::{AppState, SyncConfig};
 
 const CREDENTIAL_KEY_URL: &str = "prose_webdav_url";
@@ -237,6 +237,7 @@ fn run_full_sync(
             "prose/bookmarks/",
             "prose/highlights/",
             "prose/books/",
+            "prose/tombstones/",
         ] {
             store.ensure_collection(dir)?;
         }
@@ -244,26 +245,26 @@ fn run_full_sync(
     }
 
     emit_progress(app, "syncing_settings", 0.0);
-    sync_settings(&store, &repo)?;
+    sync_settings(store.as_ref(), &repo)?;
 
     emit_progress(app, "syncing_progress", 0.2);
-    sync_progress(&store, &repo)?;
+    sync_progress(store.as_ref(), &repo)?;
 
     emit_progress(app, "syncing_bookmarks", 0.5);
-    sync_bookmarks(&store, &repo)?;
+    sync_bookmarks(store.as_ref(), &repo)?;
 
     emit_progress(app, "syncing_highlights", 0.7);
-    sync_highlights(&store, &repo)?;
+    sync_highlights(store.as_ref(), &repo)?;
 
     emit_progress(app, "syncing_books", 0.9);
-    sync_books(&store, &repo, &app_data, app)?;
+    sync_books(store.as_ref(), &repo, &app_data, app)?;
 
     emit_progress(app, "done", 1.0);
     Ok(())
 }
 
 fn sync_settings(
-    store: &WebDavRemoteStore,
+    store: &dyn RemoteStore,
     repo: &Arc<dyn BookRepository>,
 ) -> Result<(), crate::domain::error::DomainError> {
     use crate::domain::model::Settings;
@@ -298,21 +299,45 @@ fn sync_settings(
     Ok(())
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct StoredSyncState {
+    remote_etag: Option<String>,
+    local_serialized: String,
+}
+
+fn normalize_remote_path(path: &str) -> String {
+    let normalized = path.replace('\\', "/");
+    let segments: Vec<&str> = normalized
+        .split('/')
+        .filter(|s| !s.is_empty())
+        .collect();
+    if let Some(pos) = segments.iter().position(|&s| s == "prose") {
+        let mut best_pos = pos;
+        for i in (pos + 1)..segments.len() {
+            if segments[i] == "prose" {
+                best_pos = i;
+            }
+        }
+        segments[best_pos..].join("/")
+    } else {
+        normalized
+    }
+}
+
 fn sync_progress(
-    store: &WebDavRemoteStore,
+    store: &dyn RemoteStore,
     repo: &Arc<dyn BookRepository>,
 ) -> Result<(), crate::domain::error::DomainError> {
     use crate::domain::model::Progress;
-    use std::collections::HashSet;
 
     let books = repo.list_entries()?;
     
     // Fetch remote index once to avoid redundant 404 download round trips
-    let remote_files: HashSet<String> = store
+    let remote_entries: std::collections::HashMap<String, Option<String>> = store
         .list("prose/progress/")
         .unwrap_or_default()
         .into_iter()
-        .map(|e| e.path)
+        .map(|e| (normalize_remote_path(&e.path), e.etag))
         .collect();
 
     for entry in &books {
@@ -320,52 +345,109 @@ fn sync_progress(
         let remote_path = format!("prose/progress/{}.json", book_id.as_str());
 
         let local = repo.get_progress(book_id)?;
+        let local_serialized = serde_json::to_string(&local).unwrap_or_default();
 
-        let remote: Option<Progress> = if remote_files.contains(&remote_path) {
-            store
-                .download(&remote_path)
-                .ok()
-                .and_then(|b| serde_json::from_slice(&b).ok())
-        } else {
-            None
-        };
+        let state_key = format!("state:progress:{}", book_id.as_str());
+        let stored_state: Option<StoredSyncState> = repo
+            .get_sync_state(&state_key)
+            .ok()
+            .flatten()
+            .and_then(|s| serde_json::from_str(&s).ok());
 
-        let winner = match (local.as_ref(), remote.as_ref()) {
-            (Some(l), Some(r)) => resolve_progress(l, r),
-            (Some(l), None) => l.clone(),
-            (None, Some(r)) => r.clone(),
-            (None, None) => continue,
-        };
+        let current_remote_etag = remote_entries.get(&remote_path).cloned().flatten();
+        let remote_exists = remote_entries.contains_key(&remote_path);
 
-        // Write locally only if different from local
-        if local.as_ref() != Some(&winner) {
-            repo.save_progress(book_id, &winner)?;
+        let stored_etag = stored_state.as_ref().and_then(|s| s.remote_etag.clone());
+        let remote_etag_matches = remote_exists && current_remote_etag.is_some() && current_remote_etag == stored_etag;
+        let stored_local = stored_state.as_ref().map(|s| s.local_serialized.as_str()).unwrap_or("");
+
+        if remote_exists && remote_etag_matches && stored_local == local_serialized {
+            // BOTH are unchanged. Fast path: do nothing!
+            continue;
         }
 
-        // Upload only if different from remote
-        if remote.as_ref() != Some(&winner) {
-            let json = serde_json::to_vec(&winner).map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
-            store.upload(&remote_path, &json)?;
+        let mut new_etag = current_remote_etag.clone();
+        let mut upload_needed = false;
+
+        let winner = if remote_exists && remote_etag_matches {
+            // Remote has not changed, but local did.
+            // Since remote hasn't changed, local database is guaranteed to have all remote data,
+            // so we don't need to download remote. Winner is simply local.
+            if let Some(winner_val) = local.clone() {
+                // Upload to remote
+                let json = serde_json::to_vec(&winner_val).map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
+                store.upload(&remote_path, &json)?;
+                upload_needed = true;
+                winner_val
+            } else {
+                continue;
+            }
+        } else {
+            // Remote has changed (or this is the first sync, or remote does not exist).
+            // We must download and merge (if remote exists).
+            let remote: Option<Progress> = if remote_exists {
+                store
+                    .download(&remote_path)
+                    .ok()
+                    .and_then(|b| serde_json::from_slice(&b).ok())
+            } else {
+                None
+            };
+
+            let winner = match (local.as_ref(), remote.as_ref()) {
+                (Some(l), Some(r)) => resolve_progress(l, r),
+                (Some(l), None) => l.clone(),
+                (None, Some(r)) => r.clone(),
+                (None, None) => continue,
+            };
+
+            if local.as_ref() != Some(&winner) {
+                repo.save_progress(book_id, &winner)?;
+            }
+
+            if remote.as_ref() != Some(&winner) {
+                let json = serde_json::to_vec(&winner).map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
+                store.upload(&remote_path, &json)?;
+                upload_needed = true;
+            }
+
+            winner
+        };
+
+        if upload_needed {
+            if let Ok(entries) = store.list(&remote_path) {
+                if let Some(entry) = entries.into_iter().next() {
+                    new_etag = entry.etag;
+                }
+            }
+        }
+
+        let updated_local_serialized = serde_json::to_string(&winner).unwrap_or_default();
+        let state_to_save = StoredSyncState {
+            remote_etag: new_etag,
+            local_serialized: updated_local_serialized,
+        };
+        if let Ok(serialized_state) = serde_json::to_string(&state_to_save) {
+            let _ = repo.save_sync_state(&state_key, &serialized_state);
         }
     }
     Ok(())
 }
 
 fn sync_bookmarks(
-    store: &WebDavRemoteStore,
+    store: &dyn RemoteStore,
     repo: &Arc<dyn BookRepository>,
 ) -> Result<(), crate::domain::error::DomainError> {
     use crate::domain::model::Bookmark;
-    use std::collections::HashSet;
 
     let books = repo.list_entries()?;
     
     // Fetch remote index once to avoid redundant 404 download round trips
-    let remote_files: HashSet<String> = store
+    let remote_entries: std::collections::HashMap<String, Option<String>> = store
         .list("prose/bookmarks/")
         .unwrap_or_default()
         .into_iter()
-        .map(|e| e.path)
+        .map(|e| (normalize_remote_path(&e.path), e.etag))
         .collect();
 
     for entry in &books {
@@ -373,49 +455,106 @@ fn sync_bookmarks(
         let remote_path = format!("prose/bookmarks/{}.json", book_id.as_str());
 
         let local = repo.list_bookmarks(book_id)?;
-        let remote: Vec<Bookmark> = if remote_files.contains(&remote_path) {
-            store
-                .download(&remote_path)
-                .ok()
-                .and_then(|b| serde_json::from_slice(&b).ok())
-                .unwrap_or_default()
+        let local_serialized = serde_json::to_string(&local).unwrap_or_default();
+
+        let state_key = format!("state:bookmarks:{}", book_id.as_str());
+        let stored_state: Option<StoredSyncState> = repo
+            .get_sync_state(&state_key)
+            .ok()
+            .flatten()
+            .and_then(|s| serde_json::from_str(&s).ok());
+
+        let current_remote_etag = remote_entries.get(&remote_path).cloned().flatten();
+        let remote_exists = remote_entries.contains_key(&remote_path);
+
+        let stored_etag = stored_state.as_ref().and_then(|s| s.remote_etag.clone());
+        let remote_etag_matches = remote_exists && current_remote_etag.is_some() && current_remote_etag == stored_etag;
+        let stored_local = stored_state.as_ref().map(|s| s.local_serialized.as_str()).unwrap_or("");
+
+        if remote_exists && remote_etag_matches && stored_local == local_serialized {
+            // BOTH are unchanged. Fast path: do nothing!
+            continue;
+        }
+
+        let mut new_etag = current_remote_etag.clone();
+        let mut upload_needed = false;
+
+        let winner = if remote_exists && remote_etag_matches {
+            // Remote has not changed, but local did.
+            // Merged result is simply local.
+            let winner_val = local.clone();
+
+            // Upload to remote
+            let json = serde_json::to_vec(&winner_val).map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
+            store.upload(&remote_path, &json)?;
+            upload_needed = true;
+
+            winner_val
         } else {
-            Vec::new()
+            // Remote has changed (or first sync, or does not exist).
+            let remote: Vec<Bookmark> = if remote_exists {
+                store
+                    .download(&remote_path)
+                    .ok()
+                    .and_then(|b| serde_json::from_slice(&b).ok())
+                    .unwrap_or_default()
+            } else {
+                Vec::new()
+            };
+
+            let winner = merge_by_id(&local, &remote);
+
+            // Write locally only if different from local
+            if winner != local {
+                for bm in &winner {
+                    let _ = repo.add_bookmark(bm);
+                }
+            }
+
+            // Upload only if different from remote
+            if winner != remote {
+                let json = serde_json::to_vec(&winner).map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
+                store.upload(&remote_path, &json)?;
+                upload_needed = true;
+            }
+
+            winner
         };
 
-        let merged = merge_by_id(&local, &remote);
-
-        // Write locally only if different from local
-        if merged != local {
-            for bm in &merged {
-                let _ = repo.add_bookmark(bm);
+        if upload_needed {
+            if let Ok(entries) = store.list(&remote_path) {
+                if let Some(entry) = entries.into_iter().next() {
+                    new_etag = entry.etag;
+                }
             }
         }
 
-        // Upload only if different from remote
-        if merged != remote {
-            let json = serde_json::to_vec(&merged).map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
-            store.upload(&remote_path, &json)?;
+        let updated_local_serialized = serde_json::to_string(&winner).unwrap_or_default();
+        let state_to_save = StoredSyncState {
+            remote_etag: new_etag,
+            local_serialized: updated_local_serialized,
+        };
+        if let Ok(serialized_state) = serde_json::to_string(&state_to_save) {
+            let _ = repo.save_sync_state(&state_key, &serialized_state);
         }
     }
     Ok(())
 }
 
 fn sync_highlights(
-    store: &WebDavRemoteStore,
+    store: &dyn RemoteStore,
     repo: &Arc<dyn BookRepository>,
 ) -> Result<(), crate::domain::error::DomainError> {
     use crate::domain::model::Highlight;
-    use std::collections::HashSet;
 
     let books = repo.list_entries()?;
     
     // Fetch remote index once to avoid redundant 404 download round trips
-    let remote_files: HashSet<String> = store
+    let remote_entries: std::collections::HashMap<String, Option<String>> = store
         .list("prose/highlights/")
         .unwrap_or_default()
         .into_iter()
-        .map(|e| e.path)
+        .map(|e| (normalize_remote_path(&e.path), e.etag))
         .collect();
 
     for entry in &books {
@@ -423,41 +562,113 @@ fn sync_highlights(
         let remote_path = format!("prose/highlights/{}.json", book_id.as_str());
 
         let local = repo.list_highlights(book_id)?;
-        let remote: Vec<Highlight> = if remote_files.contains(&remote_path) {
-            store
-                .download(&remote_path)
-                .ok()
-                .and_then(|b| serde_json::from_slice(&b).ok())
-                .unwrap_or_default()
+        let local_serialized = serde_json::to_string(&local).unwrap_or_default();
+
+        let state_key = format!("state:highlights:{}", book_id.as_str());
+        let stored_state: Option<StoredSyncState> = repo
+            .get_sync_state(&state_key)
+            .ok()
+            .flatten()
+            .and_then(|s| serde_json::from_str(&s).ok());
+
+        let current_remote_etag = remote_entries.get(&remote_path).cloned().flatten();
+        let remote_exists = remote_entries.contains_key(&remote_path);
+
+        let stored_etag = stored_state.as_ref().and_then(|s| s.remote_etag.clone());
+        let remote_etag_matches = remote_exists && current_remote_etag.is_some() && current_remote_etag == stored_etag;
+        let stored_local = stored_state.as_ref().map(|s| s.local_serialized.as_str()).unwrap_or("");
+
+        if remote_exists && remote_etag_matches && stored_local == local_serialized {
+            // BOTH are unchanged. Fast path: do nothing!
+            continue;
+        }
+
+        let mut new_etag = current_remote_etag.clone();
+        let mut upload_needed = false;
+
+        let winner = if remote_exists && remote_etag_matches {
+            // Remote has not changed, but local did.
+            // Merged result is simply local.
+            let winner_val = local.clone();
+
+            // Upload to remote
+            let json = serde_json::to_vec(&winner_val).map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
+            store.upload(&remote_path, &json)?;
+            upload_needed = true;
+
+            winner_val
         } else {
-            Vec::new()
+            // Remote has changed (or first sync, or does not exist).
+            let remote: Vec<Highlight> = if remote_exists {
+                store
+                    .download(&remote_path)
+                    .ok()
+                    .and_then(|b| serde_json::from_slice(&b).ok())
+                    .unwrap_or_default()
+            } else {
+                Vec::new()
+            };
+
+            let winner = merge_by_id(&local, &remote);
+
+            // Write locally only if different from local
+            if winner != local {
+                for hl in &winner {
+                    let _ = repo.add_highlight(hl);
+                }
+            }
+
+            // Upload only if different from remote
+            if winner != remote {
+                let json = serde_json::to_vec(&winner).map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
+                store.upload(&remote_path, &json)?;
+                upload_needed = true;
+            }
+
+            winner
         };
 
-        let merged = merge_by_id(&local, &remote);
-
-        // Write locally only if different from local
-        if merged != local {
-            for hl in &merged {
-                let _ = repo.add_highlight(hl);
+        if upload_needed {
+            if let Ok(entries) = store.list(&remote_path) {
+                if let Some(entry) = entries.into_iter().next() {
+                    new_etag = entry.etag;
+                }
             }
         }
 
-        // Upload only if different from remote
-        if merged != remote {
-            let json = serde_json::to_vec(&merged).map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
-            store.upload(&remote_path, &json)?;
+        let updated_local_serialized = serde_json::to_string(&winner).unwrap_or_default();
+        let state_to_save = StoredSyncState {
+            remote_etag: new_etag,
+            local_serialized: updated_local_serialized,
+        };
+        if let Ok(serialized_state) = serde_json::to_string(&state_to_save) {
+            let _ = repo.save_sync_state(&state_key, &serialized_state);
         }
     }
     Ok(())
 }
 
 fn sync_books(
-    store: &WebDavRemoteStore,
+    store: &dyn RemoteStore,
     repo: &Arc<dyn BookRepository>,
     app_data: &std::path::Path,
     app: &AppHandle,
 ) -> Result<(), crate::domain::error::DomainError> {
     use crate::domain::model::Format;
+
+    // 1. Fetch remote tombstones and remote books
+    let remote_tombstone_entries = store.list("prose/tombstones/").unwrap_or_default();
+    let remote_deleted_ids: std::collections::HashSet<String> = remote_tombstone_entries
+        .iter()
+        .map(|e| {
+            std::path::Path::new(&e.path)
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("")
+                .to_string()
+        })
+        .filter(|id| !id.is_empty())
+        .collect();
 
     let remote_entries = store.list("prose/books/")?;
     let remote_ids: std::collections::HashSet<String> = remote_entries
@@ -471,8 +682,60 @@ fn sync_books(
         })
         .collect();
 
+    // 2. Fetch local books and local tombstones
     let local_books = repo.list_entries()?;
+    let local_ids: std::collections::HashSet<String> = local_books
+        .iter()
+        .map(|entry| entry.book.id.as_str().to_string())
+        .collect();
 
+    let local_deleted_ids = repo.get_deleted_books().unwrap_or_default();
+    let local_deleted_set: std::collections::HashSet<String> = local_deleted_ids.iter().cloned().collect();
+
+    let mut imported_any = false;
+    let mut deleted_any = false;
+
+    // 3. Process remote tombstones on local database/files
+    for id_str in &remote_deleted_ids {
+        if local_ids.contains(id_str) {
+            let book_id = crate::domain::model::BookId::from_hash(id_str);
+            let _ = repo.remove_book(&book_id);
+            let _ = repo.add_deleted_book(id_str);
+
+            for ext in &["epub", "pdf"] {
+                let file_path = app_data.join("books").join(format!("{}.{}", id_str, ext));
+                if file_path.exists() {
+                    let _ = std::fs::remove_file(file_path);
+                }
+            }
+            for ext in &["png", "jpg"] {
+                let cover_path = app_data.join("covers").join(format!("{}.{}", id_str, ext));
+                if cover_path.exists() {
+                    let _ = std::fs::remove_file(cover_path);
+                }
+            }
+            deleted_any = true;
+        }
+    }
+
+    // 4. Process local tombstones on remote server
+    for id_str in &local_deleted_ids {
+        if !remote_deleted_ids.contains(id_str) {
+            let remote_tombstone_path = format!("prose/tombstones/{}", id_str);
+            let _ = store.upload(&remote_tombstone_path, &[]);
+        }
+        if remote_ids.contains(id_str) {
+            for ext in &["epub", "pdf"] {
+                let remote_book_path = format!("prose/books/{}.{}", id_str, ext);
+                let _ = store.delete(&remote_book_path);
+            }
+            let _ = store.delete(&format!("prose/progress/{}.json", id_str));
+            let _ = store.delete(&format!("prose/bookmarks/{}.json", id_str));
+            let _ = store.delete(&format!("prose/highlights/{}.json", id_str));
+        }
+    }
+
+    // 5. Upload local books that are not present on remote (and not deleted)
     for entry in &local_books {
         let book = &entry.book;
         let id_str = book.id.as_str().to_string();
@@ -482,9 +745,7 @@ fn sync_books(
         };
         let remote_path = format!("prose/books/{}.{}", id_str, ext);
 
-        // Upload if not present on remote. The local file lives at the path
-        // the library import creates: {app_data}/books/{book_id}.{ext}.
-        if !remote_ids.contains(&id_str) {
+        if !remote_ids.contains(&id_str) && !remote_deleted_ids.contains(&id_str) && !local_deleted_set.contains(&id_str) {
             let local_file = app_data.join("books").join(format!("{}.{}", id_str, ext));
             if let Ok(bytes) = std::fs::read(&local_file) {
                 let _ = store.upload(&remote_path, &bytes);
@@ -493,8 +754,47 @@ fn sync_books(
         }
     }
 
-    // Books on remote but not local are exposed via sync_list_remote /
-    // sync_download_book so the user can choose what to download.
+    // 6. Download remote books that are not present locally (and not deleted)
+    for entry in &remote_entries {
+        let path = std::path::Path::new(&entry.path);
+        let id_str = path.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_string();
+        let ext = path.extension().and_then(|s| s.to_str()).unwrap_or("");
+
+        if id_str.is_empty() || (ext != "epub" && ext != "pdf") {
+            continue;
+        }
+
+        if !local_ids.contains(&id_str) && !remote_deleted_ids.contains(&id_str) && !local_deleted_set.contains(&id_str) {
+            emit_progress(app, "downloading_book", 0.9);
+            if let Ok(bytes) = store.download(&entry.path) {
+                let format = match ext {
+                    "epub" => Format::Epub,
+                    _ => Format::Pdf,
+                };
+
+                // Write locally
+                let dest_path = app_data.join("books").join(format!("{}.{}", id_str, ext));
+                if let Some(parent) = dest_path.parent() {
+                    let _ = std::fs::create_dir_all(parent);
+                }
+                if let Err(e) = std::fs::write(&dest_path, &bytes) {
+                    eprintln!("Failed to write downloaded book: {:?}", e);
+                    continue;
+                }
+
+                // Import into database
+                let app_state = app.state::<AppState>();
+                if let Ok(_) = app_state.library.import(&bytes, format) {
+                    imported_any = true;
+                }
+            }
+        }
+    }
+
+    if imported_any || deleted_any {
+        let _ = app.emit(LIBRARY_CHANGED, ());
+    }
+
     Ok(())
 }
 
@@ -503,4 +803,126 @@ fn uuid_now() -> u64 {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap_or_default()
         .as_nanos() as u64
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_normalize_remote_path() {
+        assert_eq!(normalize_remote_path("prose/progress/123.json"), "prose/progress/123.json");
+        assert_eq!(normalize_remote_path("/prose/progress/123.json"), "prose/progress/123.json");
+        assert_eq!(normalize_remote_path("/webdav/prose/progress/123.json"), "prose/progress/123.json");
+        assert_eq!(normalize_remote_path("https://example.com/webdav/prose/progress/123.json"), "prose/progress/123.json");
+    }
+
+    #[test]
+    fn test_sync_progress_downloads_and_merges() {
+        use crate::domain::testing::{InMemoryBookRepository, InMemoryRemoteStore};
+        use crate::domain::model::{Book, BookId, Format, BookMetadata, Progress, Locator};
+        use std::sync::Arc;
+
+        let repo: Arc<dyn BookRepository> = Arc::new(InMemoryBookRepository::new());
+        let store = InMemoryRemoteStore::new();
+
+        // Create a book
+        let book_id = BookId::from_content(b"test-book");
+        let book = Book::new(
+            book_id.clone(),
+            Format::Epub,
+            BookMetadata {
+                title: "Test".to_string(),
+                author: None,
+                cover: None,
+            },
+        );
+        repo.insert_book(&book).unwrap();
+
+        // 1. First sync when remote is empty but local has progress
+        let local_progress = Progress {
+            locator: Locator::new("p", 0.5),
+            updated_at: 100,
+        };
+        repo.save_progress(&book_id, &local_progress).unwrap();
+
+        sync_progress(&store, &repo).unwrap();
+
+        // Remote file should exist and contain the local progress
+        let remote_path = format!("prose/progress/{}.json", book_id.as_str());
+        let remote_bytes = store.download(&remote_path).unwrap();
+        let remote_progress: Progress = serde_json::from_slice(&remote_bytes).unwrap();
+        assert_eq!(remote_progress.locator.progression, 0.5);
+        assert_eq!(remote_progress.updated_at, 100);
+
+        // 2. Now modify progress on remote (Device A simulated)
+        let remote_progress_new = Progress {
+            locator: Locator::new("p", 0.8),
+            updated_at: 2000000,
+        };
+        let new_bytes = serde_json::to_vec(&remote_progress_new).unwrap();
+        store.upload(&remote_path, &new_bytes).unwrap();
+
+        // Sync again (Device B simulated)
+        sync_progress(&store, &repo).unwrap();
+
+        // Local progress should be updated to the new remote progress
+        let updated_local = repo.get_progress(&book_id).unwrap().unwrap();
+        assert_eq!(updated_local.locator.progression, 0.8);
+        assert_eq!(updated_local.updated_at, 2000000);
+    }
+
+    #[test]
+    fn test_sync_bookmarks_downloads_and_merges() {
+        use crate::domain::testing::{InMemoryBookRepository, InMemoryRemoteStore};
+        use crate::domain::model::{Book, BookId, Format, BookMetadata, Bookmark, Locator};
+        use std::sync::Arc;
+
+        let repo: Arc<dyn BookRepository> = Arc::new(InMemoryBookRepository::new());
+        let store = InMemoryRemoteStore::new();
+
+        // Create a book
+        let book_id = BookId::from_content(b"test-book");
+        let book = Book::new(
+            book_id.clone(),
+            Format::Epub,
+            BookMetadata {
+                title: "Test".to_string(),
+                author: None,
+                cover: None,
+            },
+        );
+        repo.insert_book(&book).unwrap();
+
+        // 1. Initial local bookmarks
+        let bm1 = Bookmark {
+            id: "bm1".to_string(),
+            book_id: book_id.clone(),
+            locator: Locator::new("p", 0.1),
+            created_at: 100,
+        };
+        repo.add_bookmark(&bm1).unwrap();
+
+        sync_bookmarks(&store, &repo).unwrap();
+
+        // 2. Add a remote bookmark (Device A simulated)
+        let bm2 = Bookmark {
+            id: "bm2".to_string(),
+            book_id: book_id.clone(),
+            locator: Locator::new("p", 0.2),
+            created_at: 200,
+        };
+        let remote_bookmarks = vec![bm1.clone(), bm2.clone()];
+        let remote_path = format!("prose/bookmarks/{}.json", book_id.as_str());
+        let new_bytes = serde_json::to_vec(&remote_bookmarks).unwrap();
+        store.upload(&remote_path, &new_bytes).unwrap();
+
+        // Sync again (Device B simulated)
+        sync_bookmarks(&store, &repo).unwrap();
+
+        // Local bookmarks should contain both bm1 and bm2
+        let local_bookmarks = repo.list_bookmarks(&book_id).unwrap();
+        assert!(local_bookmarks.iter().any(|b| b.id == "bm1"));
+        assert!(local_bookmarks.iter().any(|b| b.id == "bm2"));
+    }
 }

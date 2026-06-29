@@ -84,9 +84,10 @@ impl LibraryService {
         Ok(entries)
     }
 
-    /// Remove a book and its derived data from the library (FR-LIB-07).
     pub fn remove(&self, id: &BookId) -> Result<(), DomainError> {
-        self.repo.remove_book(id)
+        self.repo.remove_book(id)?;
+        self.repo.add_deleted_book(id.as_str())?;
+        Ok(())
     }
 
     /// Look up a single catalog entry by id, used by the `prose://` protocol to

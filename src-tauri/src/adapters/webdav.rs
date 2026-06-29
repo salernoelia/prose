@@ -202,6 +202,25 @@ impl RemoteStore for WebDavRemoteStore {
             )))
         }
     }
+
+    fn delete(&self, path: &str) -> Result<(), DomainError> {
+        let url = self.resolve_safe_url(path)?;
+        let resp = self
+            .client()?
+            .request(reqwest::Method::DELETE, &url)
+            .basic_auth(&self.username, Some(&self.password))
+            .send()
+            .map_err(|e| DomainError::Remote(e.to_string()))?;
+
+        if resp.status().is_success() || resp.status() == 404 {
+            Ok(())
+        } else {
+            Err(DomainError::Remote(format!(
+                "DELETE {path} failed: {}",
+                resp.status()
+            )))
+        }
+    }
 }
 
 /// Parse a PROPFIND multistatus XML body and return one [`RemoteEntry`] per

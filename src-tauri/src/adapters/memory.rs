@@ -25,6 +25,8 @@ struct RepoState {
     bookmarks: Vec<Bookmark>,
     highlights: Vec<Highlight>,
     settings: Option<Settings>,
+    sync_state: HashMap<String, String>,
+    deleted_books: Vec<String>,
 }
 
 impl InMemoryBookRepository {
@@ -131,6 +133,32 @@ impl BookRepository for InMemoryBookRepository {
         self.lock().settings = Some(settings.clone());
         Ok(())
     }
+
+    fn get_sync_state(&self, key: &str) -> Result<Option<String>, DomainError> {
+        Ok(self.lock().sync_state.get(key).cloned())
+    }
+
+    fn save_sync_state(&self, key: &str, value: &str) -> Result<(), DomainError> {
+        self.lock().sync_state.insert(key.to_string(), value.to_string());
+        Ok(())
+    }
+
+    fn delete_sync_state(&self, key: &str) -> Result<(), DomainError> {
+        self.lock().sync_state.remove(key);
+        Ok(())
+    }
+
+    fn get_deleted_books(&self) -> Result<Vec<String>, DomainError> {
+        Ok(self.lock().deleted_books.clone())
+    }
+
+    fn add_deleted_book(&self, id: &str) -> Result<(), DomainError> {
+        let mut state = self.lock();
+        if !state.deleted_books.contains(&id.to_string()) {
+            state.deleted_books.push(id.to_string());
+        }
+        Ok(())
+    }
 }
 
 // ── InMemoryRemoteStore ─────────────────────────────────────────────────────
@@ -174,6 +202,14 @@ impl RemoteStore for InMemoryRemoteStore {
             .lock()
             .expect("remote mutex poisoned")
             .insert(path.to_string(), bytes.to_vec());
+        Ok(())
+    }
+
+    fn delete(&self, path: &str) -> Result<(), DomainError> {
+        self.files
+            .lock()
+            .expect("remote mutex poisoned")
+            .remove(path);
         Ok(())
     }
 }

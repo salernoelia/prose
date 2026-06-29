@@ -124,6 +124,15 @@ impl SqliteBookRepository {
                 );
                 "#,
             ],
+            // Migration 2: Deleted books tombstones
+            vec![
+                r#"
+                CREATE TABLE deleted_books (
+                    id TEXT PRIMARY KEY,
+                    deleted_at INTEGER NOT NULL
+                );
+                "#,
+            ],
         ];
 
         for (idx, statements) in migrations.into_iter().enumerate() {
@@ -498,6 +507,70 @@ impl BookRepository for SqliteBookRepository {
         ).map_err(|e| DomainError::Storage(e.to_string()))?;
         Ok(())
     }
+
+    fn get_sync_state(&self, key: &str) -> Result<Option<String>, DomainError> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn
+            .prepare("SELECT value FROM sync_state WHERE key = ?1;")
+            .map_err(|e| DomainError::Storage(e.to_string()))?;
+        let mut rows = stmt
+            .query([key])
+            .map_err(|e| DomainError::Storage(e.to_string()))?;
+        if let Some(row) = rows.next().map_err(|e| DomainError::Storage(e.to_string()))? {
+            let value: String = row.get(0).map_err(|e| DomainError::Storage(e.to_string()))?;
+            Ok(Some(value))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn save_sync_state(&self, key: &str, value: &str) -> Result<(), DomainError> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT OR REPLACE INTO sync_state (key, value) VALUES (?1, ?2);",
+            [key, value],
+        )
+        .map_err(|e| DomainError::Storage(e.to_string()))?;
+        Ok(())
+    }
+
+    fn delete_sync_state(&self, key: &str) -> Result<(), DomainError> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM sync_state WHERE key = ?1;", [key])
+            .map_err(|e| DomainError::Storage(e.to_string()))?;
+        Ok(())
+    }
+
+    fn get_deleted_books(&self) -> Result<Vec<String>, DomainError> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn
+            .prepare("SELECT id FROM deleted_books ORDER BY deleted_at ASC;")
+            .map_err(|e| DomainError::Storage(e.to_string()))?;
+        let rows = stmt
+            .query_map([], |row| row.get::<_, String>(0))
+            .map_err(|e| DomainError::Storage(e.to_string()))?;
+        let mut ids = Vec::new();
+        for r in rows {
+            if let Ok(id) = r {
+                ids.push(id);
+            }
+        }
+        Ok(ids)
+    }
+
+    fn add_deleted_book(&self, id: &str) -> Result<(), DomainError> {
+        let conn = self.conn.lock().unwrap();
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+        conn.execute(
+            "INSERT OR REPLACE INTO deleted_books (id, deleted_at) VALUES (?1, ?2);",
+            rusqlite::params![id, now],
+        )
+        .map_err(|e| DomainError::Storage(e.to_string()))?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -696,5 +769,19 @@ mod tests {
         }
 
         let _ = std::fs::remove_file(&db_path);
+    }
+
+    #[test]
+    fn test_deleted_books_tombstones() {
+        let repo = repo();
+        assert!(repo.get_deleted_books().unwrap().is_empty());
+
+        repo.add_deleted_book("book1").unwrap();
+        repo.add_deleted_book("book2").unwrap();
+
+        let deleted = repo.get_deleted_books().unwrap();
+        assert_eq!(deleted.len(), 2);
+        assert_eq!(deleted[0], "book1");
+        assert_eq!(deleted[1], "book2");
     }
 }

@@ -64,6 +64,6 @@ describe('Library View Component', () => {
     })
 
     expect(screen.getByText('Library')).toBeTruthy()
-    expect(screen.getByPlaceholderText('Search by title or author')).toBeTruthy()
+    expect(screen.getByPlaceholderText('Search by title or author...')).toBeTruthy()
   })
 })
