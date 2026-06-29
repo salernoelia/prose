@@ -132,6 +132,28 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
             <h1 class="text-xl lg:text-3xl font-semibold tracking-tight text-(--text-primary)">Library</h1>
 
             <div class="flex items-center gap-3">
+                <!-- Grid/List layout switcher capsule -->
+                <div class="border border-(--border-color) bg-(--bg-card) rounded-full p-0.5 flex items-center shadow-sm">
+                    <button
+                        @click="layout = 'grid'"
+                        class="flex items-center justify-center w-7 h-7 rounded-full transition-all duration-100 active:scale-90 cursor-pointer text-(--text-secondary)"
+                        :class="layout === 'grid' ? 'bg-(--accent-color-light) !text-(--text-primary) font-semibold' : 'hover:text-(--text-primary)'"
+                        title="Grid Layout"
+                        aria-label="Grid Layout"
+                    >
+                        <span class="material-symbols-outlined text-base leading-none select-none">grid_view</span>
+                    </button>
+                    <button
+                        @click="layout = 'list'"
+                        class="flex items-center justify-center w-7 h-7 rounded-full transition-all duration-100 active:scale-90 cursor-pointer text-(--text-secondary)"
+                        :class="layout === 'list' ? 'bg-(--accent-color-light) !text-(--text-primary) font-semibold' : 'hover:text-(--text-primary)'"
+                        title="List Layout"
+                        aria-label="List Layout"
+                    >
+                        <span class="material-symbols-outlined text-base leading-none select-none">view_list</span>
+                    </button>
+                </div>
+
                 <!-- Sync Button -->
                 <button
                     v-if="configured"

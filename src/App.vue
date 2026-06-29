@@ -88,30 +88,6 @@ function onSelectBook(book: BookDto) {
             @navigate="setView"
         />
 
-        <!-- Floating Layout Switcher (Bottom Right) -->
-        <div
-            v-if="currentView === 'library'"
-            class="fixed bottom-24 right-6 z-40 md:bottom-8 md:right-8 border border-(--border-color) bg-(--bg-card) rounded-full p-1 flex items-center shadow-lg transition-all duration-300 animate-fade-in"
-        >
-            <button
-                @click="libraryLayout = 'grid'"
-                class="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-100 active:scale-90 cursor-pointer text-(--text-secondary)"
-                :class="libraryLayout === 'grid' ? 'bg-(--accent-color-light) !text-(--text-primary) font-semibold' : 'hover:text-(--text-primary)'"
-                title="Grid Layout"
-                aria-label="Grid Layout"
-            >
-                <span class="material-symbols-outlined text-lg leading-none select-none">grid_view</span>
-            </button>
-            <button
-                @click="libraryLayout = 'list'"
-                class="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-100 active:scale-90 cursor-pointer text-(--text-secondary)"
-                :class="libraryLayout === 'list' ? 'bg-(--accent-color-light) !text-(--text-primary) font-semibold' : 'hover:text-(--text-primary)'"
-                title="List Layout"
-                aria-label="List Layout"
-            >
-                <span class="material-symbols-outlined text-lg leading-none select-none">view_list</span>
-            </button>
-        </div>
 
         <div
             v-if="showClickZonePreview"
