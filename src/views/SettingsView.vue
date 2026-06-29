@@ -91,7 +91,7 @@ async function handleSyncDisconnect() {
     <div class="w-full animate-fade-in">
         <!-- Typography-driven Header (No Icons) -->
         <header class="pb-6">
-            <h1 class="text-xl font-semibold tracking-tight text-(--text-primary)">Settings</h1>
+            <h1 class="text-xl lg:text-3xl font-semibold tracking-tight text-(--text-primary)">Settings</h1>
         </header>
 
         <!-- Form Controls (No Icons, Minimal Labels) -->

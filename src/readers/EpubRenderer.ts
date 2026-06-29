@@ -131,6 +131,25 @@ export class EpubRenderer implements BookRenderer {
       const detail = (event as CustomEvent<RelocateDetail>).detail
       this.#emitLocation(detail)
     })
+    view.addEventListener('load', (event) => {
+      const { doc } = (event as CustomEvent<{ doc: Document }>).detail
+      doc.addEventListener('keydown', (e) => {
+        const target = e.target as HTMLElement | null
+        if (target && (
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable
+        )) {
+          return
+        }
+        if (e.key === 'ArrowRight') {
+          this.next()
+        } else if (e.key === 'ArrowLeft') {
+          this.prev()
+        }
+      })
+    })
     container.append(view)
     this.#view = view
   }

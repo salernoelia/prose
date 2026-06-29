@@ -5,9 +5,10 @@
 //! logic is written against the [`RemoteStore`] port and exercised with a fake,
 //! so every conflict branch is unit-tested without a network.
 //!
-//! Two rules resolve conflicts (FR-SYNC-04):
-//! - reading position keeps the furthest progression,
-//! - everything else is last-write-wins by timestamp.
+//! Conflict resolution is last-write-wins by timestamp (FR-SYNC-04): the most
+//! recently modified record wins, reading position included. Position is keyed
+//! on time rather than furthest progression so that re-reading or jumping back
+//! is not overwritten by a stale, further-along position from another device.
 //!
 //! Resumability (NFR-R-03) rests on the [`Outbox`]: pending changes are keyed by
 //! a stable id, so re-running an interrupted sync replays each change exactly

@@ -30,7 +30,7 @@ const emit = defineEmits<{
     <div
         class="transition-all duration-300 ease-in-out pointer-events-auto
                w-full relative bottom-0 left-0 right-0 z-40 bg-(--bg-card) border-t border-(--border-color)
-               md:fixed md:bottom-3 md:left-1/2 md:-translate-x-1/2 md:z-50 md:w-auto md:border-0 md:rounded-none md:bg-transparent"
+               md:fixed md:bottom-3 md:left-1/2 md:right-auto md:-translate-x-1/2 md:z-50 md:w-auto md:border-0 md:rounded-none md:bg-transparent"
         :class="[
             visible
                 ? 'opacity-100 h-auto py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] md:py-0 md:pb-0'

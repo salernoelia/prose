@@ -2,7 +2,7 @@
     setup
     lang="ts"
 >
-import { computed, ref, toRef } from 'vue'
+import { computed, onMounted, onUnmounted, ref, toRef } from 'vue'
 import { useSettings } from '../composables/useSettings'
 import { useReader } from '../composables/useReader'
 import ReaderClickZones from '../components/reader/ReaderClickZones.vue'
@@ -59,6 +59,32 @@ function handleBack() {
         void triggerSync()
     }
 }
+
+const handleKeyDown = (e: KeyboardEvent) => {
+    const target = e.target as HTMLElement | null
+    if (target && (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.tagName === 'SELECT' ||
+        target.isContentEditable
+    )) {
+        return
+    }
+
+    if (e.key === 'ArrowRight') {
+        next()
+    } else if (e.key === 'ArrowLeft') {
+        prev()
+    }
+}
+
+onMounted(() => {
+    window.addEventListener('keydown', handleKeyDown)
+})
+
+onUnmounted(() => {
+    window.removeEventListener('keydown', handleKeyDown)
+})
 </script>
 
 <template>

@@ -118,8 +118,8 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
 <template>
     <div class="w-full animate-fade-in font-serif">
         <!-- Header -->
-        <header class="pb-6 border-b border-(--border-color) flex justify-between items-center">
-            <h1 class="text-xl font-semibold tracking-tight text-(--text-primary)">Library</h1>
+        <header class="pb-6 flex justify-between items-center">
+            <h1 class="text-xl lg:text-3xl font-semibold tracking-tight text-(--text-primary)">Library</h1>
 
             <div class="flex items-center gap-3">
                 <!-- Sync Button -->
@@ -295,7 +295,7 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                         <div class="flex justify-between items-center text-xs">
                             <span class="text-(--text-secondary)">{{
                                 entry.book.author || 'Unknown Author'
-                                }}</span>
+                            }}</span>
 
                             <!-- Minimal progress line -->
                             <div class="w-16 h-0.5 overflow-hidden">
@@ -368,7 +368,7 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                                     {{ entry.book.author || 'Unknown Author' }}
                                 </span>
                                 <span class="text-(--text-tertiary) tabular-nums">{{ Math.round(entry.progress * 100)
-                                    }}%</span>
+                                }}%</span>
                             </div>
 
                             <!-- Muted textual remove link -->

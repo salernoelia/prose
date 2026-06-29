@@ -436,7 +436,7 @@ Goal: meet portability and performance NFRs and ship.
 
 ### Commit 11.2: iOS and Android targets
 
-- [ ] `tauri ios init` / `tauri android init`; resolve mobile-only plugin permissions and the dialog/file picker on mobile.
+- [ ] `tauri ios init` / `tauri android init`; resolve mobile-only plugin   permissions and the dialog/file picker on mobile.
 - [ ] Confirm the prose:// protocol and keychain/keystore work on both (NFR-X-01).
 - [ ] `chore(mobile): ios and android targets`
 
