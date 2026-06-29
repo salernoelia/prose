@@ -218,7 +218,7 @@ onUnmounted(() => {
             <!-- Book Header Info (Subtle) -->
             <header
                 class="mb-3 pb-2 border-b border-(--border-color) flex justify-between items-center text-xs text-(--text-tertiary) select-none"
-                :style="{ paddingLeft: '1.5rem', paddingRight: '1.5rem' }"
+                :style="{ paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingTop: 'calc(0.5rem + env(safe-area-inset-top, 0px))' }"
             >
                 <span class="truncate pr-4">{{ book.title }}</span>
                 <span>{{ book.author }}</span>
