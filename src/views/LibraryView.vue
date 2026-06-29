@@ -2,7 +2,7 @@
     setup
     lang="ts"
 >
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { open } from '@tauri-apps/plugin-dialog'
 import { appDataDir } from '@tauri-apps/api/path'
 import { convertFileSrc } from '@tauri-apps/api/core'
@@ -123,71 +123,6 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
         descending: isCurrentlyActive ? !query.value.descending : false,
     })
 }
-
-const pressTimer = ref<ReturnType<typeof setTimeout> | null>(null)
-const longPressedBookId = ref<string | null>(null)
-const isLongPressActive = ref(false)
-
-function startPress(bookId: string) {
-    isLongPressActive.value = false
-    if (pressTimer.value) clearTimeout(pressTimer.value)
-    
-    pressTimer.value = setTimeout(() => {
-        longPressedBookId.value = bookId
-        isLongPressActive.value = true
-        if ('vibrate' in navigator) {
-            navigator.vibrate(50)
-        }
-    }, 600)
-}
-
-function endPress(event: Event) {
-    if (pressTimer.value) {
-        clearTimeout(pressTimer.value)
-        pressTimer.value = null
-    }
-    if (isLongPressActive.value) {
-        event.preventDefault()
-        event.stopPropagation()
-        setTimeout(() => {
-            isLongPressActive.value = false
-        }, 100)
-    }
-}
-
-function cancelPress() {
-    if (pressTimer.value) {
-        clearTimeout(pressTimer.value)
-        pressTimer.value = null
-    }
-}
-
-function handleBookClick(book: BookDto, event: Event) {
-    if (isLongPressActive.value) {
-        event.preventDefault()
-        event.stopPropagation()
-        return
-    }
-    if (longPressedBookId.value === book.id) {
-        longPressedBookId.value = null
-        return
-    }
-    emit('select-book', book)
-}
-
-function handleGlobalClick() {
-    longPressedBookId.value = null
-}
-
-onMounted(() => {
-    window.addEventListener('click', handleGlobalClick)
-    window.addEventListener('touchstart', handleGlobalClick)
-})
-
-onUnmounted(() => {
-    window.removeEventListener('click', handleGlobalClick)
-    window.removeEventListener('touchstart', handleGlobalClick)
-})
 </script>
 
 <template>
@@ -197,28 +132,6 @@ onUnmounted(() => {
             <h1 class="text-xl lg:text-3xl font-semibold tracking-tight text-(--text-primary)">Library</h1>
 
             <div class="flex items-center gap-3">
-                <!-- Grid/List layout switcher capsule -->
-                <div class="border border-(--border-color) bg-(--bg-card) rounded-full p-0.5 flex items-center shadow-sm">
-                    <button
-                        @click="layout = 'grid'"
-                        class="flex items-center justify-center w-7 h-7 rounded-full transition-all duration-100 active:scale-90 cursor-pointer text-(--text-secondary)"
-                        :class="layout === 'grid' ? 'bg-(--accent-color-light) !text-(--text-primary) font-semibold' : 'hover:text-(--text-primary)'"
-                        title="Grid Layout"
-                        aria-label="Grid Layout"
-                    >
-                        <span class="material-symbols-outlined text-base leading-none select-none">grid_view</span>
-                    </button>
-                    <button
-                        @click="layout = 'list'"
-                        class="flex items-center justify-center w-7 h-7 rounded-full transition-all duration-100 active:scale-90 cursor-pointer text-(--text-secondary)"
-                        :class="layout === 'list' ? 'bg-(--accent-color-light) !text-(--text-primary) font-semibold' : 'hover:text-(--text-primary)'"
-                        title="List Layout"
-                        aria-label="List Layout"
-                    >
-                        <span class="material-symbols-outlined text-base leading-none select-none">view_list</span>
-                    </button>
-                </div>
-
                 <!-- Sync Button -->
                 <button
                     v-if="configured"
@@ -374,6 +287,31 @@ onUnmounted(() => {
                             </span>
                         </button>
                     </div>
+
+                    <!-- Subtle Vertical Divider -->
+                    <div class="h-4 w-px bg-(--border-color) mx-1 shrink-0"></div>
+
+                    <!-- Layout Switcher -->
+                    <div class="flex items-center border border-(--border-color) bg-(--bg-card) rounded-full p-0.5 shrink-0 shadow-sm">
+                        <button
+                            @click="layout = 'grid'"
+                            class="flex items-center justify-center w-7 h-7 rounded-full transition-all duration-100 active:scale-90 cursor-pointer text-(--text-secondary)"
+                            :class="layout === 'grid' ? 'bg-(--accent-color-light) !text-(--text-primary) font-semibold' : 'hover:text-(--text-primary)'"
+                            title="Grid Layout"
+                            aria-label="Grid Layout"
+                        >
+                            <span class="material-symbols-outlined text-base leading-none select-none">grid_view</span>
+                        </button>
+                        <button
+                            @click="layout = 'list'"
+                            class="flex items-center justify-center w-7 h-7 rounded-full transition-all duration-100 active:scale-90 cursor-pointer text-(--text-secondary)"
+                            :class="layout === 'list' ? 'bg-(--accent-color-light) !text-(--text-primary) font-semibold' : 'hover:text-(--text-primary)'"
+                            title="List Layout"
+                            aria-label="List Layout"
+                        >
+                            <span class="material-symbols-outlined text-base leading-none select-none">view_list</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -397,7 +335,7 @@ onUnmounted(() => {
                     <div
                         v-for="entry in slotProps.items"
                         :key="entry.book.id"
-                        @click="handleBookClick(entry.book, $event)"
+                        @click="emit('select-book', entry.book)"
                         class="group cursor-pointer py-3.5 px-4 rounded-xl hover:bg-(--accent-color-light) transition-all flex flex-col gap-2.5 -mx-4"
                     >
                         <div class="flex justify-between items-start gap-4">
@@ -448,27 +386,17 @@ onUnmounted(() => {
                     <div
                         v-for="entry in slotProps.items"
                         :key="entry.book.id"
-                        @click="handleBookClick(entry.book, $event)"
-                        @touchstart="startPress(entry.book.id)"
-                        @touchend="endPress($event)"
-                        @touchmove="cancelPress"
-                        @mousedown="startPress(entry.book.id)"
-                        @mouseup="endPress($event)"
-                        @mouseleave="cancelPress"
-                        @mousemove="cancelPress"
+                        @click="emit('select-book', entry.book)"
                         class="group cursor-pointer flex flex-col gap-3 pb-4 border-b border-transparent hover:border-(--border-color) transition-all"
                     >
                         <!-- Typographic cover container -->
                         <div
                             class="aspect-3/4 w-full bg-(--bg-card) border border-(--border-color) rounded overflow-hidden relative shadow-sm group-hover:shadow transition-shadow flex items-center justify-center">
                             
-                            <!-- Floating Hover-reveal Trash Button on Card Cover -->
+                            <!-- Floating Trash Button on Card Cover -->
                             <button
                                 @click="(e) => triggerDelete(entry.book, e)"
-                                class="absolute top-2 right-2 w-7 h-7 rounded-full bg-(--bg-card)/90 backdrop-blur border border-(--border-color) flex items-center justify-center text-(--text-tertiary) hover:text-red-500 shadow-sm opacity-0 active:scale-90 transition-all duration-200 cursor-pointer z-10"
-                                :class="[
-                                    longPressedBookId === entry.book.id ? '!opacity-100 scale-100' : 'group-hover:opacity-100'
-                                ]"
+                                class="absolute top-2 right-2 w-7 h-7 rounded-full bg-(--bg-card)/90 backdrop-blur border border-(--border-color) flex items-center justify-center text-(--text-tertiary) hover:text-red-500 shadow-sm active:scale-90 transition-all duration-200 cursor-pointer z-10"
                                 title="Remove Book"
                                 aria-label="Remove Book"
                             >
