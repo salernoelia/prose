@@ -151,6 +151,7 @@ export class EpubRenderer implements BookRenderer, Annotatable {
   // The currently visible section document, used to read and clear selections.
   #currentDoc: Document | null = null
   #clickedHighlight = false
+  #lastActiveSelectionTime = 0
 
   async mount(container: HTMLElement): Promise<void> {
     const view = document.createElement('foliate-view') as FoliateView
@@ -210,6 +211,9 @@ export class EpubRenderer implements BookRenderer, Annotatable {
 
       doc.addEventListener('click', (e) => {
         setTimeout(() => {
+          if (Date.now() - this.#lastActiveSelectionTime < 300) {
+            return
+          }
           if (hadSelection) {
             hadSelection = false
             return
@@ -331,9 +335,15 @@ export class EpubRenderer implements BookRenderer, Annotatable {
     // pointerup catches mouse and touch drags; selectionchange clears the popover
     // when the user taps away and the selection collapses.
     doc.addEventListener('pointerup', () => setTimeout(report, 0))
+    doc.addEventListener('touchend', () => setTimeout(report, 0))
     doc.addEventListener('selectionchange', () => {
       const selection = doc.defaultView?.getSelection()
-      if (!selection || selection.isCollapsed) this.#emitSelection(null)
+      if (!selection || selection.isCollapsed) {
+        this.#emitSelection(null)
+      } else {
+        this.#lastActiveSelectionTime = Date.now()
+        report()
+      }
     })
   }
 
