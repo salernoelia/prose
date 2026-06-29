@@ -130,7 +130,7 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                     class="px-4 py-1.5 text-xs font-semibold rounded border border-(--border-color) text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer focus-ring-minimal flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <span
-                        class="material-symbols-outlined text-sm select-none"
+                        class="material-symbols-outlined text-base select-none"
                         :class="{ 'animate-spin': syncing }"
                     >sync</span>
                     <span>{{ syncing ? 'Syncing...' : 'Sync' }}</span>
@@ -141,7 +141,7 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                     title="Configure WebDAV sync in settings"
                     class="px-4 py-1.5 text-xs font-semibold rounded border border-(--border-color) text-(--text-tertiary) opacity-50 cursor-not-allowed flex items-center gap-2"
                 >
-                    <span class="material-symbols-outlined text-sm select-none">sync</span>
+                    <span class="material-symbols-outlined text-base select-none">sync</span>
                     <span>Sync</span>
                 </button>
 
@@ -150,7 +150,7 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                     @click="handleImport"
                     class="px-4 py-1.5 text-xs font-semibold rounded border border-(--border-color) text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer focus-ring-minimal flex items-center gap-2"
                 >
-                    <span class="material-symbols-outlined text-sm select-none">add</span>
+                    <span class="material-symbols-outlined text-base select-none">add</span>
                     <span>Import Book</span>
                 </button>
             </div>
