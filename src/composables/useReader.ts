@@ -35,6 +35,26 @@ export function useReader(book: Ref<BookDto>) {
   const canZoom = ref(false)
   const ZOOM_FACTOR = 1.25
   let saveTimer: ReturnType<typeof setTimeout> | null = null
+  // The latest position not yet written, kept so a pending save can be flushed
+  // immediately when the book closes or the app is hidden.
+  let pendingSave: { bookId: string; locator: Locator } | null = null
+
+  function flushPendingSave() {
+    if (saveTimer) {
+      clearTimeout(saveTimer)
+      saveTimer = null
+    }
+    if (pendingSave) {
+      void readingSavePosition(pendingSave.bookId, pendingSave.locator)
+      pendingSave = null
+    }
+  }
+
+  // The app being backgrounded or closed should never lose the current page;
+  // visibilitychange fires before the window goes away on every platform.
+  function onHidden() {
+    if (document.visibilityState === 'hidden') flushPendingSave()
+  }
 
   function readingStyle() {
     return {
@@ -56,13 +76,31 @@ export function useReader(book: Ref<BookDto>) {
     try {
       const instance = await createRenderer(book.value.format)
       const bookId = book.value.id
+
+      const saved = await readingGetPosition(bookId)
+      let lastSavedPayload = saved?.locator.payload ?? null
+      let isInitializing = true
+
       instance.onLocationChange((next) => {
         locator.value = next
-        if (saveTimer) clearTimeout(saveTimer)
-        saveTimer = setTimeout(() => {
-          void readingSavePosition(bookId, next)
-          saveTimer = null
-        }, 500)
+        if (isInitializing) return
+
+        const hasMoved = next.payload !== lastSavedPayload
+        if (hasMoved) {
+          lastSavedPayload = next.payload
+          // Record the move right away, then debounce the write so a burst of
+          // page turns coalesces into one. The pending position is flushed on
+          // teardown and on app hide, so a quick close never loses the page.
+          pendingSave = { bookId, locator: next }
+          if (saveTimer) clearTimeout(saveTimer)
+          saveTimer = setTimeout(() => {
+            saveTimer = null
+            if (pendingSave) {
+              void readingSavePosition(pendingSave.bookId, pendingSave.locator)
+              pendingSave = null
+            }
+          }, 500)
+        }
       })
       await instance.mount(container)
       instance.applyStyle(readingStyle())
@@ -70,9 +108,13 @@ export function useReader(book: Ref<BookDto>) {
       toc.value = instance.toc()
       canZoom.value = isZoomable(instance)
       renderer.value = instance
-      const saved = await readingGetPosition(bookId)
       if (saved) {
         await instance.goToLocator(saved.locator)
+      }
+      isInitializing = false
+      const currentLocator = locator.value as Locator | null
+      if (currentLocator) {
+        lastSavedPayload = currentLocator.payload
       }
     } catch (cause) {
       error.value = cause instanceof Error ? cause.message : 'Failed to open this book.'
@@ -82,10 +124,7 @@ export function useReader(book: Ref<BookDto>) {
   }
 
   function teardown() {
-    if (saveTimer) {
-      clearTimeout(saveTimer)
-      saveTimer = null
-    }
+    flushPendingSave()
     renderer.value?.destroy()
     renderer.value = null
   }
@@ -130,7 +169,11 @@ export function useReader(book: Ref<BookDto>) {
     () => renderer.value?.applyStyle(readingStyle()),
   )
 
-  onUnmounted(teardown)
+  document.addEventListener('visibilitychange', onHidden)
+  onUnmounted(() => {
+    document.removeEventListener('visibilitychange', onHidden)
+    teardown()
+  })
 
   return {
     host,

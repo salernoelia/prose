@@ -43,6 +43,7 @@ targets:
         LSRequiresIPhoneOS: true
         UILaunchStoryboardName: LaunchScreen
         UIRequiredDeviceCapabilities: [arm64, metal]
+        UIPrerenderedIcon: false
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft

@@ -19,7 +19,6 @@ use std::sync::Arc;
 use crate::domain::error::DomainError;
 use crate::domain::model::{Bookmark, Highlight, Progress};
 use crate::domain::ports::{RemoteEntry, RemoteStore};
-use crate::domain::reading::furthest;
 
 /// A record that can be synchronized: it carries a stable id for idempotent
 /// keying and a last-modified timestamp for last-write-wins resolution.
@@ -46,10 +45,15 @@ impl Syncable for Highlight {
     }
 }
 
-/// Resolve a reading-position conflict: keep the position furthest through the
-/// book (FR-SYNC-04). On an exact tie the local copy is kept.
+/// Resolve a reading-position conflict: keep the position with the newest
+/// timestamp (last-write-wins) to avoid jumps when page lengths or font sizes
+/// differ across devices (FR-SYNC-04). On an exact tie the local copy is kept.
 pub fn resolve_progress(local: &Progress, remote: &Progress) -> Progress {
-    furthest(local, remote).clone()
+    if remote.updated_at > local.updated_at {
+        remote.clone()
+    } else {
+        local.clone()
+    }
 }
 
 /// Resolve a conflict for any timestamped record: the most recently modified
@@ -208,17 +212,17 @@ mod tests {
     }
 
     #[test]
-    fn progress_conflict_keeps_the_furthest() {
+    fn progress_conflict_keeps_the_newest_timestamp() {
         let local = progress(0.3, 200);
         let remote = progress(0.7, 100);
-        assert_eq!(resolve_progress(&local, &remote), remote);
-        assert_eq!(resolve_progress(&remote, &local), remote);
+        assert_eq!(resolve_progress(&local, &remote), local);
+        assert_eq!(resolve_progress(&remote, &local), local);
     }
 
     #[test]
     fn progress_conflict_tie_keeps_local() {
-        let local = progress(0.5, 1);
-        let remote = progress(0.5, 999);
+        let local = progress(0.3, 100);
+        let remote = progress(0.5, 100);
         assert_eq!(resolve_progress(&local, &remote), local);
     }
 
