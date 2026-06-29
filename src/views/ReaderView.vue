@@ -38,7 +38,11 @@ const shortAuthor = computed(() => {
     if (surnameIdx > 0 && suffixes.includes(parts[surnameIdx].toLowerCase())) {
         surnameIdx--
     }
-    return parts[surnameIdx]
+    
+    const firstName = parts[0]
+    const firstLetter = firstName.charAt(0).toUpperCase()
+    const surname = parts[surnameIdx]
+    return `${firstLetter}. ${surname}`
 })
 
 const {

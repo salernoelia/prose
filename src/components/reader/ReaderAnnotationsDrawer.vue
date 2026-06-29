@@ -47,7 +47,8 @@ function progressLabel(progression: number): string {
         <template #container="{ closeCallback }">
             <div class="flex flex-col h-full">
                 <header
-                    class="flex items-center justify-between px-4 py-3 border-b border-(--border-color)"
+                    class="flex items-center justify-between px-4 pb-3 border-b border-(--border-color)"
+                    :style="{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }"
                 >
                     <span class="text-sm font-semibold tracking-wide text-(--text-primary) select-none">
                         Annotations
@@ -84,7 +85,10 @@ function progressLabel(progression: number): string {
                     </button>
                 </div>
 
-                <div class="flex-1 overflow-y-auto px-2 py-2">
+                <div
+                    class="flex-1 overflow-y-auto px-2 pt-2"
+                    :style="{ paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))' }"
+                >
                     <!-- Bookmarks -->
                     <ul
                         v-if="tab === 'bookmarks'"
