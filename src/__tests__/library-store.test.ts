@@ -40,7 +40,7 @@ describe('Library Store and Composable', () => {
     await initLibraryStore()
 
     expect(mockedInvoke).toHaveBeenCalledWith('library_list', {
-      query: { search: null, sort: 'title', descending: false },
+      query: { search: null, sort: 'progress', descending: true },
     })
     expect(libraryState.entries).toEqual(mockEntries)
     expect(libraryState.loaded).toBe(true)
@@ -52,7 +52,7 @@ describe('Library Store and Composable', () => {
     await updateLibraryQuery({ search: 'Alice' })
 
     expect(mockedInvoke).toHaveBeenCalledWith('library_list', {
-      query: { search: 'Alice', sort: 'title', descending: false },
+      query: { search: 'Alice', sort: 'progress', descending: true },
     })
     expect(libraryState.query.search).toBe('Alice')
   })

@@ -6,8 +6,8 @@ import { syncState, triggerSync } from './sync'
 
 const defaultQuery: LibraryQueryDto = {
   search: null,
-  sort: 'title',
-  descending: false,
+  sort: 'progress',
+  descending: true,
 }
 
 const state = reactive<{
