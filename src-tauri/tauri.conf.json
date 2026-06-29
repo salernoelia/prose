@@ -13,6 +13,8 @@
         "windows": [
             {
                 "title": "Prose",
+                "titleBarStyle": "Overlay",
+                "hiddenTitle": true,
                 "width": 1100,
                 "height": 760,
                 "minWidth": 480,
