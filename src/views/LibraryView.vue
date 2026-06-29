@@ -39,7 +39,17 @@ const {
     dismissSyncResult,
 } = useSync()
 
-const dataViewEntries = computed(() => [...entries.value])
+const filterMode = ref<'all' | 'reading' | 'read'>('all')
+
+const dataViewEntries = computed(() => {
+    let list = [...entries.value]
+    if (filterMode.value === 'reading') {
+        list = list.filter(entry => entry.progress > 0 && entry.progress < 1)
+    } else if (filterMode.value === 'read') {
+        list = list.filter(entry => entry.progress >= 1)
+    }
+    return list
+})
 
 const layout = defineModel<'grid' | 'list'>('layout', { default: 'grid' })
 const showDeleteDialog = ref(false)
@@ -222,34 +232,61 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                 />
             </div>
 
-            <!-- Filter Chips Row -->
+            <!-- Filter & Sort Chips Row -->
             <div class="flex items-center justify-between gap-3 w-full">
-                <!-- Sort options horizontally scrollable on mobile, flex-wrap on desktop -->
+                <!-- Horizontally scrollable on mobile, flex-wrap on desktop -->
                 <div class="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth flex-1 py-1 -my-1 -mx-6 px-6 md:mx-0 md:px-0">
-                    <button
-                        v-for="opt in [
-                            { key: 'progress', label: 'Progress', icon: 'percent' },
-                            { key: 'title', label: 'Title', icon: 'sort_by_alpha' },
-                            { key: 'author', label: 'Author', icon: 'person' },
-                            { key: 'last_read', label: 'Recent', icon: 'history' }
-                        ] as const"
-                        :key="opt.key"
-                        @click="handleSortChange(opt.key)"
-                        class="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold rounded-full border transition-all duration-100 whitespace-nowrap cursor-pointer active:scale-95 select-none shrink-0"
-                        :class="query.sort === opt.key
-                            ? 'bg-(--text-primary) border-(--text-primary) text-(--bg-app)'
-                            : 'bg-(--bg-card) border-(--border-color) text-(--text-secondary) hover:text-(--text-primary) hover:border-(--border-color-hover)'
-                            "
-                    >
-                        <span class="material-symbols-outlined text-sm leading-none select-none">{{ opt.icon }}</span>
-                        <span>{{ opt.label }}</span>
-                        <span
-                            v-if="query.sort === opt.key"
-                            class="material-symbols-outlined text-xs leading-none ml-0.5 select-none"
+                    <!-- Filters -->
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <button
+                            v-for="opt in [
+                                { key: 'all', label: 'All', icon: 'all_inclusive' },
+                                { key: 'reading', label: 'In Progress', icon: 'menu_book' },
+                                { key: 'read', label: 'Read', icon: 'task_alt' }
+                            ] as const"
+                            :key="opt.key"
+                            @click="filterMode = opt.key"
+                            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border transition-all duration-100 whitespace-nowrap cursor-pointer active:scale-95 select-none"
+                            :class="filterMode === opt.key
+                                ? 'bg-(--text-primary) border-(--text-primary) text-(--bg-app)'
+                                : 'bg-(--bg-card) border-(--border-color) text-(--text-secondary) hover:text-(--text-primary) hover:border-(--border-color-hover)'
+                                "
                         >
-                            {{ query.descending ? 'arrow_downward' : 'arrow_upward' }}
-                        </span>
-                    </button>
+                            <span class="material-symbols-outlined text-sm leading-none select-none">{{ opt.icon }}</span>
+                            <span>{{ opt.label }}</span>
+                        </button>
+                    </div>
+
+                    <!-- Subtle Vertical Divider -->
+                    <div class="h-4 w-px bg-(--border-color) mx-1 shrink-0"></div>
+
+                    <!-- Sort Options -->
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <button
+                            v-for="opt in [
+                                { key: 'progress', label: 'Progress', icon: 'percent' },
+                                { key: 'title', label: 'Title', icon: 'sort_by_alpha' },
+                                { key: 'author', label: 'Author', icon: 'person' },
+                                { key: 'last_read', label: 'Recent', icon: 'history' }
+                            ] as const"
+                            :key="opt.key"
+                            @click="handleSortChange(opt.key)"
+                            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border transition-all duration-100 whitespace-nowrap cursor-pointer active:scale-95 select-none"
+                            :class="query.sort === opt.key
+                                ? 'bg-(--text-primary) border-(--text-primary) text-(--bg-app)'
+                                : 'bg-(--bg-card) border-(--border-color) text-(--text-secondary) hover:text-(--text-primary) hover:border-(--border-color-hover)'
+                                "
+                        >
+                            <span class="material-symbols-outlined text-sm leading-none select-none">{{ opt.icon }}</span>
+                            <span>{{ opt.label }}</span>
+                            <span
+                                v-if="query.sort === opt.key"
+                                class="material-symbols-outlined text-xs leading-none ml-0.5 select-none"
+                            >
+                                {{ query.descending ? 'arrow_downward' : 'arrow_upward' }}
+                            </span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -296,7 +333,12 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                                 entry.book.author || 'Unknown Author'
                                 }}</span>
 
-                            <span class="text-xs font-semibold text-(--text-secondary) tabular-nums bg-(--accent-color-light) px-2 py-0.5 rounded shrink-0">
+                            <span 
+                                class="text-xs font-semibold tabular-nums px-2 py-0.5 rounded shrink-0 transition-colors"
+                                :class="entry.progress >= 1 
+                                    ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-400' 
+                                    : 'bg-(--accent-color-light) text-(--text-secondary)'"
+                            >
                                 {{ Math.round(entry.progress * 100) }}%
                             </span>
                         </div>
@@ -304,7 +346,8 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                         <!-- Full-width progress line at bottom of row -->
                         <div class="w-full h-1 bg-(--border-color) rounded-full overflow-hidden mt-1 opacity-60 group-hover:opacity-100 transition-opacity">
                             <div
-                                class="h-full bg-(--text-primary) transition-all duration-300"
+                                class="h-full transition-all duration-300"
+                                :class="entry.progress >= 1 ? 'bg-emerald-700 dark:bg-emerald-600' : 'bg-(--text-primary)'"
                                 :style="{ width: entry.progress * 100 + '%' }"
                             ></div>
                         </div>
@@ -365,7 +408,8 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                             <!-- hover progress bar line at bottom of cover -->
                             <div class="absolute bottom-0 left-0 w-full h-1 bg-(--border-color)">
                                 <div
-                                    class="h-full bg-(--text-primary)"
+                                    class="h-full transition-all duration-300"
+                                    :class="entry.progress >= 1 ? 'bg-emerald-700 dark:bg-emerald-600' : 'bg-(--text-primary)'"
                                     :style="{ width: entry.progress * 100 + '%' }"
                                 ></div>
                             </div>
@@ -381,8 +425,14 @@ const handleSortChange = (key: 'title' | 'author' | 'last_read' | 'progress') =>
                                 <span class="text-(--text-secondary) truncate max-w-[70%]">
                                     {{ entry.book.author || 'Unknown Author' }}
                                 </span>
-                                <span class="text-(--text-tertiary) tabular-nums">{{ Math.round(entry.progress * 100)
-                                    }}%</span>
+                                <span 
+                                    class="tabular-nums transition-colors"
+                                    :class="entry.progress >= 1 
+                                        ? 'text-emerald-700 dark:text-emerald-400 font-semibold' 
+                                        : 'text-(--text-tertiary)'"
+                                >
+                                    {{ Math.round(entry.progress * 100) }}%
+                                </span>
                             </div>
                         </div>
                     </div>
