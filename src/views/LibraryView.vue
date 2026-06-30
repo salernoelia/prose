@@ -35,7 +35,17 @@ const {
     refreshSyncConfig,
 } = useSync();
 
-const filterMode = ref<"all" | "reading" | "read">("all");
+// Filter mode persists locally so the library reopens with the same view. This
+// is a device preference, not synced.
+const FILTER_MODE_KEY = "prose.library.filterMode";
+const loadFilterMode = (): "all" | "reading" | "read" => {
+    const saved = localStorage.getItem(FILTER_MODE_KEY);
+    return saved === "reading" || saved === "read" ? saved : "all";
+};
+const filterMode = ref<"all" | "reading" | "read">(loadFilterMode());
+watch(filterMode, (mode) => {
+    localStorage.setItem(FILTER_MODE_KEY, mode);
+});
 
 // Pull-to-sync: drag the library down from the top to start a sync. The gesture
 // runs on the scrolling <main> ancestor, the only scroll container on the page.
@@ -275,7 +285,7 @@ const getSyncButtonText = computed(() => {
 
             <!-- Filter & Sort Controls Row -->
             <div class="flex items-center justify-between gap-3 w-full">
-                <div class="flex items-center gap-2 flex-wrap">
+                <div class="flex items-center gap-2 flex-nowrap min-w-0">
                     <!-- Layout Switcher -->
                     <div
                         class="flex items-center border border-(--border-color) bg-(--bg-card) rounded-full p-0.5 shrink-0">
@@ -305,8 +315,6 @@ const getSyncButtonText = computed(() => {
                         </button>
                     </div>
 
-                    <!-- Subtle Vertical Divider -->
-                    <div class="h-4 w-px bg-(--border-color) mx-1 shrink-0"></div>
 
                     <!-- Filter Dropdown -->
                     <Select
@@ -317,16 +325,23 @@ const getSyncButtonText = computed(() => {
                         class="select-chip focus-ring-minimal"
                     >
                         <template #value="slotProps">
-                            <div v-if="slotProps.value" class="flex items-center gap-1.5 text-xs font-semibold text-(--text-primary)">
-                                <span class="material-symbols-outlined text-sm leading-none text-(--text-secondary) select-none">
+                            <div
+                                v-if="slotProps.value"
+                                class="flex items-center gap-1.5 text-xs font-semibold text-(--text-primary) min-w-0"
+                            >
+                                <span
+                                    class="material-symbols-outlined text-sm leading-none text-(--text-secondary) select-none shrink-0"
+                                >
                                     {{ getFilterIcon(slotProps.value) }}
                                 </span>
-                                <span>{{ filterOptions.find(o => o.value === slotProps.value)?.label }}</span>
+                                <span class="truncate">{{filterOptions.find(o => o.value === slotProps.value)?.label}}</span>
                             </div>
                         </template>
                         <template #option="slotProps">
                             <div class="flex items-center gap-1.5 text-xs font-semibold text-(--text-primary)">
-                                <span class="material-symbols-outlined text-sm leading-none text-(--text-secondary) select-none">
+                                <span
+                                    class="material-symbols-outlined text-sm leading-none text-(--text-secondary) select-none"
+                                >
                                     {{ getFilterIcon(slotProps.option.value) }}
                                 </span>
                                 <span>{{ slotProps.option.label }}</span>
@@ -344,16 +359,23 @@ const getSyncButtonText = computed(() => {
                         class="select-chip focus-ring-minimal"
                     >
                         <template #value="slotProps">
-                            <div v-if="slotProps.value" class="flex items-center gap-1.5 text-xs font-semibold text-(--text-primary)">
-                                <span class="material-symbols-outlined text-sm leading-none text-(--text-secondary) select-none">
+                            <div
+                                v-if="slotProps.value"
+                                class="flex items-center gap-1.5 text-xs font-semibold text-(--text-primary) min-w-0"
+                            >
+                                <span
+                                    class="material-symbols-outlined text-sm leading-none text-(--text-secondary) select-none shrink-0"
+                                >
                                     {{ getSortIcon(slotProps.value) }}
                                 </span>
-                                <span>{{ sortOptions.find(o => o.value === slotProps.value)?.label }}</span>
+                                <span class="truncate">{{sortOptions.find(o => o.value === slotProps.value)?.label}}</span>
                             </div>
                         </template>
                         <template #option="slotProps">
                             <div class="flex items-center gap-1.5 text-xs font-semibold text-(--text-primary)">
-                                <span class="material-symbols-outlined text-sm leading-none text-(--text-secondary) select-none">
+                                <span
+                                    class="material-symbols-outlined text-sm leading-none text-(--text-secondary) select-none"
+                                >
                                     {{ getSortIcon(slotProps.option.value) }}
                                 </span>
                                 <span>{{ slotProps.option.label }}</span>
@@ -364,7 +386,7 @@ const getSyncButtonText = computed(() => {
                     <!-- Sort Direction Button -->
                     <button
                         @click="updateLibraryQuery({ descending: !query.descending })"
-                        class="flex items-center justify-center w-8 h-8 rounded-full border border-(--border-color) bg-(--bg-card) text-(--text-secondary) hover:text-(--text-primary) transition-all cursor-pointer focus-ring-minimal active:scale-90"
+                        class="flex items-center justify-center w-8 h-8 rounded-full border border-(--border-color) bg-(--bg-card) text-(--text-secondary) hover:text-(--text-primary) transition-all cursor-pointer focus-ring-minimal active:scale-90 shrink-0"
                         title="Toggle Sort Direction"
                     >
                         <span class="material-symbols-outlined text-sm leading-none select-none">
@@ -415,7 +437,7 @@ const getSyncButtonText = computed(() => {
                         <div class="flex justify-between items-center text-xs">
                             <span class="text-(--text-secondary)">{{
                                 entry.book.author || "Unknown Author"
-                                }}</span>
+                            }}</span>
 
                             <span
                                 class="text-xs font-semibold tabular-nums px-2 py-0.5 rounded shrink-0 transition-colors"
@@ -587,37 +609,40 @@ const getSyncButtonText = computed(() => {
 </template>
 
 <style scoped>
-.select-chip {
-    padding: 0.15rem 0.6rem !important;
-    height: 2rem;
-    display: inline-flex;
-    align-items: center;
-    border: 1px solid var(--border-color) !important;
-    background-color: var(--bg-card) !important;
-    border-radius: 9999px !important;
-    box-shadow: none !important;
-    transition: all 0.2s ease;
-    cursor: pointer;
-}
+    .select-chip {
+        padding: 0.15rem 0.6rem !important;
+        height: 2rem;
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--border-color) !important;
+        background-color: var(--bg-card) !important;
+        border-radius: 9999px !important;
+        box-shadow: none !important;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        min-width: 0;
+    }
 
-.select-chip:hover {
-    border-color: var(--border-color-hover) !important;
-}
+    .select-chip:hover {
+        border-color: var(--border-color-hover) !important;
+    }
 
-:deep(.p-select-label) {
-    padding: 0 !important;
-    margin-right: 0.25rem !important;
-    display: flex;
-    align-items: center;
-}
+    :deep(.p-select-label) {
+        padding: 0 !important;
+        margin-right: 0.25rem !important;
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        overflow: hidden;
+    }
 
-:deep(.p-select-dropdown) {
-    width: auto !important;
-    height: auto !important;
-    color: var(--text-secondary) !important;
-}
+    :deep(.p-select-dropdown) {
+        width: auto !important;
+        height: auto !important;
+        color: var(--text-secondary) !important;
+    }
 
-:deep(.p-select-dropdown-icon) {
-    font-size: 0.75rem !important;
-}
+    :deep(.p-select-dropdown-icon) {
+        font-size: 0.75rem !important;
+    }
 </style>

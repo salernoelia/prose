@@ -10,6 +10,37 @@ const defaultQuery: LibraryQueryDto = {
   descending: true,
 }
 
+// Sort key and direction persist locally so the library opens the way the user
+// left it. Search stays transient. This is a device preference, not synced.
+const SORT_PREFS_KEY = 'prose.library.sort'
+
+function loadSortPrefs(): Pick<LibraryQueryDto, 'sort' | 'descending'> {
+  try {
+    const raw = localStorage.getItem(SORT_PREFS_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<LibraryQueryDto>
+      return {
+        sort: parsed.sort ?? defaultQuery.sort,
+        descending: parsed.descending ?? defaultQuery.descending,
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load library sort preferences:', err)
+  }
+  return { sort: defaultQuery.sort, descending: defaultQuery.descending }
+}
+
+function saveSortPrefs(query: LibraryQueryDto): void {
+  try {
+    localStorage.setItem(
+      SORT_PREFS_KEY,
+      JSON.stringify({ sort: query.sort, descending: query.descending })
+    )
+  } catch (err) {
+    console.error('Failed to save library sort preferences:', err)
+  }
+}
+
 const state = reactive<{
   entries: LibraryEntryDto[]
   query: LibraryQueryDto
@@ -19,7 +50,7 @@ const state = reactive<{
   importFraction: number
 }>({
   entries: [],
-  query: { ...defaultQuery },
+  query: { ...defaultQuery, ...loadSortPrefs() },
   loaded: false,
   importing: false,
   importMessage: '',
@@ -74,6 +105,9 @@ export const libraryState = readonly(state)
 
 export async function updateLibraryQuery(patch: Partial<LibraryQueryDto>): Promise<void> {
   Object.assign(state.query, patch)
+  if ('sort' in patch || 'descending' in patch) {
+    saveSortPrefs(state.query)
+  }
   await reloadLibrary()
 }
 
