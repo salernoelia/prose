@@ -616,7 +616,7 @@ fn sync_books(
 
     // 1. Fetch remote tombstones and remote books
     let remote_tombstone_entries = store.list("prose/tombstones/").unwrap_or_default();
-    let remote_deleted_ids: std::collections::HashSet<String> = remote_tombstone_entries
+    let mut remote_deleted_ids: std::collections::HashSet<String> = remote_tombstone_entries
         .iter()
         .map(|e| {
             std::path::Path::new(&e.path)
@@ -655,25 +655,36 @@ fn sync_books(
     let mut deleted_any = false;
 
     // 3. Process remote tombstones on local database/files
-    for id_str in &remote_deleted_ids {
+    let tombstones_to_process: Vec<String> = remote_deleted_ids.iter().cloned().collect();
+    for id_str in &tombstones_to_process {
         if local_ids.contains(id_str) {
-            let book_id = crate::domain::model::BookId::from_hash(id_str);
-            let _ = repo.remove_book(&book_id);
-            let _ = repo.add_deleted_book(id_str);
+            let state_key = format!("state:book:{}", id_str);
+            let has_synced = repo.get_sync_state(&state_key).unwrap_or_default().is_some();
 
-            for ext in &["epub", "pdf"] {
-                let file_path = app_data.join("books").join(format!("{}.{}", id_str, ext));
-                if file_path.exists() {
-                    let _ = std::fs::remove_file(file_path);
+            if has_synced {
+                let book_id = crate::domain::model::BookId::from_hash(id_str);
+                let _ = repo.remove_book(&book_id);
+                let _ = repo.add_deleted_book(id_str);
+                let _ = repo.delete_sync_state(&state_key);
+
+                for ext in &["epub", "pdf"] {
+                    let file_path = app_data.join("books").join(format!("{}.{}", id_str, ext));
+                    if file_path.exists() {
+                        let _ = std::fs::remove_file(file_path);
+                    }
                 }
-            }
-            for ext in &["png", "jpg"] {
-                let cover_path = app_data.join("covers").join(format!("{}.{}", id_str, ext));
-                if cover_path.exists() {
-                    let _ = std::fs::remove_file(cover_path);
+                for ext in &["png", "jpg"] {
+                    let cover_path = app_data.join("covers").join(format!("{}.{}", id_str, ext));
+                    if cover_path.exists() {
+                        let _ = std::fs::remove_file(cover_path);
+                    }
                 }
+                deleted_any = true;
+            } else {
+                let remote_tombstone_path = format!("prose/tombstones/{}", id_str);
+                let _ = store.delete(&remote_tombstone_path);
+                remote_deleted_ids.remove(id_str);
             }
-            deleted_any = true;
         }
     }
 
@@ -711,8 +722,10 @@ fn sync_books(
         {
             let local_file = app_data.join("books").join(format!("{}.{}", id_str, ext));
             if let Ok(bytes) = std::fs::read(&local_file) {
-                let _ = store.upload(&remote_path, &bytes);
-                emit_progress(app, "uploading_book", 0.9);
+                if store.upload(&remote_path, &bytes).is_ok() {
+                    let _ = repo.save_sync_state(&format!("state:book:{}", id_str), "synced");
+                    emit_progress(app, "uploading_book", 0.9);
+                }
             }
         }
     }
@@ -754,10 +767,19 @@ fn sync_books(
 
                 // Import into database
                 let app_state = app.state::<AppState>();
-                if let Ok(_) = app_state.library.import(&bytes, format) {
+                if let Ok(book) = app_state.library.import(&bytes, format) {
                     imported_any = true;
+                    let _ = repo.save_sync_state(&format!("state:book:{}", book.id.as_str()), "synced");
                 }
             }
+        }
+    }
+
+    // 7. Ensure all already synced books have their sync state set
+    for entry in &local_books {
+        let id_str = entry.book.id.as_str();
+        if remote_ids.contains(id_str) && !local_deleted_set.contains(id_str) {
+            let _ = repo.save_sync_state(&format!("state:book:{}", id_str), "synced");
         }
     }
 

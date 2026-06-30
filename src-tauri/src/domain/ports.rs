@@ -51,6 +51,7 @@ pub trait BookRepository: Send + Sync {
 
     fn get_deleted_books(&self) -> Result<Vec<String>, DomainError>;
     fn add_deleted_book(&self, id: &str) -> Result<(), DomainError>;
+    fn remove_deleted_book(&self, id: &str) -> Result<(), DomainError>;
 }
 
 /// A single resource served to the renderer through the `prose://` protocol:

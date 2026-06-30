@@ -189,6 +189,11 @@ impl BookRepository for InMemoryBookRepository {
         }
         Ok(())
     }
+
+    fn remove_deleted_book(&self, id: &str) -> Result<(), DomainError> {
+        self.lock().deleted_books.retain(|b| b != id);
+        Ok(())
+    }
 }
 
 // ── InMemoryRemoteStore ─────────────────────────────────────────────────────

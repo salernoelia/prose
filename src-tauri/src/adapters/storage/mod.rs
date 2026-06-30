@@ -656,6 +656,13 @@ impl BookRepository for SqliteBookRepository {
         .map_err(|e| DomainError::Storage(e.to_string()))?;
         Ok(())
     }
+
+    fn remove_deleted_book(&self, id: &str) -> Result<(), DomainError> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM deleted_books WHERE id = ?1;", [id])
+            .map_err(|e| DomainError::Storage(e.to_string()))?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
