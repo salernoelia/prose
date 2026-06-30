@@ -15,6 +15,10 @@
   --text-secondary: #52525b; /* muted charcoal */
   --text-tertiary: #a1a1aa; /* light gray */
 
+  /* Recolor monochrome (black) icon art to suit the theme: light themes keep
+     it dark, dark-family themes invert it to read as light. */
+  --icon-invert: 0;
+
   --border-color: #e5e5e0; /* hairline gray-sand */
   --border-color-hover: #c8c8c0; /* darker hairline */
 
@@ -73,6 +77,8 @@
   --text-primary: #e4e4e7; /* soft silver */
   --text-secondary: #a1a1aa; /* medium gray */
   --text-tertiary: #52525b; /* dark gray */
+
+  --icon-invert: 1;
 
   --border-color: #27272a; /* charcoal gray border */
   --border-color-hover: #3f3f46;

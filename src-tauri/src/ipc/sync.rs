@@ -223,6 +223,10 @@ fn emit_progress(app: &AppHandle, stage: &str, fraction: f32) {
     );
 }
 
+/// A snapshot of the remote tree: normalized file path -> etag. Fetched once
+/// per sync run so the stages never list a folder of their own.
+type RemoteIndex = std::collections::HashMap<String, Option<String>>;
+
 /// The full sync cycle, run on a blocking thread.
 fn run_full_sync(
     store: Arc<WebDavRemoteStore>,
@@ -230,83 +234,196 @@ fn run_full_sync(
     app_data: std::path::PathBuf,
     app: &AppHandle,
 ) -> Result<(), crate::domain::error::DomainError> {
-    // Ensure the directory structure exists.
     let app_state = app.state::<AppState>();
-    if !app_state
-        .sync_dirs_created
-        .load(std::sync::atomic::Ordering::Relaxed)
-    {
-        for dir in &[
-            "prose/",
-            "prose/progress/",
-            "prose/bookmarks/",
-            "prose/highlights/",
-            "prose/sessions/",
-            "prose/books/",
-            "prose/tombstones/",
-        ] {
-            store.ensure_collection(dir)?;
-        }
-        app_state
-            .sync_dirs_created
-            .store(true, std::sync::atomic::Ordering::Relaxed);
-    }
+
+    // Ensure the directory structure exists. The "created" mark is persisted per
+    // server so the seven MKCOLs do not re-run on the first sync after each
+    // launch; a fresh or changed server URL has no mark and is provisioned once.
+    ensure_remote_dirs(store.as_ref(), &repo, &app_state)?;
+
+    // A single recursive listing covers every folder below, so each stage reads
+    // the prefetched index instead of issuing its own PROPFIND.
+    let remote_index = build_remote_index(store.as_ref())?;
 
     emit_progress(app, "syncing_settings", 0.0);
-    sync_settings(store.as_ref(), &repo)?;
+    sync_settings(store.as_ref(), &repo, &remote_index)?;
 
     emit_progress(app, "syncing_progress", 0.2);
-    sync_progress(store.as_ref(), &repo)?;
+    sync_progress(store.as_ref(), &repo, &remote_index)?;
 
     emit_progress(app, "syncing_bookmarks", 0.5);
-    sync_bookmarks(store.as_ref(), &repo)?;
+    sync_bookmarks(store.as_ref(), &repo, &remote_index)?;
 
     emit_progress(app, "syncing_highlights", 0.7);
-    sync_highlights(store.as_ref(), &repo)?;
+    sync_highlights(store.as_ref(), &repo, &remote_index)?;
 
     emit_progress(app, "syncing_sessions", 0.8);
-    sync_sessions(store.as_ref(), &repo)?;
+    sync_sessions(store.as_ref(), &repo, &remote_index)?;
 
     emit_progress(app, "syncing_books", 0.9);
-    sync_books(store.as_ref(), &repo, &app_data, app)?;
+    sync_books(store.as_ref(), &repo, &remote_index, &app_data, app)?;
 
     emit_progress(app, "done", 1.0);
     Ok(())
 }
 
+/// Provision the remote folder layout, skipping the round trips when this
+/// server has already been provisioned. The in-memory flag short-circuits
+/// within a session; the sync-state row carries the mark across launches.
+fn ensure_remote_dirs(
+    store: &WebDavRemoteStore,
+    repo: &Arc<dyn BookRepository>,
+    app_state: &AppState,
+) -> Result<(), crate::domain::error::DomainError> {
+    if app_state
+        .sync_dirs_created
+        .load(std::sync::atomic::Ordering::Relaxed)
+    {
+        return Ok(());
+    }
+
+    let url = app_state
+        .sync_config
+        .lock()
+        .unwrap()
+        .url
+        .clone()
+        .unwrap_or_default();
+    let dirs_key = format!("state:dirs_created:{url}");
+    if repo.get_sync_state(&dirs_key).ok().flatten().is_some() {
+        app_state
+            .sync_dirs_created
+            .store(true, std::sync::atomic::Ordering::Relaxed);
+        return Ok(());
+    }
+
+    for dir in &[
+        "prose/",
+        "prose/progress/",
+        "prose/bookmarks/",
+        "prose/highlights/",
+        "prose/sessions/",
+        "prose/books/",
+        "prose/tombstones/",
+    ] {
+        store.ensure_collection(dir)?;
+    }
+    let _ = repo.save_sync_state(&dirs_key, "1");
+    app_state
+        .sync_dirs_created
+        .store(true, std::sync::atomic::Ordering::Relaxed);
+    Ok(())
+}
+
+/// Take one snapshot of the remote tree. A recursive PROPFIND returns every
+/// file etag in a single request; if the server forbids infinite depth the
+/// per-folder fallback preserves identical behavior at the cost of more round
+/// trips. A failure to list books aborts the sync rather than mistaking an
+/// unreachable server for an empty remote.
+fn build_remote_index(
+    store: &WebDavRemoteStore,
+) -> Result<RemoteIndex, crate::domain::error::DomainError> {
+    if let Ok(entries) = store.list_tree("prose/") {
+        return Ok(entries
+            .into_iter()
+            .map(|e| (normalize_remote_path(&e.path), e.etag))
+            .collect());
+    }
+
+    let mut index = RemoteIndex::new();
+    for folder in &[
+        "prose/",
+        "prose/progress/",
+        "prose/bookmarks/",
+        "prose/highlights/",
+        "prose/sessions/",
+        "prose/tombstones/",
+    ] {
+        if let Ok(entries) = store.list(folder) {
+            for e in entries {
+                index.insert(normalize_remote_path(&e.path), e.etag);
+            }
+        }
+    }
+    for e in store.list("prose/books/")? {
+        index.insert(normalize_remote_path(&e.path), e.etag);
+    }
+    Ok(index)
+}
+
 fn sync_settings(
     store: &dyn RemoteStore,
     repo: &Arc<dyn BookRepository>,
+    remote_index: &RemoteIndex,
 ) -> Result<(), crate::domain::error::DomainError> {
     use crate::domain::model::Settings;
 
+    const REMOTE_PATH: &str = "prose/settings.json";
+    const STATE_KEY: &str = "state:settings";
+
     let local_settings = repo.get_settings()?.unwrap_or_default();
+    let local_serialized = serde_json::to_string(&local_settings).unwrap_or_default();
 
-    // Try to pull remote settings; if absent, upload ours and return.
-    let remote_bytes = match store.download("prose/settings.json") {
-        Ok(b) => b,
-        Err(_) => {
-            let json = serde_json::to_vec(&local_settings)
-                .map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
-            store.upload("prose/settings.json", &json)?;
-            return Ok(());
-        }
+    let stored_state: Option<StoredSyncState> = repo
+        .get_sync_state(STATE_KEY)
+        .ok()
+        .flatten()
+        .and_then(|s| serde_json::from_str(&s).ok());
+
+    let current_remote_etag = remote_index.get(REMOTE_PATH).cloned().flatten();
+    let remote_exists = remote_index.contains_key(REMOTE_PATH);
+    let stored_etag = stored_state.as_ref().and_then(|s| s.remote_etag.clone());
+    let remote_etag_matches =
+        remote_exists && current_remote_etag.is_some() && current_remote_etag == stored_etag;
+    let stored_local = stored_state
+        .as_ref()
+        .map(|s| s.local_serialized.as_str())
+        .unwrap_or("");
+
+    if remote_exists && remote_etag_matches && stored_local == local_serialized {
+        // Neither side moved since the last sync: no GET, no PUT.
+        return Ok(());
+    }
+
+    // Pull remote only when it actually changed (or we have never seen it).
+    let remote_settings: Option<Settings> = if remote_exists {
+        store
+            .download(REMOTE_PATH)
+            .ok()
+            .and_then(|b| serde_json::from_slice(&b).ok())
+    } else {
+        None
     };
-
-    let remote_settings: Settings = serde_json::from_slice(&remote_bytes).unwrap_or_default();
 
     // Last-write-wins by schema_version (higher version wins; same keeps local).
-    let winner = if remote_settings.schema_version > local_settings.schema_version {
-        remote_settings
-    } else {
-        local_settings.clone()
+    let winner = match remote_settings.as_ref() {
+        Some(r) if r.schema_version > local_settings.schema_version => r.clone(),
+        _ => local_settings.clone(),
     };
 
-    repo.save_settings(&winner)?;
+    if winner != local_settings {
+        repo.save_settings(&winner)?;
+    }
 
-    let json = serde_json::to_vec(&winner)
-        .map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
-    store.upload("prose/settings.json", &json)?;
+    let mut new_etag = current_remote_etag.clone();
+    if remote_settings.as_ref() != Some(&winner) {
+        let json = serde_json::to_vec(&winner)
+            .map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
+        store.upload(REMOTE_PATH, &json)?;
+        if let Ok(entries) = store.list(REMOTE_PATH) {
+            if let Some(entry) = entries.into_iter().next() {
+                new_etag = entry.etag;
+            }
+        }
+    }
+
+    let state_to_save = StoredSyncState {
+        remote_etag: new_etag,
+        local_serialized: serde_json::to_string(&winner).unwrap_or_default(),
+    };
+    if let Ok(serialized_state) = serde_json::to_string(&state_to_save) {
+        let _ = repo.save_sync_state(STATE_KEY, &serialized_state);
+    }
     Ok(())
 }
 
@@ -335,18 +452,11 @@ fn normalize_remote_path(path: &str) -> String {
 fn sync_progress(
     store: &dyn RemoteStore,
     repo: &Arc<dyn BookRepository>,
+    remote_entries: &RemoteIndex,
 ) -> Result<(), crate::domain::error::DomainError> {
     use crate::domain::model::Progress;
 
     let books = repo.list_entries()?;
-
-    // Fetch remote index once to avoid redundant 404 download round trips
-    let remote_entries: std::collections::HashMap<String, Option<String>> = store
-        .list("prose/progress/")
-        .unwrap_or_default()
-        .into_iter()
-        .map(|e| (normalize_remote_path(&e.path), e.etag))
-        .collect();
 
     for entry in &books {
         let book_id = &entry.book.id;
@@ -451,10 +561,12 @@ fn sync_progress(
 fn sync_bookmarks(
     store: &dyn RemoteStore,
     repo: &Arc<dyn BookRepository>,
+    remote_index: &RemoteIndex,
 ) -> Result<(), crate::domain::error::DomainError> {
     sync_collection(
         store,
         repo,
+        remote_index,
         "bookmarks",
         |book_id| repo.list_bookmarks(book_id),
         |record| repo.add_bookmark(record),
@@ -464,10 +576,12 @@ fn sync_bookmarks(
 fn sync_highlights(
     store: &dyn RemoteStore,
     repo: &Arc<dyn BookRepository>,
+    remote_index: &RemoteIndex,
 ) -> Result<(), crate::domain::error::DomainError> {
     sync_collection(
         store,
         repo,
+        remote_index,
         "highlights",
         |book_id| repo.list_highlights(book_id),
         |record| repo.add_highlight(record),
@@ -477,10 +591,12 @@ fn sync_highlights(
 fn sync_sessions(
     store: &dyn RemoteStore,
     repo: &Arc<dyn BookRepository>,
+    remote_index: &RemoteIndex,
 ) -> Result<(), crate::domain::error::DomainError> {
     sync_collection(
         store,
         repo,
+        remote_index,
         "sessions",
         |book_id| repo.list_reading_sessions(book_id),
         |record| repo.add_reading_session(record),
@@ -489,37 +605,31 @@ fn sync_sessions(
 
 /// Sync one id-keyed collection (bookmarks, highlights, sessions) for every local book.
 ///
-/// The shape is identical across kinds: list the remote folder once to avoid
-/// per-book 404 round trips, then for each book take the etag fast path when
-/// nothing changed, merge by id when remote moved, and refresh the stored sync
-/// state. `kind` names the remote subfolder and the sync-state key; `load` and
-/// `store_local` bind the kind's repository methods.
+/// The shape is identical across kinds: for each book take the etag fast path
+/// when nothing changed, merge by id when remote moved, and refresh the stored
+/// sync state. The remote folder etags come from the prefetched `remote_entries`
+/// snapshot, so no per-kind PROPFIND is issued here. `kind` names the remote
+/// subfolder and the sync-state key; `load` and `store_local` bind the kind's
+/// repository methods.
 fn sync_collection<T>(
     store: &dyn RemoteStore,
     repo: &Arc<dyn BookRepository>,
+    remote_entries: &RemoteIndex,
     kind: &str,
     load: impl Fn(&crate::domain::model::BookId) -> Result<Vec<T>, crate::domain::error::DomainError>,
     store_local: impl Fn(&T) -> Result<(), crate::domain::error::DomainError>,
 ) -> Result<(), crate::domain::error::DomainError>
 where
-    T: Syncable + Clone + PartialEq + Serialize + serde::de::DeserializeOwned,
+    T: Syncable + Clone + Serialize + serde::de::DeserializeOwned,
 {
     let books = repo.list_entries()?;
-
-    // Fetch remote index once to avoid redundant 404 download round trips
-    let remote_entries: std::collections::HashMap<String, Option<String>> = store
-        .list(&format!("prose/{kind}/"))
-        .unwrap_or_default()
-        .into_iter()
-        .map(|e| (normalize_remote_path(&e.path), e.etag))
-        .collect();
 
     for entry in &books {
         let book_id = &entry.book.id;
         let remote_path = format!("prose/{}/{}.json", kind, book_id.as_str());
 
         let local = load(book_id)?;
-        let local_serialized = serde_json::to_string(&local).unwrap_or_default();
+        let local_serialized = canonical_serialized(&local);
 
         let state_key = format!("state:{}:{}", kind, book_id.as_str());
         let stored_state: Option<StoredSyncState> = repo
@@ -567,16 +677,17 @@ where
             };
 
             let winner = merge_by_id(&local, &remote);
+            let winner_serialized = canonical_serialized(&winner);
 
-            // Write locally only if different from local
-            if winner != local {
+            // Write locally only if the merge changed our local set.
+            if winner_serialized != local_serialized {
                 for record in &winner {
                     let _ = store_local(record);
                 }
             }
 
-            // Upload only if different from remote
-            if winner != remote {
+            // Upload only if the merge changed the remote set.
+            if winner_serialized != canonical_serialized(&remote) {
                 let json = serde_json::to_vec(&winner)
                     .map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
                 store.upload(&remote_path, &json)?;
@@ -594,10 +705,9 @@ where
             }
         }
 
-        let updated_local_serialized = serde_json::to_string(&winner).unwrap_or_default();
         let state_to_save = StoredSyncState {
             remote_etag: new_etag,
-            local_serialized: updated_local_serialized,
+            local_serialized: canonical_serialized(&winner),
         };
         if let Ok(serialized_state) = serde_json::to_string(&state_to_save) {
             let _ = repo.save_sync_state(&state_key, &serialized_state);
@@ -606,20 +716,32 @@ where
     Ok(())
 }
 
+/// A stable, order-independent serialization of a syncable collection, keyed by
+/// sync id. The repository returns records in a kind-specific order (sessions by
+/// start time) while [`merge_by_id`] returns them id-sorted, so a plain
+/// serialize would differ on order alone and defeat the unchanged-since-last-sync
+/// fast path. Sorting by id first makes both sides comparable.
+fn canonical_serialized<T: Syncable + Serialize>(items: &[T]) -> String {
+    let mut ordered: Vec<&T> = items.iter().collect();
+    ordered.sort_by(|a, b| a.sync_id().cmp(b.sync_id()));
+    serde_json::to_string(&ordered).unwrap_or_default()
+}
+
 fn sync_books(
     store: &dyn RemoteStore,
     repo: &Arc<dyn BookRepository>,
+    remote_index: &RemoteIndex,
     app_data: &std::path::Path,
     app: &AppHandle,
 ) -> Result<(), crate::domain::error::DomainError> {
     use crate::domain::model::Format;
 
-    // 1. Fetch remote tombstones and remote books
-    let remote_tombstone_entries = store.list("prose/tombstones/").unwrap_or_default();
-    let mut remote_deleted_ids: std::collections::HashSet<String> = remote_tombstone_entries
-        .iter()
-        .map(|e| {
-            std::path::Path::new(&e.path)
+    // 1. Read remote tombstones and remote books from the prefetched index.
+    let mut remote_deleted_ids: std::collections::HashSet<String> = remote_index
+        .keys()
+        .filter(|p| p.starts_with("prose/tombstones/"))
+        .map(|p| {
+            std::path::Path::new(p)
                 .file_stem()
                 .and_then(|s| s.to_str())
                 .unwrap_or("")
@@ -628,11 +750,15 @@ fn sync_books(
         .filter(|id| !id.is_empty())
         .collect();
 
-    let remote_entries = store.list("prose/books/")?;
-    let remote_ids: std::collections::HashSet<String> = remote_entries
+    let remote_book_paths: Vec<String> = remote_index
+        .keys()
+        .filter(|p| p.starts_with("prose/books/"))
+        .cloned()
+        .collect();
+    let remote_ids: std::collections::HashSet<String> = remote_book_paths
         .iter()
-        .map(|e| {
-            std::path::Path::new(&e.path)
+        .map(|p| {
+            std::path::Path::new(p)
                 .file_stem()
                 .and_then(|s| s.to_str())
                 .unwrap_or("")
@@ -731,8 +857,8 @@ fn sync_books(
     }
 
     // 6. Download remote books that are not present locally (and not deleted)
-    for entry in &remote_entries {
-        let path = std::path::Path::new(&entry.path);
+    for book_path in &remote_book_paths {
+        let path = std::path::Path::new(book_path);
         let id_str = path
             .file_stem()
             .and_then(|s| s.to_str())
@@ -749,7 +875,7 @@ fn sync_books(
             && !local_deleted_set.contains(&id_str)
         {
             emit_progress(app, "downloading_book", 0.9);
-            if let Ok(bytes) = store.download(&entry.path) {
+            if let Ok(bytes) = store.download(book_path) {
                 let format = match ext {
                     "epub" => Format::Epub,
                     _ => Format::Pdf,
@@ -801,6 +927,57 @@ fn uuid_now() -> u64 {
 mod tests {
     use super::*;
 
+    /// Build the prefetched remote snapshot the stages now expect, the same way
+    /// `run_full_sync` does, so each test sees current etags.
+    fn remote_index(store: &impl RemoteStore) -> RemoteIndex {
+        store
+            .list_tree("prose/")
+            .unwrap_or_default()
+            .into_iter()
+            .map(|e| (normalize_remote_path(&e.path), e.etag))
+            .collect()
+    }
+
+    /// A remote store that counts uploads, so a test can assert the unchanged
+    /// fast path issues no PUT.
+    struct CountingStore {
+        inner: crate::domain::testing::InMemoryRemoteStore,
+        uploads: std::sync::atomic::AtomicUsize,
+    }
+
+    impl CountingStore {
+        fn new() -> Self {
+            Self {
+                inner: crate::domain::testing::InMemoryRemoteStore::new(),
+                uploads: std::sync::atomic::AtomicUsize::new(0),
+            }
+        }
+        fn upload_count(&self) -> usize {
+            self.uploads.load(std::sync::atomic::Ordering::Relaxed)
+        }
+    }
+
+    impl RemoteStore for CountingStore {
+        fn list(
+            &self,
+            dir: &str,
+        ) -> Result<Vec<crate::domain::ports::RemoteEntry>, crate::domain::error::DomainError>
+        {
+            self.inner.list(dir)
+        }
+        fn download(&self, path: &str) -> Result<Vec<u8>, crate::domain::error::DomainError> {
+            self.inner.download(path)
+        }
+        fn upload(&self, path: &str, bytes: &[u8]) -> Result<(), crate::domain::error::DomainError> {
+            self.uploads
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            self.inner.upload(path, bytes)
+        }
+        fn delete(&self, path: &str) -> Result<(), crate::domain::error::DomainError> {
+            self.inner.delete(path)
+        }
+    }
+
     #[test]
     fn test_normalize_remote_path() {
         assert_eq!(
@@ -850,7 +1027,7 @@ mod tests {
         };
         repo.save_progress(&book_id, &local_progress).unwrap();
 
-        sync_progress(&store, &repo).unwrap();
+        sync_progress(&store, &repo, &remote_index(&store)).unwrap();
 
         // Remote file should exist and contain the local progress
         let remote_path = format!("prose/progress/{}.json", book_id.as_str());
@@ -868,7 +1045,7 @@ mod tests {
         store.upload(&remote_path, &new_bytes).unwrap();
 
         // Sync again (Device B simulated)
-        sync_progress(&store, &repo).unwrap();
+        sync_progress(&store, &repo, &remote_index(&store)).unwrap();
 
         // Local progress should be updated to the new remote progress
         let updated_local = repo.get_progress(&book_id).unwrap().unwrap();
@@ -907,7 +1084,7 @@ mod tests {
         };
         repo.add_bookmark(&bm1).unwrap();
 
-        sync_bookmarks(&store, &repo).unwrap();
+        sync_bookmarks(&store, &repo, &remote_index(&store)).unwrap();
 
         // 2. Add a remote bookmark (Device A simulated)
         let bm2 = Bookmark {
@@ -922,7 +1099,7 @@ mod tests {
         store.upload(&remote_path, &new_bytes).unwrap();
 
         // Sync again (Device B simulated)
-        sync_bookmarks(&store, &repo).unwrap();
+        sync_bookmarks(&store, &repo, &remote_index(&store)).unwrap();
 
         // Local bookmarks should contain both bm1 and bm2
         let local_bookmarks = repo.list_bookmarks(&book_id).unwrap();
@@ -959,7 +1136,7 @@ mod tests {
             duration_seconds: 60,
         };
         repo.add_reading_session(&s1).unwrap();
-        sync_sessions(&store, &repo).unwrap();
+        sync_sessions(&store, &repo, &remote_index(&store)).unwrap();
 
         // 2. Another device records a session and uploads the merged set.
         let s2 = ReadingSession {
@@ -975,11 +1152,59 @@ mod tests {
             .unwrap();
 
         // 3. This device syncs again and converges on both sessions.
-        sync_sessions(&store, &repo).unwrap();
+        sync_sessions(&store, &repo, &remote_index(&store)).unwrap();
 
         let local = repo.list_reading_sessions(&book_id).unwrap();
         assert_eq!(local.len(), 2);
         assert!(local.iter().any(|s| s.id == "s1"));
         assert!(local.iter().any(|s| s.id == "s2"));
+    }
+
+    #[test]
+    fn sync_sessions_unchanged_does_not_reupload() {
+        use crate::domain::model::{Book, BookId, BookMetadata, Format, ReadingSession};
+        use crate::domain::testing::InMemoryBookRepository;
+        use std::sync::Arc;
+
+        let repo: Arc<dyn BookRepository> = Arc::new(InMemoryBookRepository::new());
+        let store = CountingStore::new();
+
+        let book_id = BookId::from_content(b"test-book");
+        let book = Book::new(
+            book_id.clone(),
+            Format::Epub,
+            BookMetadata {
+                title: "Test".to_string(),
+                author: None,
+                cover: None,
+            },
+        );
+        repo.insert_book(&book).unwrap();
+
+        // Insert sessions whose stored (insertion / started-at) order differs
+        // from id order, the exact shape that defeated the old fast path because
+        // merge_by_id re-sorts by id.
+        for (id, started_at) in [("zzz", 1_000_i64), ("aaa", 2_000), ("mmm", 3_000)] {
+            repo.add_reading_session(&ReadingSession {
+                id: id.to_string(),
+                book_id: book_id.clone(),
+                started_at,
+                duration_seconds: 10,
+            })
+            .unwrap();
+        }
+
+        // First sync pushes the sessions file up exactly once.
+        sync_sessions(&store, &repo, &remote_index(&store)).unwrap();
+        let after_first = store.upload_count();
+        assert!(after_first >= 1);
+
+        // Re-syncing with nothing changed must take the fast path: no PUT.
+        sync_sessions(&store, &repo, &remote_index(&store)).unwrap();
+        assert_eq!(
+            store.upload_count(),
+            after_first,
+            "unchanged sessions must not re-upload"
+        );
     }
 }

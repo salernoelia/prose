@@ -5,12 +5,6 @@
 import { computed } from 'vue'
 import type { DefinitionDto } from '../../ipc/types'
 import type { ViewportRect } from '../../readers'
-import {
-    googleSearchUrl,
-    openExternal,
-    wikipediaUrl,
-    wiktionaryUrl,
-} from '../../lib/externalLookup'
 
 const props = defineProps<{
     word: string | null
@@ -22,18 +16,6 @@ const props = defineProps<{
 const emit = defineEmits<{
     (e: 'close'): void
 }>()
-
-// Open the active word in an external reference. The popover already has the
-// looked-up word, so each source just builds its own URL.
-function openWikipedia() {
-    if (props.word) void openExternal(wikipediaUrl(props.word))
-}
-function openWiktionary() {
-    if (props.word) void openExternal(wiktionaryUrl(props.word))
-}
-function openGoogle() {
-    if (props.word) void openExternal(googleSearchUrl(props.word))
-}
 
 // Anchor the card below or above the selection, centered and clamped within the viewport
 // so the definition stays fully visible.
@@ -100,44 +82,14 @@ const placement = computed(() => {
                 class="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-(--border-color)"
             >
                 <span class="min-w-0 truncate text-base font-semibold text-(--text-primary) select-text">{{ word }}</span>
-                <div class="flex items-center shrink-0">
-                    <button
-                        @click="openWikipedia"
-                        class="group flex items-center justify-center w-7 h-7 rounded-full text-(--text-tertiary) hover:text-(--text-primary) transition-colors focus-ring-minimal"
-                        title="Search Wikipedia"
-                        aria-label="Search Wikipedia"
-                    >
-                        <img
-                            src="/wikipedia.webp"
-                            alt=""
-                            class="h-[18px] w-[18px] object-contain select-none opacity-55 group-hover:opacity-100 transition-opacity"
-                        />
-                    </button>
-                    <button
-                        @click="openWiktionary"
-                        class="flex items-center justify-center w-7 h-7 rounded-full text-(--text-tertiary) hover:text-(--text-primary) transition-colors focus-ring-minimal"
-                        title="Search Wiktionary"
-                        aria-label="Search Wiktionary"
-                    >
-                        <span class="material-symbols-outlined text-lg leading-none select-none">dictionary</span>
-                    </button>
-                    <button
-                        @click="openGoogle"
-                        class="flex items-center justify-center w-7 h-7 rounded-full text-(--text-tertiary) hover:text-(--text-primary) transition-colors focus-ring-minimal"
-                        title="Search Google"
-                        aria-label="Search Google"
-                    >
-                        <span class="material-symbols-outlined text-lg leading-none select-none">search</span>
-                    </button>
-                    <button
-                        @click="emit('close')"
-                        class="flex items-center justify-center w-7 h-7 rounded-full text-(--text-tertiary) hover:text-(--text-primary) transition-colors focus-ring-minimal"
-                        title="Close"
-                        aria-label="Close"
-                    >
-                        <span class="material-symbols-outlined text-lg leading-none select-none">close</span>
-                    </button>
-                </div>
+                <button
+                    @click="emit('close')"
+                    class="flex items-center justify-center w-7 h-7 rounded-full shrink-0 text-(--text-tertiary) hover:text-(--text-primary) transition-colors focus-ring-minimal"
+                    title="Close"
+                    aria-label="Close"
+                >
+                    <span class="material-symbols-outlined text-lg leading-none select-none">close</span>
+                </button>
             </header>
 
             <div

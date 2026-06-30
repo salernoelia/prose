@@ -102,6 +102,13 @@ pub struct RemoteEntry {
 pub trait RemoteStore: Send + Sync {
     /// List the entries directly under `dir`.
     fn list(&self, dir: &str) -> Result<Vec<RemoteEntry>, DomainError>;
+    /// List every file in the subtree rooted at `dir`, recursively, in one
+    /// call. The default delegates to [`RemoteStore::list`]; stores that support
+    /// a recursive listing (WebDAV `Depth: infinity`) override this to collapse
+    /// a whole sync's directory scans into a single round trip.
+    fn list_tree(&self, dir: &str) -> Result<Vec<RemoteEntry>, DomainError> {
+        self.list(dir)
+    }
     fn download(&self, path: &str) -> Result<Vec<u8>, DomainError>;
     fn upload(&self, path: &str, bytes: &[u8]) -> Result<(), DomainError>;
     fn delete(&self, path: &str) -> Result<(), DomainError>;

@@ -9,12 +9,6 @@ const props = defineProps<{
     rect: ViewportRect | null
 }>()
 
-// On touch devices the OS draws its own selection menu (Copy / Paste / Select
-// All) directly above the selection, which covers a toolbar placed there. Detect
-// a coarse pointer and drop our toolbar below the selection instead.
-const isTouch =
-    typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches
-
 // Approximate toolbar height, used only to decide whether a placement would run
 // off the top or bottom of the viewport.
 const TOOLBAR_HEIGHT = 48
@@ -40,9 +34,10 @@ watch(toolbarEl, (el) => {
 onUnmounted(() => observer?.disconnect())
 
 // Float the toolbar over the target rect, nudged back inside the viewport
-// horizontally so it never clips off-screen on a near-edge selection. Touch
-// devices prefer a below placement to clear the native selection menu, and
-// either side falls back to the other when there is no room.
+// horizontally so it never clips off-screen on a near-edge selection. Always
+// prefer placing below the selection: the OS selection menu (Copy / Look Up /
+// Translate) sits above the selection, and a toolbar there would be covered.
+// Fall back to above only when there is no room below.
 const placement = computed(() => {
     const rect = props.rect
     if (!rect) return null
@@ -52,9 +47,8 @@ const placement = computed(() => {
 
     const below = rect.y + rect.height + 12
     const fitsBelow = below + TOOLBAR_HEIGHT <= window.innerHeight
-    const fitsAbove = rect.y - 12 - TOOLBAR_HEIGHT >= 0
 
-    if ((isTouch && fitsBelow) || !fitsAbove) {
+    if (fitsBelow) {
         return { left, top: below, above: false }
     }
     return { left, top: rect.y - 12, above: true }

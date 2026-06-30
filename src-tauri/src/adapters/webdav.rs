@@ -131,8 +131,10 @@ impl Drop for WebDavRemoteStore {
     }
 }
 
-impl RemoteStore for WebDavRemoteStore {
-    fn list(&self, dir: &str) -> Result<Vec<RemoteEntry>, DomainError> {
+impl WebDavRemoteStore {
+    /// Run a PROPFIND at the given `Depth` and parse the multistatus body.
+    /// A 404 means the collection does not exist yet, reported as empty.
+    fn propfind(&self, dir: &str, depth: &str) -> Result<Vec<RemoteEntry>, DomainError> {
         let url = self.resolve_safe_url(dir)?;
         let body = r#"<?xml version="1.0" encoding="utf-8"?>
 <D:propfind xmlns:D="DAV:">
@@ -148,7 +150,7 @@ impl RemoteStore for WebDavRemoteStore {
             .request(reqwest::Method::from_bytes(b"PROPFIND").unwrap(), &url)
             .basic_auth(&self.username, Some(&self.password))
             .header(CONTENT_TYPE, "application/xml")
-            .header("Depth", "1")
+            .header("Depth", depth)
             .body(body)
             .send()
             .map_err(|e| DomainError::Remote(e.to_string()))?;
@@ -168,6 +170,19 @@ impl RemoteStore for WebDavRemoteStore {
             .text()
             .map_err(|e| DomainError::Remote(e.to_string()))?;
         Ok(parse_propfind(&xml, dir))
+    }
+}
+
+impl RemoteStore for WebDavRemoteStore {
+    fn list(&self, dir: &str) -> Result<Vec<RemoteEntry>, DomainError> {
+        self.propfind(dir, "1")
+    }
+
+    /// One recursive PROPFIND returns every file etag under `dir`. Servers that
+    /// forbid infinite depth answer with an error status, surfaced here as
+    /// `Err` so the sync layer can fall back to per-folder listings.
+    fn list_tree(&self, dir: &str) -> Result<Vec<RemoteEntry>, DomainError> {
+        self.propfind(dir, "infinity")
     }
 
     fn download(&self, path: &str) -> Result<Vec<u8>, DomainError> {
