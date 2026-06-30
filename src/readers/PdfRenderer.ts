@@ -72,12 +72,14 @@ export class PdfRenderer implements BookRenderer, Zoomable {
     this.#canvas = canvas
     this.#container = container
 
-    // Measure the non-scrolling parent so the fit is immune to the scrollbar
-    // the canvas itself may introduce when zoomed (which otherwise feeds back
-    // into the observer and triggers the "ResizeObserver loop" warning).
-    this.#viewport = container.parentElement ?? container
+    // Fit to the host's own box, not its parent: the host is inset from the
+    // parent (it clears the floating dock), so measuring the parent oversizes
+    // the canvas and makes it overflow vertically. Observe and measure the
+    // border-box, which a scrollbar never changes, so the fit cannot feed back
+    // into the observer and trigger the "ResizeObserver loop" warning.
+    this.#viewport = container
     this.#resizeObserver = new ResizeObserver(() => this.#scheduleRepaint())
-    this.#resizeObserver.observe(this.#viewport)
+    this.#resizeObserver.observe(this.#viewport, { box: 'border-box' })
 
     // Pinch-to-zoom: a trackpad pinch is a `wheel` with `ctrlKey` set; WebKit
     // also emits `gesture*` events. Both are handled so the canvas zooms in
@@ -304,9 +306,11 @@ export class PdfRenderer implements BookRenderer, Zoomable {
 
     const unscaled = page.getViewport({ scale: 1 })
     // Fit the whole page to the viewport (contain), so it is never cut off in
-    // wide or short windows; zoom scales up from there (FR-READ-05).
-    const fitWidth = this.#viewport.clientWidth || unscaled.width
-    const fitHeight = this.#viewport.clientHeight || unscaled.height
+    // wide or short windows; zoom scales up from there (FR-READ-05). The
+    // border-box from getBoundingClientRect is immune to any scrollbar.
+    const box = this.#viewport.getBoundingClientRect()
+    const fitWidth = box.width || unscaled.width
+    const fitHeight = box.height || unscaled.height
     const baseScale = Math.min(fitWidth / unscaled.width, fitHeight / unscaled.height)
 
     // Save base dimensions for layout scaling
@@ -334,9 +338,10 @@ export class PdfRenderer implements BookRenderer, Zoomable {
     offscreenCanvas.width = Math.floor(viewport.width * dpr)
     offscreenCanvas.height = Math.floor(viewport.height * dpr)
 
-    // Smart invert maps each color as pdf.js paints it; images, drawn directly,
-    // are left alone. A fresh offscreen context each paint needs no teardown.
-    if (dark && mode === 'smart') installColorInvert(offscreenContext)
+    // Smart invert remaps each color as pdf.js paints it onto the active theme;
+    // images, drawn directly, are left alone. A fresh offscreen context each
+    // paint needs no teardown.
+    if (dark && mode === 'smart') installColorInvert(offscreenContext, this.#theme)
 
     this.#renderTask = page.render({
       canvas: offscreenCanvas,

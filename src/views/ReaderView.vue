@@ -261,7 +261,7 @@ onUnmounted(() => {
                 <div
                     ref="host"
                     class="absolute inset-x-0 top-0"
-                    style="bottom: calc(3rem + env(safe-area-inset-bottom, 0px))"
+                    style="bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px))"
                     @renderer-click="handleRendererClick"
                 ></div>
 
