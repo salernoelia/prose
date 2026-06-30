@@ -19,8 +19,13 @@ const { settings, loaded, theme, fontFamily, fontSize, lineHeight, margin, click
 
 const themeOptions = [
     { label: 'Light', value: 'light' as Theme },
+    { label: 'Paper', value: 'paper' as Theme },
     { label: 'Dark', value: 'dark' as Theme },
+    { label: 'OLED Black', value: 'oled' as Theme },
     { label: 'Sepia', value: 'sepia' as Theme },
+    { label: 'Sepia Dark', value: 'sepia-dark' as Theme },
+    { label: 'E-Ink Light', value: 'eink' as Theme },
+    { label: 'E-Ink Dark', value: 'eink-dark' as Theme },
 ]
 
 const fontOptions = [

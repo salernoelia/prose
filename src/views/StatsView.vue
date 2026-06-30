@@ -56,14 +56,13 @@ const topBook = computed(() => bookActivity.value[0] ?? null)
 </script>
 
 <template>
-    <div class="w-full animate-fade-in font-serif">
+    <div class="w-full animate-fade-in font-serif pb-[calc(3rem+env(safe-area-inset-bottom,0px))]">
         <!-- Header -->
         <header class="pb-6 flex justify-between items-start">
             <div>
                 <h1 class="text-xl lg:text-3xl font-semibold tracking-tight text-(--text-primary)">
                     Reading
                 </h1>
-                <p class="text-sm text-(--text-tertiary) mt-0.5">Your reading at a glance</p>
             </div>
         </header>
 

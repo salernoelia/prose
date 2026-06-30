@@ -172,8 +172,7 @@ const handleSortChange = (
             :style="pullIndicatorStyle"
         >
             <div
-                class="w-9 h-9 rounded-full bg-(--bg-card) border border-(--border-color) shadow-md flex items-center justify-center"
-            >
+                class="w-9 h-9 rounded-full bg-(--bg-card) border border-(--border-color) shadow-md flex items-center justify-center">
                 <span
                     class="material-symbols-outlined text-lg text-(--text-secondary) select-none"
                     :class="{ 'animate-spin': pullActive }"
@@ -218,7 +217,7 @@ const handleSortChange = (
                     class="px-4 py-1.5 text-xs font-semibold rounded border border-(--border-color) text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer focus-ring-minimal flex items-center gap-2"
                 >
                     <span class="material-symbols-outlined text-base select-none">add</span>
-                    <span>Import Book</span>
+                    <span>Import</span>
                 </button>
             </div>
         </header>
@@ -343,7 +342,7 @@ const handleSortChange = (
                                 "
                         >
                             <span class="material-symbols-outlined text-sm leading-none select-none">{{ opt.icon
-                            }}</span>
+                                }}</span>
                             <span>{{ opt.label }}</span>
                         </button>
                     </div>
@@ -369,7 +368,7 @@ const handleSortChange = (
                                 "
                         >
                             <span class="material-symbols-outlined text-sm leading-none select-none">{{ opt.icon
-                            }}</span>
+                                }}</span>
                             <span>{{ opt.label }}</span>
                             <span
                                 v-if="query.sort === opt.key"
@@ -423,7 +422,7 @@ const handleSortChange = (
                         <div class="flex justify-between items-center text-xs">
                             <span class="text-(--text-secondary)">{{
                                 entry.book.author || "Unknown Author"
-                            }}</span>
+                                }}</span>
 
                             <span
                                 class="text-xs font-semibold tabular-nums px-2 py-0.5 rounded shrink-0 transition-colors"

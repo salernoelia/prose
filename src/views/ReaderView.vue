@@ -12,6 +12,7 @@ import ReaderTocDrawer from '../components/reader/ReaderTocDrawer.vue'
 import ReaderAnnotationsDrawer from '../components/reader/ReaderAnnotationsDrawer.vue'
 import ReaderAnnotationPopover from '../components/reader/ReaderAnnotationPopover.vue'
 import ReaderDefinitionPopover from '../components/reader/ReaderDefinitionPopover.vue'
+import ReaderQuickSettings from '../components/reader/ReaderQuickSettings.vue'
 import { useDictionary } from '../composables/useDictionary'
 import { useSync } from '../composables/useSync'
 import { startSession, endSession } from '../composables/useReadingTracker'
@@ -32,14 +33,14 @@ const shortAuthor = computed(() => {
     if (!author) return ''
     const parts = author.trim().split(/\s+/)
     if (parts.length <= 1) return author
-    
+
     // If the last part is a common suffix, try the second-to-last part
     let surnameIdx = parts.length - 1
     const suffixes = ['jr', 'jr.', 'sr', 'sr.', 'ii', 'iii', 'iv']
     if (surnameIdx > 0 && suffixes.includes(parts[surnameIdx].toLowerCase())) {
         surnameIdx--
     }
-    
+
     const firstName = parts[0]
     const firstLetter = firstName.charAt(0).toUpperCase()
     const surname = parts[surnameIdx]
@@ -98,6 +99,7 @@ const isSingleWord = computed(() => {
 const showDock = ref(true)
 const showToc = ref(false)
 const showAnnotations = ref(false)
+const showQuickSettings = ref(false)
 
 const canPrev = computed(() => progress.value > 0)
 const canNext = computed(() => progress.value < 100)
@@ -235,22 +237,24 @@ onUnmounted(() => {
 
         <!-- Non-Scrolling Reading Canvas (Overflow hidden, flex-1, with fade-in) -->
         <div
-            class="relative z-0 w-full flex-1 overflow-hidden select-text transition-all duration-300 flex flex-col animate-fade-in"
-        >
+            class="relative z-0 w-full flex-1 overflow-hidden select-text transition-all duration-300 flex flex-col animate-fade-in">
             <!-- Book Header Info (Subtle) -->
             <header
-                class="mb-3 pb-2 border-b border-(--border-color) flex justify-between items-center text-xs text-(--text-tertiary) select-none whitespace-nowrap overflow-hidden"
+                class="mb-2 mt-5 pb-2 border-b border-(--border-color) flex justify-between items-center text-xs text-(--text-tertiary) select-none whitespace-nowrap overflow-hidden"
                 :style="{ paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingTop: 'calc(0.5rem + env(safe-area-inset-top, 0px))' }"
             >
                 <span class="truncate flex-1 min-w-0 pr-4 text-left">{{ book.title }}</span>
                 <span class="shrink-0 text-right">{{ shortAuthor }}</span>
             </header>
 
-            <!-- Renderer host: foliate-js (ePub) or pdf.js (PDF) mounts here -->
+            <!-- Renderer host: foliate-js (ePub) or pdf.js (PDF) mounts here.
+                 A bottom inset keeps the last line clear of the dock (which now
+                 floats over the page) and the device's safe area. -->
             <div class="relative flex-1 overflow-hidden">
                 <div
                     ref="host"
-                    class="absolute inset-0"
+                    class="absolute inset-x-0 top-0"
+                    style="bottom: calc(3rem + env(safe-area-inset-bottom, 0px))"
                     @renderer-click="handleRendererClick"
                 ></div>
 
@@ -290,8 +294,14 @@ onUnmounted(() => {
             @next="next"
             @zoom-in="zoomIn"
             @zoom-out="zoomOut"
+            @quick-settings="showQuickSettings = !showQuickSettings"
             @hide="showDock = false"
             @show="showDock = true"
+        />
+
+        <ReaderQuickSettings
+            :visible="showQuickSettings"
+            @close="showQuickSettings = false"
         />
 
         <ReaderTocDrawer

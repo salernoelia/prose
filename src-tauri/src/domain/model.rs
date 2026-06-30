@@ -234,12 +234,17 @@ impl Default for ReadingStyle {
 
 /// The reading theme, applied to both the reading view and the app shell.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
+#[serde(rename_all = "kebab-case")]
 pub enum Theme {
     #[default]
     Light,
+    Paper,
     Dark,
+    Oled,
     Sepia,
+    SepiaDark,
+    Eink,
+    EinkDark,
 }
 
 /// All reader-customizable settings. Versioned and fully defaulted: a missing

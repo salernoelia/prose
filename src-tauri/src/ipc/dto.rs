@@ -76,16 +76,26 @@ impl TryFrom<SettingsPatchDto> for SettingsPatch {
 fn theme_to_str(theme: Theme) -> &'static str {
     match theme {
         Theme::Light => "light",
+        Theme::Paper => "paper",
         Theme::Dark => "dark",
+        Theme::Oled => "oled",
         Theme::Sepia => "sepia",
+        Theme::SepiaDark => "sepia-dark",
+        Theme::Eink => "eink",
+        Theme::EinkDark => "eink-dark",
     }
 }
 
 fn theme_from_str(value: &str) -> Result<Theme, DomainError> {
     match value {
         "light" => Ok(Theme::Light),
+        "paper" => Ok(Theme::Paper),
         "dark" => Ok(Theme::Dark),
+        "oled" => Ok(Theme::Oled),
         "sepia" => Ok(Theme::Sepia),
+        "sepia-dark" => Ok(Theme::SepiaDark),
+        "eink" => Ok(Theme::Eink),
+        "eink-dark" => Ok(Theme::EinkDark),
         other => Err(DomainError::InvalidInput(format!("unknown theme: {other}"))),
     }
 }

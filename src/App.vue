@@ -13,17 +13,28 @@ import type { BookDto } from './ipc/types'
 
 const { theme, loaded, showClickZonePreview, clickZoneSize } = useSettings()
 
+// Each theme maps to the classes applied on <html>. Dark-family themes keep the
+// base `dark` class so Tailwind `dark:` variants still resolve, plus a variant
+// class that overrides the CSS color tokens (its rules sit after `.dark`).
+const THEME_CLASSES: Record<string, string[]> = {
+    light: [],
+    paper: ['paper'],
+    dark: ['dark'],
+    oled: ['dark', 'oled'],
+    sepia: ['sepia'],
+    'sepia-dark': ['dark', 'sepia-dark'],
+    eink: ['eink'],
+    'eink-dark': ['dark', 'eink-dark'],
+}
+
+const ALL_THEME_CLASSES = ['dark', 'sepia', 'paper', 'oled', 'sepia-dark', 'eink', 'eink-dark']
+
 watchEffect(() => {
     if (!loaded.value) return
 
     const root = document.documentElement
-    root.classList.remove('dark', 'sepia')
-
-    if (theme.value === 'dark') {
-        root.classList.add('dark')
-    } else if (theme.value === 'sepia') {
-        root.classList.add('sepia')
-    }
+    root.classList.remove(...ALL_THEME_CLASSES)
+    root.classList.add(...(THEME_CLASSES[theme.value] ?? []))
 })
 
 type ViewType = 'library' | 'settings' | 'reader' | 'stats'

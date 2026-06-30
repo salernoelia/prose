@@ -189,6 +189,137 @@
   --p-button-secondary-hover-border-color: var(--border-color-hover);
 }
 
+/* The themes below only override the core color tokens. The PrimeVue `--p-*`
+   mappings declared on :root reference these tokens through var(), so they pick
+   up each theme automatically. Dark-family themes (oled, sepia-dark, eink-dark)
+   also carry the `.dark` class; their blocks sit after `.dark` here so these
+   token overrides win. */
+
+/* Paper - crisp neutral white, flatter than the warm Light default */
+.paper {
+  --bg-app: #ffffff;
+  --bg-card: #ffffff;
+
+  --text-primary: #111111;
+  --text-secondary: #444444;
+  --text-tertiary: #999999;
+
+  --border-color: #e5e5e5;
+  --border-color-hover: #d4d4d4;
+
+  --accent-color: #111111;
+  --accent-color-hover: #333333;
+  --accent-color-light: #f2f2f2;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.04);
+
+  --focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px #111111;
+
+  --p-button-primary-color: #ffffff;
+}
+
+/* OLED - true black for power-saving displays */
+.oled {
+  --bg-app: #000000;
+  --bg-card: #0a0a0a;
+
+  --text-primary: #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #52525b;
+
+  --border-color: #1f1f1f;
+  --border-color-hover: #2e2e2e;
+
+  --accent-color: #f4f4f5;
+  --accent-color-hover: #e4e4e7;
+  --accent-color-light: #141414;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.6);
+
+  --focus-ring: 0 0 0 2px #000000, 0 0 0 4px #f4f4f5;
+
+  --p-button-primary-color: #000000;
+}
+
+/* Sepia Dark - warm parchment tones on a dark night surface */
+.sepia-dark {
+  --bg-app: #1c1611;
+  --bg-card: #261e16;
+
+  --text-primary: #e0cdab;
+  --text-secondary: #b09a78;
+  --text-tertiary: #7a6a52;
+
+  --border-color: #38291c;
+  --border-color-hover: #4a3826;
+
+  --accent-color: #d8b483;
+  --accent-color-hover: #e6c699;
+  --accent-color-light: #2e2318;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.5);
+
+  --focus-ring: 0 0 0 2px #1c1611, 0 0 0 4px #d8b483;
+
+  --p-button-primary-color: #1c1611;
+}
+
+/* E-Ink Light - maximum-contrast monochrome, flat (no shadows) */
+.eink {
+  --bg-app: #ffffff;
+  --bg-card: #ffffff;
+
+  --text-primary: #000000;
+  --text-secondary: #1a1a1a;
+  --text-tertiary: #3d3d3d;
+
+  --border-color: #555555;
+  --border-color-hover: #000000;
+
+  --accent-color: #000000;
+  --accent-color-hover: #000000;
+  --accent-color-light: #e0e0e0;
+
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+
+  --focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px #000000;
+
+  --p-button-primary-color: #ffffff;
+}
+
+/* E-Ink Dark - maximum-contrast monochrome on black, flat (no shadows) */
+.eink-dark {
+  --bg-app: #000000;
+  --bg-card: #000000;
+
+  --text-primary: #ffffff;
+  --text-secondary: #e0e0e0;
+  --text-tertiary: #b0b0b0;
+
+  --border-color: #999999;
+  --border-color-hover: #ffffff;
+
+  --accent-color: #ffffff;
+  --accent-color-hover: #ffffff;
+  --accent-color-light: #1a1a1a;
+
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+
+  --focus-ring: 0 0 0 2px #000000, 0 0 0 4px #ffffff;
+
+  --p-button-primary-color: #000000;
+}
+
 /* Global Reset and Aesthetics */
 * {
   touch-action: manipulation;

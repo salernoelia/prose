@@ -42,8 +42,16 @@ export interface SettingsPatchDto {
   margin?: number
 }
 
-/** The three supported reading themes. */
-export type Theme = 'light' | 'dark' | 'sepia'
+/** The supported reading themes. */
+export type Theme =
+  | 'light'
+  | 'paper'
+  | 'dark'
+  | 'oled'
+  | 'sepia'
+  | 'sepia-dark'
+  | 'eink'
+  | 'eink-dark'
 
 // Event payloads
 

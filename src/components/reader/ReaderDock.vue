@@ -21,6 +21,7 @@ const emit = defineEmits<{
     (e: 'next'): void
     (e: 'zoom-in'): void
     (e: 'zoom-out'): void
+    (e: 'quick-settings'): void
     (e: 'hide'): void
     (e: 'show'): void
 }>()
@@ -28,14 +29,17 @@ const emit = defineEmits<{
 
 <template>
     <!-- Floating Dock Card (Compact, Icon-based and Mobile-friendly) -->
+    <!-- Mobile: a fixed overlay so toggling it never resizes the reading canvas
+         (an in-flow dock forced foliate to re-paginate, which flashed on every
+         center tap). Desktop keeps its floating pill. -->
     <div
         class="transition-all duration-300 ease-in-out pointer-events-auto
-               w-full relative bottom-0 left-0 right-0 z-40 bg-(--bg-card) border-t border-(--border-color)
-               md:fixed md:bottom-3 md:left-1/2 md:right-auto md:-translate-x-1/2 md:z-50 md:w-auto md:border-0 md:rounded-none md:bg-transparent"
+               w-full fixed bottom-0 left-0 right-0 z-40 bg-(--bg-card) border-t border-(--border-color)
+               md:bottom-3 md:left-1/2 md:right-auto md:-translate-x-1/2 md:z-50 md:w-auto md:border-0 md:rounded-none md:bg-transparent"
         :class="[
             visible
-                ? 'opacity-100 h-auto py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] md:py-0 md:pb-0'
-                : 'h-0 overflow-hidden border-t-0 opacity-0 pointer-events-none md:block md:h-auto md:translate-y-16 md:opacity-0 md:pointer-events-none'
+                ? 'opacity-100 translate-y-0 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] md:py-0 md:pb-0'
+                : 'translate-y-full opacity-0 pointer-events-none md:block md:translate-y-16 md:opacity-0 md:pointer-events-none'
         ]"
     >
         <!-- Small Border Card (Rounded Pill on Desktop, Flat bar on Mobile) -->
@@ -134,6 +138,18 @@ const emit = defineEmits<{
                     <span class="material-symbols-outlined text-base">chevron_right</span>
                 </button>
             </div>
+
+            <span class="w-px h-4 bg-(--border-color)"></span>
+
+            <!-- Quick reading settings (theme, text size, line spacing) -->
+            <button
+                @click="emit('quick-settings')"
+                class="flex items-center justify-center w-8 h-8 rounded-full text-(--text-secondary) hover:text-(--text-primary) transition-all duration-100 active:scale-90 active:opacity-80 focus-ring-minimal"
+                title="Reading settings"
+                aria-label="Reading settings"
+            >
+                <span class="material-symbols-outlined text-xl leading-none select-none">tune</span>
+            </button>
 
             <span class="w-px h-4 bg-(--border-color)"></span>
 

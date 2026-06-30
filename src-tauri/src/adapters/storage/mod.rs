@@ -537,8 +537,13 @@ impl BookRepository for SqliteBookRepository {
 
             let theme = match theme_str.as_str() {
                 "light" => Theme::Light,
+                "paper" => Theme::Paper,
                 "dark" => Theme::Dark,
+                "oled" => Theme::Oled,
                 "sepia" => Theme::Sepia,
+                "sepia-dark" => Theme::SepiaDark,
+                "eink" => Theme::Eink,
+                "eink-dark" => Theme::EinkDark,
                 _ => Theme::Light,
             };
 
@@ -561,8 +566,13 @@ impl BookRepository for SqliteBookRepository {
         let conn = self.conn.lock().unwrap();
         let theme_str = match settings.theme {
             Theme::Light => "light",
+            Theme::Paper => "paper",
             Theme::Dark => "dark",
+            Theme::Oled => "oled",
             Theme::Sepia => "sepia",
+            Theme::SepiaDark => "sepia-dark",
+            Theme::Eink => "eink",
+            Theme::EinkDark => "eink-dark",
         };
         conn.execute(
             "INSERT OR REPLACE INTO settings (id, schema_version, theme, font_family, font_size, line_height, margin) VALUES (1, ?1, ?2, ?3, ?4, ?5, ?6);",
