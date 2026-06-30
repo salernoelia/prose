@@ -8,6 +8,7 @@ import { appDataDir } from "@tauri-apps/api/path";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import DataView from "primevue/dataview";
 import Dialog from "primevue/dialog";
+import Select from "primevue/select";
 import { useLibrary } from "../composables/useLibrary";
 import { useSync } from "../composables/useSync";
 import { usePullToSync } from "../composables/usePullToSync";
@@ -145,11 +146,40 @@ const confirmDelete = async () => {
 const handleSortChange = (
     key: "title" | "author" | "last_read" | "progress"
 ) => {
-    const isCurrentlyActive = query.value.sort === key;
     updateLibraryQuery({
         sort: key,
-        descending: isCurrentlyActive ? !query.value.descending : false,
+        descending: key === 'progress' || key === 'last_read',
     });
+};
+
+const filterOptions = [
+    { label: "All Books", value: "all" },
+    { label: "In Progress", value: "reading" },
+    { label: "Read", value: "read" }
+];
+
+const sortOptions = [
+    { label: "Progress", value: "progress" },
+    { label: "Title", value: "title" },
+    { label: "Author", value: "author" },
+    { label: "Recent", value: "last_read" }
+];
+
+const getFilterIcon = (mode: string) => {
+    switch (mode) {
+        case "reading": return "menu_book";
+        case "read": return "task_alt";
+        default: return "all_inclusive";
+    }
+};
+
+const getSortIcon = (sort: string) => {
+    switch (sort) {
+        case "progress": return "percent";
+        case "title": return "sort_by_alpha";
+        case "author": return "person";
+        default: return "history";
+    }
 };
 
 const getSyncButtonText = computed(() => {
@@ -243,11 +273,9 @@ const getSyncButtonText = computed(() => {
                 />
             </div>
 
-            <!-- Filter & Sort Chips Row -->
+            <!-- Filter & Sort Controls Row -->
             <div class="flex items-center justify-between gap-3 w-full">
-                <!-- Horizontally scrollable on mobile, flex-wrap on desktop -->
-                <div
-                    class="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth flex-1 py-1 -my-1 -mx-6 px-6 md:mx-0 md:px-0">
+                <div class="flex items-center gap-2 flex-wrap">
                     <!-- Layout Switcher -->
                     <div
                         class="flex items-center border border-(--border-color) bg-(--bg-card) rounded-full p-0.5 shrink-0">
@@ -280,59 +308,69 @@ const getSyncButtonText = computed(() => {
                     <!-- Subtle Vertical Divider -->
                     <div class="h-4 w-px bg-(--border-color) mx-1 shrink-0"></div>
 
-                    <!-- Filters -->
-                    <div class="flex items-center gap-1.5 shrink-0">
-                        <button
-                            v-for="opt in [
-                                { key: 'all', label: 'All', icon: 'all_inclusive' },
-                                { key: 'reading', label: 'In Progress', icon: 'menu_book' },
-                                { key: 'read', label: 'Read', icon: 'task_alt' }
-                            ] as const"
-                            :key="opt.key"
-                            @click="filterMode = opt.key"
-                            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border transition-all duration-100 whitespace-nowrap cursor-pointer active:scale-95 select-none"
-                            :class="filterMode === opt.key
-                                ? 'bg-(--text-primary) border-(--text-primary) text-(--bg-app)'
-                                : 'bg-(--bg-card) border-(--border-color) text-(--text-secondary) hover:text-(--text-primary) hover:border-(--border-color-hover)'
-                                "
-                        >
-                            <span class="material-symbols-outlined text-sm leading-none select-none">{{ opt.icon
-                                }}</span>
-                            <span>{{ opt.label }}</span>
-                        </button>
-                    </div>
+                    <!-- Filter Dropdown -->
+                    <Select
+                        v-model="filterMode"
+                        :options="filterOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        class="select-chip focus-ring-minimal"
+                    >
+                        <template #value="slotProps">
+                            <div v-if="slotProps.value" class="flex items-center gap-1.5 text-xs font-semibold text-(--text-primary)">
+                                <span class="material-symbols-outlined text-sm leading-none text-(--text-secondary) select-none">
+                                    {{ getFilterIcon(slotProps.value) }}
+                                </span>
+                                <span>{{ filterOptions.find(o => o.value === slotProps.value)?.label }}</span>
+                            </div>
+                        </template>
+                        <template #option="slotProps">
+                            <div class="flex items-center gap-1.5 text-xs font-semibold text-(--text-primary)">
+                                <span class="material-symbols-outlined text-sm leading-none text-(--text-secondary) select-none">
+                                    {{ getFilterIcon(slotProps.option.value) }}
+                                </span>
+                                <span>{{ slotProps.option.label }}</span>
+                            </div>
+                        </template>
+                    </Select>
 
-                    <!-- Subtle Vertical Divider -->
-                    <div class="h-4 w-px bg-(--border-color) mx-1 shrink-0"></div>
+                    <!-- Sort Dropdown -->
+                    <Select
+                        :modelValue="query.sort"
+                        @update:modelValue="(val) => handleSortChange(val as any)"
+                        :options="sortOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        class="select-chip focus-ring-minimal"
+                    >
+                        <template #value="slotProps">
+                            <div v-if="slotProps.value" class="flex items-center gap-1.5 text-xs font-semibold text-(--text-primary)">
+                                <span class="material-symbols-outlined text-sm leading-none text-(--text-secondary) select-none">
+                                    {{ getSortIcon(slotProps.value) }}
+                                </span>
+                                <span>{{ sortOptions.find(o => o.value === slotProps.value)?.label }}</span>
+                            </div>
+                        </template>
+                        <template #option="slotProps">
+                            <div class="flex items-center gap-1.5 text-xs font-semibold text-(--text-primary)">
+                                <span class="material-symbols-outlined text-sm leading-none text-(--text-secondary) select-none">
+                                    {{ getSortIcon(slotProps.option.value) }}
+                                </span>
+                                <span>{{ slotProps.option.label }}</span>
+                            </div>
+                        </template>
+                    </Select>
 
-                    <!-- Sort Options -->
-                    <div class="flex items-center gap-1.5 shrink-0">
-                        <button
-                            v-for="opt in [
-                                { key: 'progress', label: 'Progress', icon: 'percent' },
-                                { key: 'title', label: 'Title', icon: 'sort_by_alpha' },
-                                { key: 'author', label: 'Author', icon: 'person' },
-                                { key: 'last_read', label: 'Recent', icon: 'history' }
-                            ] as const"
-                            :key="opt.key"
-                            @click="handleSortChange(opt.key)"
-                            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full border transition-all duration-100 whitespace-nowrap cursor-pointer active:scale-95 select-none"
-                            :class="query.sort === opt.key
-                                ? 'bg-(--text-primary) border-(--text-primary) text-(--bg-app)'
-                                : 'bg-(--bg-card) border-(--border-color) text-(--text-secondary) hover:text-(--text-primary) hover:border-(--border-color-hover)'
-                                "
-                        >
-                            <span class="material-symbols-outlined text-sm leading-none select-none">{{ opt.icon
-                                }}</span>
-                            <span>{{ opt.label }}</span>
-                            <span
-                                v-if="query.sort === opt.key"
-                                class="material-symbols-outlined text-xs leading-none ml-0.5 select-none"
-                            >
-                                {{ query.descending ? "arrow_downward" : "arrow_upward" }}
-                            </span>
-                        </button>
-                    </div>
+                    <!-- Sort Direction Button -->
+                    <button
+                        @click="updateLibraryQuery({ descending: !query.descending })"
+                        class="flex items-center justify-center w-8 h-8 rounded-full border border-(--border-color) bg-(--bg-card) text-(--text-secondary) hover:text-(--text-primary) transition-all cursor-pointer focus-ring-minimal active:scale-90"
+                        title="Toggle Sort Direction"
+                    >
+                        <span class="material-symbols-outlined text-sm leading-none select-none">
+                            {{ query.descending ? "arrow_downward" : "arrow_upward" }}
+                        </span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -357,7 +395,7 @@ const getSyncButtonText = computed(() => {
                         v-for="entry in slotProps.items"
                         :key="entry.book.id"
                         @click="emit('select-book', entry.book)"
-                        class="group cursor-pointer py-3.5 px-4 rounded-xl hover:bg-(--accent-color-light) transition-all flex flex-col gap-2.5 -mx-4"
+                        class="group cursor-pointer py-3.5 px-4 rounded-xl hover:bg-(--accent-color-light) transition-all flex flex-col gap-2.5"
                     >
                         <div class="flex justify-between items-start gap-4">
                             <h2
@@ -547,3 +585,39 @@ const getSyncButtonText = computed(() => {
         </Dialog>
     </div>
 </template>
+
+<style scoped>
+.select-chip {
+    padding: 0.15rem 0.6rem !important;
+    height: 2rem;
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--border-color) !important;
+    background-color: var(--bg-card) !important;
+    border-radius: 9999px !important;
+    box-shadow: none !important;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.select-chip:hover {
+    border-color: var(--border-color-hover) !important;
+}
+
+:deep(.p-select-label) {
+    padding: 0 !important;
+    margin-right: 0.25rem !important;
+    display: flex;
+    align-items: center;
+}
+
+:deep(.p-select-dropdown) {
+    width: auto !important;
+    height: auto !important;
+    color: var(--text-secondary) !important;
+}
+
+:deep(.p-select-dropdown-icon) {
+    font-size: 0.75rem !important;
+}
+</style>
