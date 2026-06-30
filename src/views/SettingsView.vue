@@ -4,6 +4,7 @@
 >
 import { onMounted, ref } from 'vue'
 import { useSettings } from '../composables/useSettings'
+import { TRANSLATION_LANGUAGES } from '../lib/externalLookup'
 import { syncConfigure, syncDisconnect, syncStatus } from '../ipc/sync'
 import { refreshSyncConfig } from '../stores/sync'
 import type { SyncStatusDto } from '../ipc/types'
@@ -14,8 +15,19 @@ import Password from 'primevue/password'
 import Button from 'primevue/button'
 import type { Theme } from '../ipc/types'
 
-const { settings, loaded, theme, fontFamily, fontSize, lineHeight, margin, clickZoneSize } =
-    useSettings()
+const {
+    settings,
+    loaded,
+    theme,
+    fontFamily,
+    fontSize,
+    lineHeight,
+    margin,
+    clickZoneSize,
+    translationLanguage,
+} = useSettings()
+
+const translationOptions = [...TRANSLATION_LANGUAGES]
 
 const themeOptions = [
     { label: 'Light', value: 'light' as Theme },
@@ -242,6 +254,25 @@ async function handleSyncDisconnect() {
                         class="w-full focus-ring-minimal"
                     />
                 </div>
+            </div>
+
+            <!-- Translation Target Language -->
+            <div class="flex flex-col gap-1.5">
+                <label
+                    for="translation-select"
+                    class="text-xs font-medium uppercase tracking-wider text-(--text-secondary)"
+                >
+                    Translate To
+                </label>
+                <Select
+                    id="translation-select"
+                    v-model="translationLanguage"
+                    :options="translationOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    filter
+                    class="w-full focus-ring-minimal"
+                />
             </div>
 
             <!-- Sync -->

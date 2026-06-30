@@ -2,7 +2,7 @@
     setup
     lang="ts"
 >
-import { computed } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import type { ViewportRect } from '../../readers'
 
 const props = defineProps<{
@@ -15,25 +15,49 @@ const props = defineProps<{
 const isTouch =
     typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)').matches
 
-// Approximate toolbar height, used only to decide whether a below placement
-// would run off the bottom of the viewport.
+// Approximate toolbar height, used only to decide whether a placement would run
+// off the top or bottom of the viewport.
 const TOOLBAR_HEIGHT = 48
+
+// The toolbar's measured half-width, kept current so the horizontal clamp uses
+// the real size. The set of actions (and so the width) changes with the
+// selection, and a stale estimate would let a wide toolbar clip off the edge.
+const toolbarEl = ref<HTMLDivElement | null>(null)
+const halfWidth = ref(120)
+let observer: ResizeObserver | null = null
+
+watch(toolbarEl, (el) => {
+    observer?.disconnect()
+    observer = null
+    if (!el || typeof ResizeObserver === 'undefined') return
+    observer = new ResizeObserver(() => {
+        const width = el.offsetWidth
+        if (width) halfWidth.value = width / 2
+    })
+    observer.observe(el)
+})
+
+onUnmounted(() => observer?.disconnect())
 
 // Float the toolbar over the target rect, nudged back inside the viewport
 // horizontally so it never clips off-screen on a near-edge selection. Touch
-// devices prefer a below placement to clear the native selection menu.
+// devices prefer a below placement to clear the native selection menu, and
+// either side falls back to the other when there is no room.
 const placement = computed(() => {
     const rect = props.rect
     if (!rect) return null
     const centerX = rect.x + rect.width / 2
-    const left = Math.min(Math.max(centerX, 80), window.innerWidth - 80)
+    const margin = halfWidth.value + 8
+    const left = Math.min(Math.max(centerX, margin), window.innerWidth - margin)
+
     const below = rect.y + rect.height + 12
     const fitsBelow = below + TOOLBAR_HEIGHT <= window.innerHeight
+    const fitsAbove = rect.y - 12 - TOOLBAR_HEIGHT >= 0
 
-    if (isTouch && fitsBelow) {
+    if ((isTouch && fitsBelow) || !fitsAbove) {
         return { left, top: below, above: false }
     }
-    return { left, top: Math.max(rect.y - 12, 12), above: true }
+    return { left, top: rect.y - 12, above: true }
 })
 
 const style = computed(() => {
@@ -52,7 +76,8 @@ const style = computed(() => {
     >
         <div class="animate-fade-in">
             <div
-                class="flex items-center gap-1 rounded-full bg-(--bg-card) border border-(--border-color) shadow-md px-1 py-1 select-none"
+                ref="toolbarEl"
+                class="flex items-center gap-0.5 rounded-full bg-(--bg-card) border border-(--border-color) shadow-md px-1 py-1 select-none"
             >
                 <slot />
             </div>

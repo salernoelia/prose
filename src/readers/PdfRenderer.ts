@@ -101,7 +101,7 @@ export class PdfRenderer implements BookRenderer, Zoomable {
       if (diffX < 5 && diffY < 5) {
         container.dispatchEvent(new CustomEvent('renderer-click', {
           bubbles: true,
-          detail: { target: e.target }
+          detail: { target: e.target, x: e.clientX }
         }))
       }
     })

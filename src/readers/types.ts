@@ -91,6 +91,14 @@ export interface Annotatable {
   removeHighlight(payload: string): void
   /** Clear the current text selection. */
   clearSelection(): void
+  /**
+   * Whether `payload` falls within the page currently identified by
+   * `pagePayload`. Reflowable formats compare by CFI range containment, so a
+   * saved location still matches its page after the text re-paginates (a
+   * different font size, margin, or window width). Fixed-layout formats can
+   * compare payloads directly.
+   */
+  samePage(payload: string, pagePayload: string): boolean
 }
 
 /** Narrow a renderer to {@link Annotatable} when it supports highlights. */

@@ -7,6 +7,7 @@
  */
 import './vendor/foliate-js/view.js'
 import { Overlayer } from './vendor/foliate-js/overlayer.js'
+import * as CFI from './vendor/foliate-js/epubcfi.js'
 import type {
   Annotatable,
   BookRenderer,
@@ -226,9 +227,15 @@ export class EpubRenderer implements BookRenderer, Annotatable {
 
           if ((e.target as HTMLElement).closest('a, button, input, textarea, select')) return
 
+          // The click lands inside the section iframe, so its clientX is relative
+          // to that frame. Lift it into outer-window coordinates by the frame's
+          // own offset, so the reader can map the tap to a page-turn zone.
+          const frame = doc.defaultView?.frameElement?.getBoundingClientRect()
+          const x = (e as MouseEvent).clientX + (frame?.left ?? 0)
+
           container.dispatchEvent(new CustomEvent('renderer-click', {
             bubbles: true,
-            detail: { target: e.target }
+            detail: { target: e.target, x }
           }))
         }, 0)
       })
@@ -273,7 +280,23 @@ export class EpubRenderer implements BookRenderer, Annotatable {
   }
 
   async goToHref(href: string): Promise<void> {
-    if (href) await this.#view?.goTo(href)
+    if (!href) return
+    await this.#view?.goTo(href)
+    // The section just shown can still reflow as its web fonts and our injected
+    // styles settle, which shifts where the outline's anchor sits and can leave
+    // the wrong page on screen. Re-resolve the same target once the layout is
+    // stable so it lands correctly regardless of viewport (font size, margin,
+    // window width).
+    void this.#fontsReady().then(() => {
+      this.#view?.goTo(href).catch(() => {})
+    })
+  }
+
+  /** Resolve once the current section's fonts have loaded, or right away if none. */
+  #fontsReady(): Promise<unknown> {
+    const fonts = this.#currentDoc?.fonts
+    if (!fonts) return Promise.resolve()
+    return fonts.ready.catch(() => {})
   }
 
   toc(): TocItem[] {
@@ -304,6 +327,25 @@ export class EpubRenderer implements BookRenderer, Annotatable {
 
   clearSelection(): void {
     this.#currentDoc?.defaultView?.getSelection()?.removeAllRanges()
+  }
+
+  /**
+   * Whether a saved CFI lies within the page foliate currently reports. The
+   * reported page payload is a range CFI spanning the visible content, so a
+   * bookmark matches when its anchor falls between that range's endpoints. This
+   * survives re-pagination, where exact CFI equality would not. Falls back to
+   * equality if either CFI cannot be parsed.
+   */
+  samePage(payload: string, pagePayload: string): boolean {
+    if (payload === pagePayload) return true
+    try {
+      const pageStart = CFI.collapse(pagePayload)
+      const pageEnd = CFI.collapse(pagePayload, true)
+      const anchor = CFI.collapse(payload)
+      return CFI.compare(pageStart, anchor) <= 0 && CFI.compare(anchor, pageEnd) <= 0
+    } catch {
+      return false
+    }
   }
 
   /**

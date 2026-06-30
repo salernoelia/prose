@@ -43,11 +43,23 @@ export function useAnnotations(
   // The highlight the reader tapped, surfaced so the UI can offer to remove it.
   const activeHighlight = ref<ActiveHighlight | null>(null)
 
-  /** Whether the current page is already bookmarked, matched by locator payload. */
+  /**
+   * Whether a bookmark sits on the page the reader is currently viewing. ePub
+   * pages are spans of text whose CFI shifts as the book re-paginates, so the
+   * renderer decides membership by range containment; without that capability
+   * (PDF), an exact payload match is enough.
+   */
+  function bookmarkOnPage(bookmark: BookmarkDto, payload: string): boolean {
+    const renderer = annotatable.value
+    if (renderer) return renderer.samePage(bookmark.locator.payload, payload)
+    return bookmark.locator.payload === payload
+  }
+
+  /** Whether the current page already carries a bookmark. */
   const isBookmarked = computed(() => {
     const payload = locator.value?.payload
     if (!payload) return false
-    return bookmarks.value.some((b) => b.locator.payload === payload)
+    return bookmarks.value.some((b) => bookmarkOnPage(b, payload))
   })
 
   /** Whether the active renderer can carry highlights (selectable text). */
@@ -68,11 +80,12 @@ export function useAnnotations(
   /** Bookmark the current page, or remove the bookmarks already on it. */
   async function toggleBookmark() {
     const current = locator.value
-    if (!current) return
-    const existing = bookmarks.value.filter((b) => b.locator.payload === current.payload)
+    if (!current?.payload) return
+    const existing = bookmarks.value.filter((b) => bookmarkOnPage(b, current.payload))
     if (existing.length > 0) {
+      const removed = new Set(existing.map((b) => b.id))
       await Promise.all(existing.map((b) => annotationDeleteBookmark(b.id)))
-      bookmarks.value = bookmarks.value.filter((b) => b.locator.payload !== current.payload)
+      bookmarks.value = bookmarks.value.filter((b) => !removed.has(b.id))
       return
     }
     const created = await annotationAddBookmark(book.value.id, current)

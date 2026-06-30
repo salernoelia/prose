@@ -109,7 +109,7 @@ function progressLabel(progression: number): string {
                             </button>
                             <button
                                 @click="emit('delete-bookmark', bookmark.id)"
-                                class="flex items-center justify-center w-7 h-7 mr-1 rounded-full text-(--text-tertiary) opacity-0 group-hover:opacity-100 hover:text-(--danger-color,#dc2626) transition-all focus-ring-minimal"
+                                class="flex items-center justify-center w-7 h-7 mr-1 rounded-full text-(--text-tertiary) hover:text-(--danger-color,#dc2626) transition-colors focus-ring-minimal"
                                 title="Delete bookmark"
                                 aria-label="Delete bookmark"
                             >
@@ -145,7 +145,7 @@ function progressLabel(progression: number): string {
                             </button>
                             <button
                                 @click="emit('delete-highlight', highlight.id)"
-                                class="flex items-center justify-center w-7 h-7 mr-1 mt-1 rounded-full text-(--text-tertiary) opacity-0 group-hover:opacity-100 hover:text-(--danger-color,#dc2626) transition-all focus-ring-minimal"
+                                class="flex items-center justify-center w-7 h-7 mr-1 mt-1 rounded-full text-(--text-tertiary) hover:text-(--danger-color,#dc2626) transition-colors focus-ring-minimal"
                                 title="Delete highlight"
                                 aria-label="Delete highlight"
                             >

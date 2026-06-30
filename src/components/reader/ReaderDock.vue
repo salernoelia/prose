@@ -159,7 +159,7 @@ const emit = defineEmits<{
     <!-- Small controls restoration tab (displays when dock is hidden) -->
     <div
         class="fixed bottom-3 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ease-in-out pointer-events-auto"
-        :class="!visible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'"
+        :class="!visible ? 'translate-y-0 opacity-50' : 'translate-y-8 opacity-0 pointer-events-none'"
     >
         <button
             @click="emit('show')"

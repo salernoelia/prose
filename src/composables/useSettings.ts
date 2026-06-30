@@ -1,6 +1,8 @@
 import { computed, ref, watch } from 'vue'
 import { settingsState, updateSettings, initSettingsStore } from '../stores/settings'
 import type { Theme } from '../ipc/types'
+import type { TranslationLanguage } from '../lib/externalLookup'
+import { defaultTranslationLanguage } from '../lib/externalLookup'
 
 // Shared reactive module-scoped state for click zone size, persisted locally
 const clickZoneSize = ref(
@@ -9,6 +11,15 @@ const clickZoneSize = ref(
   ),
 )
 const showClickZonePreview = ref(false)
+
+// Which language the reader's Translate action targets; a local view
+// preference, stored alongside the click zone size rather than in the synced
+// domain core. Defaults to the device language on first run.
+const translationLanguage = ref<TranslationLanguage>(
+  ((typeof localStorage !== 'undefined'
+    ? localStorage.getItem('translationLanguage')
+    : null) as TranslationLanguage | null) || defaultTranslationLanguage(),
+)
 
 let previewTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -74,6 +85,16 @@ export function useSettings() {
     },
   })
 
+  const translation = computed({
+    get: () => translationLanguage.value,
+    set: (value: TranslationLanguage) => {
+      translationLanguage.value = value
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('translationLanguage', value)
+      }
+    },
+  })
+
   return {
     settings,
     loaded,
@@ -83,6 +104,7 @@ export function useSettings() {
     lineHeight,
     margin,
     clickZoneSize: clickZone,
+    translationLanguage: translation,
     showClickZonePreview,
     updateSettings,
   }

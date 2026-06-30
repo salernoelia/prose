@@ -18,3 +18,13 @@ declare module '*/foliate-js/overlayer.js' {
     outline: unknown
   }
 }
+
+/**
+ * The epubcfi module parses and compares CFIs. We use it to test whether a saved
+ * location still belongs to the current page after re-pagination. `collapse`
+ * reduces a range CFI to one of its endpoints; `compare` orders two CFIs.
+ */
+declare module '*/foliate-js/epubcfi.js' {
+  export function collapse(cfi: string, toEnd?: boolean): string
+  export function compare(a: string, b: string): number
+}

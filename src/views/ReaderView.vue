@@ -16,6 +16,11 @@ import ReaderQuickSettings from "../components/reader/ReaderQuickSettings.vue";
 import { useDictionary } from "../composables/useDictionary";
 import { useSync } from "../composables/useSync";
 import { startSession, endSession } from "../composables/useReadingTracker";
+import {
+    googleSearchUrl,
+    openExternal,
+    translateUrl,
+} from "../lib/externalLookup";
 import type { BookDto, BookmarkDto, HighlightDto } from "../ipc/types";
 
 const props = defineProps<{
@@ -26,7 +31,7 @@ const emit = defineEmits<{
     (e: "back-to-library"): void;
 }>();
 
-const { clickZoneSize } = useSettings();
+const { clickZoneSize, translationLanguage } = useSettings();
 
 const shortAuthor = computed(() => {
     const author = props.book.author;
@@ -96,6 +101,13 @@ const isSingleWord = computed(() => {
     return text.length > 0 && !/\s/.test(text);
 });
 
+// Mirror the selection popover for an existing highlight: a single word can be
+// defined, a longer passage is searched instead.
+const isActiveHighlightSingleWord = computed(() => {
+    const text = activeHighlight.value?.highlight.text.trim() ?? "";
+    return text.length > 0 && !/\s/.test(text);
+});
+
 const showDock = ref(true);
 const showToc = ref(false);
 const showAnnotations = ref(false);
@@ -142,12 +154,35 @@ function onDefine() {
     const current = selection.value;
     if (!current) return;
 
-    if (annotatable.value) {
+    // A define popover and the highlight-remove popover must never stack: the
+    // remove button would sit invisibly under the definition card and a tap
+    // there would silently delete the highlight.
+    dismissActiveHighlight();
+
+    // The temporary blue highlight is only a visual cue for the looked-up word.
+    // Never draw it over a real highlight at the same range: clearing the temp
+    // would also erase the real one (both are keyed by payload in the renderer).
+    const alreadyHighlighted = highlights.value.some(
+        (h) => h.locator.payload === current.payload,
+    );
+    if (annotatable.value && !alreadyHighlighted) {
         tempHighlightCfi.value = current.payload;
         annotatable.value.addHighlight(current.payload, "#3b82f6");
     }
 
     void lookupWord(current.text, current.rect);
+    dismissSelection();
+}
+
+function onTranslate() {
+    const text = selection.value?.text.trim();
+    if (text) void openExternal(translateUrl(text, translationLanguage.value));
+    dismissSelection();
+}
+
+function onSearch() {
+    const text = selection.value?.text.trim();
+    if (text) void openExternal(googleSearchUrl(text));
     dismissSelection();
 }
 
@@ -159,6 +194,22 @@ watch(locator, () => {
 function onRemoveActiveHighlight() {
     const active = activeHighlight.value;
     if (active) void removeHighlight(active.highlight.id);
+}
+
+function onDefineActiveHighlight() {
+    const active = activeHighlight.value;
+    if (!active) return;
+    // The text is already highlighted, so look it up without touching any
+    // highlight; defining a mark must never remove it.
+    void lookupWord(active.highlight.text.trim(), active.rect);
+    dismissActiveHighlight();
+}
+
+function onSearchActiveHighlight() {
+    const active = activeHighlight.value;
+    if (!active) return;
+    void openExternal(googleSearchUrl(active.highlight.text.trim()));
+    dismissActiveHighlight();
 }
 
 function handleBack() {
@@ -188,17 +239,33 @@ const handleKeyDown = (e: KeyboardEvent) => {
 };
 
 function handleRendererClick(e: Event) {
+    const customEvent = e as CustomEvent<{ target: Node; x?: number }>;
     if (definitionWord.value) {
-        const customEvent = e as CustomEvent<{ target: Node }>;
         const target = customEvent.detail?.target || e.target;
         const popoverEl = document.querySelector(".reader-definition-popover");
         if (popoverEl && popoverEl.contains(target as Node)) {
             return;
         }
         handleClearDefinition();
-    } else {
-        toggleDock();
+        return;
     }
+
+    // A tap in a side turn-zone flips the page; a tap in the middle toggles the
+    // dock. Zones are measured from the viewport edges, the same width the
+    // settings preview shows. The renderer reports the tap's x in window space.
+    const x = customEvent.detail?.x;
+    if (typeof x === "number") {
+        const zoneWidth = (window.innerWidth * clickZoneSize.value) / 100;
+        if (x < zoneWidth) {
+            prev();
+            return;
+        }
+        if (x > window.innerWidth - zoneWidth) {
+            next();
+            return;
+        }
+    }
+    toggleDock();
 }
 
 const handleOutsideClick = (e: MouseEvent) => {
@@ -230,10 +297,8 @@ onUnmounted(() => {
 <template>
     <div class="w-full relative h-full flex flex-col justify-between select-none">
         <ReaderClickZones
-            :zone-size="clickZoneSize"
             @prev="prev"
             @next="next"
-            @toggle="toggleDock"
         />
 
         <!-- Non-Scrolling Reading Canvas (Overflow hidden, flex-1, with fade-in) -->
@@ -331,7 +396,7 @@ onUnmounted(() => {
         <ReaderAnnotationPopover :rect="selection?.rect ?? null">
             <button
                 @click="onHighlight"
-                class="flex items-center gap-1.5 px-3 h-8 rounded-full text-sm text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                class="flex items-center gap-1 px-2.5 h-8 rounded-full text-sm text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
                 title="Highlight"
             >
                 <span class="material-symbols-outlined text-base">format_ink_highlighter</span>
@@ -340,11 +405,28 @@ onUnmounted(() => {
             <button
                 v-if="isSingleWord"
                 @click="onDefine"
-                class="flex items-center gap-1.5 px-3 h-8 rounded-full text-sm text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                class="flex items-center gap-1 px-2.5 h-8 rounded-full text-sm text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
                 title="Define"
             >
                 <span class="material-symbols-outlined text-base">menu_book</span>
                 Define
+            </button>
+            <button
+                v-else
+                @click="onSearch"
+                class="flex items-center gap-1 px-2.5 h-8 rounded-full text-sm text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                title="Search"
+            >
+                <span class="material-symbols-outlined text-base">search</span>
+                Search
+            </button>
+            <button
+                @click="onTranslate"
+                class="flex items-center gap-1 px-2.5 h-8 rounded-full text-sm text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                title="Translate"
+            >
+                <span class="material-symbols-outlined text-base">translate</span>
+                Translate
             </button>
         </ReaderAnnotationPopover>
 
@@ -357,15 +439,34 @@ onUnmounted(() => {
             @close="handleClearDefinition"
         />
 
-        <!-- Floating action over an existing highlight -->
-        <ReaderAnnotationPopover :rect="activeHighlight?.rect ?? null">
+        <!-- Floating action over an existing highlight. Hidden while a definition
+             is open so its Remove button can never sit under the definition card. -->
+        <ReaderAnnotationPopover :rect="definitionWord ? null : (activeHighlight?.rect ?? null)">
             <button
                 @click="onRemoveActiveHighlight"
-                class="flex items-center gap-1.5 px-3 h-8 rounded-full text-sm text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                class="flex items-center gap-1 px-2.5 h-8 rounded-full text-sm text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
                 title="Remove highlight"
             >
                 <span class="material-symbols-outlined text-base">delete</span>
                 Remove
+            </button>
+            <button
+                v-if="isActiveHighlightSingleWord"
+                @click="onDefineActiveHighlight"
+                class="flex items-center gap-1 px-2.5 h-8 rounded-full text-sm text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                title="Define"
+            >
+                <span class="material-symbols-outlined text-base">menu_book</span>
+                Define
+            </button>
+            <button
+                v-else
+                @click="onSearchActiveHighlight"
+                class="flex items-center gap-1 px-2.5 h-8 rounded-full text-sm text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                title="Search"
+            >
+                <span class="material-symbols-outlined text-base">search</span>
+                Search
             </button>
             <button
                 @click="dismissActiveHighlight"
