@@ -10,12 +10,14 @@ const state = reactive<{
   progressMessage: string
   progressFraction: number
   lastFinishedResult: { success: boolean; message: string } | null
+  hasSyncError: boolean
 }>({
   configured: false,
   syncing: false,
   progressMessage: '',
   progressFraction: 0,
   lastFinishedResult: null,
+  hasSyncError: false,
 })
 
 let initPromise: Promise<void> | null = null
@@ -53,6 +55,7 @@ export function initSyncStore(): Promise<void> {
           success: payload.success,
           message: payload.message,
         }
+        state.hasSyncError = !payload.success
         if (payload.success) {
           // Sync succeeded - reload library and settings to reflect remote changes
           await reloadLibrary()
@@ -89,6 +92,7 @@ export async function triggerSync(): Promise<void> {
   state.progressMessage = 'Connecting...'
   state.progressFraction = 0
   state.lastFinishedResult = null
+  state.hasSyncError = false
   try {
     await syncTrigger()
   } catch (err) {
@@ -98,6 +102,7 @@ export async function triggerSync(): Promise<void> {
       success: false,
       message: msg,
     }
+    state.hasSyncError = true
     console.error('Failed to trigger sync:', err)
   }
 }
@@ -137,4 +142,5 @@ export function resetSyncStoreForTesting(): void {
   state.progressMessage = ''
   state.progressFraction = 0
   state.lastFinishedResult = null
+  state.hasSyncError = false
 }

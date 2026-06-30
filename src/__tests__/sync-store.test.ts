@@ -67,9 +67,10 @@ describe('Sync Store and Composable', () => {
   })
 
   it('useSync composable provides computed properties', () => {
-    const { configured, syncing } = useSync()
+    const { configured, syncing, hasSyncError } = useSync()
 
     expect(configured.value).toBe(false)
     expect(syncing.value).toBe(false)
+    expect(hasSyncError.value).toBe(false)
   })
 })

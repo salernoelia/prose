@@ -15,6 +15,7 @@ export function useSync() {
   const progressMessage = computed(() => syncState.progressMessage)
   const progressFraction = computed(() => syncState.progressFraction)
   const lastFinishedResult = computed(() => syncState.lastFinishedResult)
+  const hasSyncError = computed(() => syncState.hasSyncError)
 
   return {
     configured,
@@ -22,6 +23,7 @@ export function useSync() {
     progressMessage,
     progressFraction,
     lastFinishedResult,
+    hasSyncError,
     triggerSync,
     refreshSyncConfig,
     dismissSyncResult,

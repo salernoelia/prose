@@ -21,9 +21,6 @@ const {
     entries,
     query,
     loaded,
-    importing,
-    importMessage,
-    importFraction,
     updateLibraryQuery,
     importBook,
     removeBook,
@@ -32,12 +29,9 @@ const {
 const {
     configured,
     syncing,
-    progressMessage,
-    progressFraction,
-    lastFinishedResult,
+    hasSyncError,
     triggerSync,
     refreshSyncConfig,
-    dismissSyncResult,
 } = useSync();
 
 const filterMode = ref<"all" | "reading" | "read">("all");
@@ -157,6 +151,12 @@ const handleSortChange = (
         descending: isCurrentlyActive ? !query.value.descending : false,
     });
 };
+
+const getSyncButtonText = computed(() => {
+    if (syncing.value) return "Syncing";
+    if (hasSyncError.value) return "Sync error";
+    return "Sync";
+});
 </script>
 
 <template>
@@ -193,13 +193,16 @@ const handleSortChange = (
                     v-if="configured"
                     @click="triggerSync"
                     :disabled="syncing"
-                    class="px-4 py-1.5 text-xs font-semibold rounded border border-(--border-color) text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer focus-ring-minimal flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="px-4 py-1.5 text-xs font-semibold rounded border text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer focus-ring-minimal flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    :class="hasSyncError
+                        ? 'border-red-500 text-red-500 dark:border-red-500 dark:text-red-400'
+                        : 'border-(--border-color)'"
                 >
                     <span
                         class="material-symbols-outlined text-base select-none"
-                        :class="{ 'animate-spin': syncing }"
+                        :class="{ 'animate-spin': syncing, 'text-red-500 dark:text-red-400': hasSyncError && !syncing }"
                     >sync</span>
-                    <span>{{ syncing ? "Syncing" : "Sync" }}</span>
+                    <span>{{ getSyncButtonText }}</span>
                 </button>
                 <button
                     v-else
@@ -221,54 +224,6 @@ const handleSortChange = (
                 </button>
             </div>
         </header>
-
-        <!-- Sync Progress Indicator -->
-        <div
-            v-if="syncing"
-            class="mb-4 p-4 rounded-2xl border border-(--border-color) bg-(--accent-color-medium) text-sm text-(--text-primary)"
-        >
-            <div class="flex justify-between items-center mb-1">
-                <span>{{ progressMessage || "Syncing library..." }}</span>
-                <span class="tabular-nums font-semibold">{{ Math.round(progressFraction * 100) }}%</span>
-            </div>
-            <div class="w-full h-1 bg-(--border-color) rounded overflow-hidden">
-                <div
-                    class="h-full bg-(--text-primary) transition-all duration-300"
-                    :style="{ width: progressFraction * 100 + '%' }"
-                ></div>
-            </div>
-        </div>
-
-        <!-- Sync Error Alert -->
-        <div
-            v-if="lastFinishedResult && !lastFinishedResult.success"
-            class="mt-6 mb-2 p-4 border border-red-200 dark:border-red-950/40 rounded-2xl bg-red-50 dark:bg-red-950/10 text-sm text-red-700 dark:text-red-400 flex justify-between items-start gap-4"
-        >
-            <span class="min-w-0 break-words">Sync failed: {{ lastFinishedResult.message }}</span>
-            <button
-                @click="dismissSyncResult"
-                class="shrink-0 text-xs font-semibold hover:underline cursor-pointer border-0 bg-transparent text-red-700 dark:text-red-400"
-            >
-                Dismiss
-            </button>
-        </div>
-
-        <!-- Import Progress Indicator (Zero Icon) -->
-        <div
-            v-if="importing"
-            class="mb-6 p-4 border border-(--border-color) rounded-2xl bg-(--accent-color-light) text-sm text-(--text-primary)"
-        >
-            <div class="flex justify-between items-center mb-1">
-                <span>{{ importMessage }}</span>
-                <span>{{ Math.round(importFraction * 100) }}%</span>
-            </div>
-            <div class="w-full h-1 bg-(--border-color) rounded overflow-hidden">
-                <div
-                    class="h-full bg-(--text-primary) transition-all duration-300"
-                    :style="{ width: importFraction * 100 + '%' }"
-                ></div>
-            </div>
-        </div>
 
         <!-- Search & Filter Bar -->
         <div class="flex flex-col gap-4 mb-8">
