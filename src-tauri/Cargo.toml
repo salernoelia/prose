@@ -1,6 +1,6 @@
 [package]
 name = "prose"
-version = "0.1.0"
+version = "0.1.1"
 description = "Cross-platform, local-first reader for ePub and PDF."
 authors = ["Elia Salerno"]
 edition = "2021"

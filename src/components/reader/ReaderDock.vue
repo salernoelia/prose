@@ -44,8 +44,8 @@ const emit = defineEmits<{
     >
         <!-- Small Border Card (Rounded Pill on Desktop, Flat bar on Mobile) -->
         <div
-            class="w-full h-full flex items-center justify-around gap-4 px-4
-                   md:w-auto md:bg-(--bg-card) md:border md:border-(--border-color) md:rounded-full md:shadow-md md:justify-start md:py-2 md:px-4">
+            class="w-full h-full flex items-center justify-around gap-2 px-2
+                   md:w-auto md:bg-(--bg-card) md:border md:border-(--border-color) md:rounded-full md:shadow-md md:justify-start md:py-2 md:px-4 md:gap-4">
             <!-- Back to Library -->
             <button
                 @click="emit('back')"
@@ -55,8 +55,6 @@ const emit = defineEmits<{
             >
                 <span class="material-symbols-outlined text-xl leading-none select-none">arrow_back</span>
             </button>
-
-            <span class="w-px h-4 bg-(--border-color)"></span>
 
             <!-- Outline / TOC -->
             <button
@@ -97,7 +95,6 @@ const emit = defineEmits<{
 
             <!-- Zoom controls (fixed-layout formats only) -->
             <template v-if="canZoom">
-                <span class="w-px h-4 bg-(--border-color)"></span>
                 <div class="flex items-center gap-1 text-(--text-secondary) select-none">
                     <button
                         @click="emit('zoom-out')"
@@ -118,8 +115,6 @@ const emit = defineEmits<{
                 </div>
             </template>
 
-            <span class="w-px h-4 bg-(--border-color)"></span>
-
             <!-- Page turn indicators in dock -->
             <div class="flex items-center gap-2 text-xs text-(--text-secondary) select-none">
                 <button
@@ -139,8 +134,6 @@ const emit = defineEmits<{
                 </button>
             </div>
 
-            <span class="w-px h-4 bg-(--border-color)"></span>
-
             <!-- Quick reading settings (theme, text size, line spacing) -->
             <button
                 @click="emit('quick-settings')"
@@ -150,8 +143,6 @@ const emit = defineEmits<{
             >
                 <span class="material-symbols-outlined text-xl leading-none select-none">tune</span>
             </button>
-
-            <span class="w-px h-4 bg-(--border-color)"></span>
 
             <!-- Hide Dock Action -->
             <button

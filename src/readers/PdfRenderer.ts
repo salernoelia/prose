@@ -224,6 +224,13 @@ export class PdfRenderer implements BookRenderer, Zoomable {
     canvas.style.width = `${newWidth}px`
     canvas.style.height = `${newHeight}px`
 
+    // Dynamically adjust margin to center canvas or align to start to avoid flexbox cropping
+    const containerWidth = container.clientWidth
+    const containerHeight = container.clientHeight
+    const marginX = newWidth < containerWidth ? 'auto' : '0'
+    const marginY = newHeight < containerHeight ? 'auto' : '0'
+    canvas.style.margin = `${marginY} ${marginX}`
+
     // Adjust scroll positions so anchor point stays in place
     const ratio = this.#zoom / oldZoom
     container.scrollLeft = (scrollLeft + offsetX) * ratio - offsetX
@@ -308,10 +315,15 @@ export class PdfRenderer implements BookRenderer, Zoomable {
     // Fit the whole page to the viewport (contain), so it is never cut off in
     // wide or short windows; zoom scales up from there (FR-READ-05). The
     // border-box from getBoundingClientRect is immune to any scrollbar.
-    const box = this.#viewport.getBoundingClientRect()
-    const fitWidth = box.width || unscaled.width
-    const fitHeight = box.height || unscaled.height
-    const baseScale = Math.min(fitWidth / unscaled.width, fitHeight / unscaled.height)
+    const box = this.#viewport ? this.#viewport.getBoundingClientRect() : { width: 0, height: 0 }
+    const fitWidth = box.width || window.innerWidth || unscaled.width
+    const fitHeight = box.height || window.innerHeight || unscaled.height
+
+    // On mobile devices, let the PDF fill up the full width instead of fitting to page height.
+    const isMobile = window.innerWidth < 768
+    const baseScale = isMobile
+      ? (fitWidth / unscaled.width)
+      : Math.min(fitWidth / unscaled.width, fitHeight / unscaled.height)
 
     // Save base dimensions for layout scaling
     this.#baseWidth = unscaled.width * baseScale
@@ -371,6 +383,20 @@ export class PdfRenderer implements BookRenderer, Zoomable {
     if (context) {
       context.drawImage(offscreenCanvas, 0, 0)
     }
+
+    // Dynamic margin calculation to center canvas if smaller than container,
+    // and align to start (0) if larger, avoiding flexbox cropping.
+    if (canvas && container) {
+      const canvasWidth = Math.floor(viewport.width)
+      const canvasHeight = Math.floor(viewport.height)
+      const containerWidth = container.clientWidth
+      const containerHeight = container.clientHeight
+
+      const marginX = canvasWidth < containerWidth ? 'auto' : '0'
+      const marginY = canvasHeight < containerHeight ? 'auto' : '0'
+      canvas.style.margin = `${marginY} ${marginX}`
+    }
+
     this.#emitLocation()
   }
 
