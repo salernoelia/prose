@@ -16,7 +16,9 @@ import type {
   RenderTask,
 } from 'pdfjs-dist'
 import workerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url'
-import type { BookRenderer, Locator, TocItem, Zoomable } from './types'
+import type { BookRenderer, Locator, ReadingStyle, TocItem, Zoomable } from './types'
+import { isDarkTheme } from './themes'
+import { installColorInvert } from './darkInvert'
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerSrc
 
@@ -50,6 +52,10 @@ export class PdfRenderer implements BookRenderer, Zoomable {
   #baseHeight = 0
   #debounceTimeoutHandle: number | null = null
   #lastPaintedPage = 1
+  /** Active reading theme; dark themes invert the page (FR-READ themes). */
+  #theme: ReadingStyle['theme'] = 'light'
+  /** Per-page invert strategy, cached so zoom and page-flips never recompute. */
+  #pageModes = new Map<number, 'smart' | 'scanned'>()
 
   async mount(container: HTMLElement): Promise<void> {
     // The page scrolls only when zoomed past fit; centered otherwise. `margin:
@@ -166,8 +172,12 @@ export class PdfRenderer implements BookRenderer, Zoomable {
     this.#locationListeners.push(cb)
   }
 
-  applyStyle(): void {
-    // PDF is fixed-layout; typography settings do not apply.
+  applyStyle(style: ReadingStyle): void {
+    // PDF is fixed-layout, so typography is ignored; only the theme matters,
+    // and only to decide whether the page is inverted for dark reading.
+    if (style.theme === this.#theme) return
+    this.#theme = style.theme
+    if (this.#doc) void this.#paint()
   }
 
   /** Adjust the zoom multiplier and repaint. 1 is fit-to-page (the whole page). */
@@ -285,6 +295,13 @@ export class PdfRenderer implements BookRenderer, Zoomable {
     }
 
     const page: PDFPageProxy = await this.#doc.getPage(this.#page)
+
+    // Dark themes invert the page. Born-digital pages are inverted per-color so
+    // photos keep their true colors (`smart`); a page that is just a scanned
+    // image has no such structure, so the whole canvas is inverted instead.
+    const dark = isDarkTheme(this.#theme)
+    const mode = dark ? await this.#pageMode(page) : 'smart'
+
     const unscaled = page.getViewport({ scale: 1 })
     // Fit the whole page to the viewport (contain), so it is never cut off in
     // wide or short windows; zoom scales up from there (FR-READ-05).
@@ -317,6 +334,10 @@ export class PdfRenderer implements BookRenderer, Zoomable {
     offscreenCanvas.width = Math.floor(viewport.width * dpr)
     offscreenCanvas.height = Math.floor(viewport.height * dpr)
 
+    // Smart invert maps each color as pdf.js paints it; images, drawn directly,
+    // are left alone. A fresh offscreen context each paint needs no teardown.
+    if (dark && mode === 'smart') installColorInvert(offscreenContext)
+
     this.#renderTask = page.render({
       canvas: offscreenCanvas,
       canvasContext: offscreenContext,
@@ -337,11 +358,35 @@ export class PdfRenderer implements BookRenderer, Zoomable {
     canvas.style.width = `${Math.floor(viewport.width)}px`
     canvas.style.height = `${Math.floor(viewport.height)}px`
 
+    // A scanned page carries no per-color structure, so flip the whole canvas
+    // at display time; `hue-rotate` keeps any color tint roughly true.
+    canvas.style.filter = dark && mode === 'scanned' ? 'invert(1) hue-rotate(180deg)' : ''
+
     const context = canvas.getContext('2d')
     if (context) {
       context.drawImage(offscreenCanvas, 0, 0)
     }
     this.#emitLocation()
+  }
+
+  /**
+   * Decide how a page inverts under a dark theme. A page that paints raster
+   * images but shows no text is a scan, which must be inverted whole; anything
+   * with text is born-digital and inverts per-color so its images stay true.
+   */
+  async #pageMode(page: PDFPageProxy): Promise<'smart' | 'scanned'> {
+    const cached = this.#pageModes.get(page.pageNumber)
+    if (cached) return cached
+    const { fnArray } = await page.getOperatorList()
+    let images = 0
+    let texts = 0
+    for (const fn of fnArray) {
+      if (fn === pdfjs.OPS.paintImageXObject || fn === pdfjs.OPS.paintInlineImageXObject) images += 1
+      else if (fn === pdfjs.OPS.showText) texts += 1
+    }
+    const mode = images > 0 && texts === 0 ? 'scanned' : 'smart'
+    this.#pageModes.set(page.pageNumber, mode)
+    return mode
   }
 
   async #buildToc(): Promise<TocItem[]> {
