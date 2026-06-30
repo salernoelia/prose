@@ -123,7 +123,7 @@ function readingCss(style: ReadingStyle): string {
        letter/word spacing, left-align body text some books center across the
        whole screen, and drop heavy first-line indents and side gutters. */
     p, li, blockquote, dd, dt, div, section, article {
-      line-height: ${style.lineHeight};
+      line-height: ${style.lineHeight} !important;
       text-align: start !important;
       letter-spacing: normal !important;
       word-spacing: normal !important;
@@ -135,6 +135,11 @@ function readingCss(style: ReadingStyle): string {
       max-width: none !important;
     }
     pre { white-space: pre-wrap !important; }
+    /* Back every image with a light gray so transparent figures and line art
+       (usually authored dark-on-transparent for a white page) stay readable on
+       dark themes. On opaque images the backing sits behind the pixels, so it is
+       invisible and adds no frame. */
+    img, svg, image { background-color: #919191 !important; }
   `
 }
 

@@ -2,50 +2,50 @@
     setup
     lang="ts"
 >
-import { computed, onMounted, onUnmounted, ref, toRef, watch } from 'vue'
-import { useSettings } from '../composables/useSettings'
-import { useReader } from '../composables/useReader'
-import { useAnnotations } from '../composables/useAnnotations'
-import ReaderClickZones from '../components/reader/ReaderClickZones.vue'
-import ReaderDock from '../components/reader/ReaderDock.vue'
-import ReaderTocDrawer from '../components/reader/ReaderTocDrawer.vue'
-import ReaderAnnotationsDrawer from '../components/reader/ReaderAnnotationsDrawer.vue'
-import ReaderAnnotationPopover from '../components/reader/ReaderAnnotationPopover.vue'
-import ReaderDefinitionPopover from '../components/reader/ReaderDefinitionPopover.vue'
-import ReaderQuickSettings from '../components/reader/ReaderQuickSettings.vue'
-import { useDictionary } from '../composables/useDictionary'
-import { useSync } from '../composables/useSync'
-import { startSession, endSession } from '../composables/useReadingTracker'
-import type { BookDto, BookmarkDto, HighlightDto } from '../ipc/types'
+import { computed, onMounted, onUnmounted, ref, toRef, watch } from "vue";
+import { useSettings } from "../composables/useSettings";
+import { useReader } from "../composables/useReader";
+import { useAnnotations } from "../composables/useAnnotations";
+import ReaderClickZones from "../components/reader/ReaderClickZones.vue";
+import ReaderDock from "../components/reader/ReaderDock.vue";
+import ReaderTocDrawer from "../components/reader/ReaderTocDrawer.vue";
+import ReaderAnnotationsDrawer from "../components/reader/ReaderAnnotationsDrawer.vue";
+import ReaderAnnotationPopover from "../components/reader/ReaderAnnotationPopover.vue";
+import ReaderDefinitionPopover from "../components/reader/ReaderDefinitionPopover.vue";
+import ReaderQuickSettings from "../components/reader/ReaderQuickSettings.vue";
+import { useDictionary } from "../composables/useDictionary";
+import { useSync } from "../composables/useSync";
+import { startSession, endSession } from "../composables/useReadingTracker";
+import type { BookDto, BookmarkDto, HighlightDto } from "../ipc/types";
 
 const props = defineProps<{
-    book: BookDto
-}>()
+    book: BookDto;
+}>();
 
 const emit = defineEmits<{
-    (e: 'back-to-library'): void
-}>()
+    (e: "back-to-library"): void;
+}>();
 
-const { clickZoneSize } = useSettings()
+const { clickZoneSize } = useSettings();
 
 const shortAuthor = computed(() => {
-    const author = props.book.author
-    if (!author) return ''
-    const parts = author.trim().split(/\s+/)
-    if (parts.length <= 1) return author
+    const author = props.book.author;
+    if (!author) return "";
+    const parts = author.trim().split(/\s+/);
+    if (parts.length <= 1) return author;
 
     // If the last part is a common suffix, try the second-to-last part
-    let surnameIdx = parts.length - 1
-    const suffixes = ['jr', 'jr.', 'sr', 'sr.', 'ii', 'iii', 'iv']
+    let surnameIdx = parts.length - 1;
+    const suffixes = ["jr", "jr.", "sr", "sr.", "ii", "iii", "iv"];
     if (surnameIdx > 0 && suffixes.includes(parts[surnameIdx].toLowerCase())) {
-        surnameIdx--
+        surnameIdx--;
     }
 
-    const firstName = parts[0]
-    const firstLetter = firstName.charAt(0).toUpperCase()
-    const surname = parts[surnameIdx]
-    return `${firstLetter}. ${surname}`
-})
+    const firstName = parts[0];
+    const firstLetter = firstName.charAt(0).toUpperCase();
+    const surname = parts[surnameIdx];
+    return `${firstLetter}. ${surname}`;
+});
 
 const {
     host,
@@ -64,7 +64,7 @@ const {
     goToLocator,
     zoomIn,
     zoomOut,
-} = useReader(toRef(props, 'book'))
+} = useReader(toRef(props, "book"));
 
 const {
     bookmarks,
@@ -78,7 +78,7 @@ const {
     removeHighlight,
     dismissSelection,
     dismissActiveHighlight,
-} = useAnnotations(toRef(props, 'book'), locator, annotatable, ready)
+} = useAnnotations(toRef(props, "book"), locator, annotatable, ready);
 
 const {
     word: definitionWord,
@@ -87,143 +87,144 @@ const {
     loading: definitionLoading,
     lookup: lookupWord,
     clear: clearDefinition,
-} = useDictionary()
+} = useDictionary();
 
 // Offer a definition only for a single selected word; multi-word selections are
 // for highlighting, not lookup.
 const isSingleWord = computed(() => {
-    const text = selection.value?.text.trim() ?? ''
-    return text.length > 0 && !/\s/.test(text)
-})
+    const text = selection.value?.text.trim() ?? "";
+    return text.length > 0 && !/\s/.test(text);
+});
 
-const showDock = ref(true)
-const showToc = ref(false)
-const showAnnotations = ref(false)
-const showQuickSettings = ref(false)
+const showDock = ref(true);
+const showToc = ref(false);
+const showAnnotations = ref(false);
+const showQuickSettings = ref(false);
 
-const canPrev = computed(() => progress.value > 0)
-const canNext = computed(() => progress.value < 100)
+const canPrev = computed(() => progress.value > 0);
+const canNext = computed(() => progress.value < 100);
 
-const { configured, syncing, triggerSync } = useSync()
+const { configured, syncing, triggerSync } = useSync();
 
 function toggleDock() {
-    showDock.value = !showDock.value
+    showDock.value = !showDock.value;
 }
 
 function onSelectToc(href: string) {
-    void goToHref(href)
+    void goToHref(href);
 }
 
 function onSelectBookmark(bookmark: BookmarkDto) {
-    void goToLocator(bookmark.locator)
-    showAnnotations.value = false
+    void goToLocator(bookmark.locator);
+    showAnnotations.value = false;
 }
 
 function onSelectHighlight(highlight: HighlightDto) {
-    void goToLocator(highlight.locator)
-    showAnnotations.value = false
+    void goToLocator(highlight.locator);
+    showAnnotations.value = false;
 }
 
 function onHighlight() {
-    void highlightSelection()
+    void highlightSelection();
 }
 
-const tempHighlightCfi = ref<string | null>(null)
+const tempHighlightCfi = ref<string | null>(null);
 
 function handleClearDefinition() {
     if (tempHighlightCfi.value && annotatable.value) {
-        annotatable.value.removeHighlight(tempHighlightCfi.value)
-        tempHighlightCfi.value = null
+        annotatable.value.removeHighlight(tempHighlightCfi.value);
+        tempHighlightCfi.value = null;
     }
-    clearDefinition()
+    clearDefinition();
 }
 
 function onDefine() {
-    const current = selection.value
-    if (!current) return
+    const current = selection.value;
+    if (!current) return;
 
     if (annotatable.value) {
-        tempHighlightCfi.value = current.payload
-        annotatable.value.addHighlight(current.payload, '#3b82f6')
+        tempHighlightCfi.value = current.payload;
+        annotatable.value.addHighlight(current.payload, "#3b82f6");
     }
 
-    void lookupWord(current.text, current.rect)
-    dismissSelection()
+    void lookupWord(current.text, current.rect);
+    dismissSelection();
 }
 
 // Automatically clear active definition popover and temporary highlights on page navigation
 watch(locator, () => {
-    handleClearDefinition()
-})
+    handleClearDefinition();
+});
 
 function onRemoveActiveHighlight() {
-    const active = activeHighlight.value
-    if (active) void removeHighlight(active.highlight.id)
+    const active = activeHighlight.value;
+    if (active) void removeHighlight(active.highlight.id);
 }
 
 function handleBack() {
-    emit('back-to-library')
+    emit("back-to-library");
     if (configured.value && !syncing.value) {
-        void triggerSync()
+        void triggerSync();
     }
 }
 
 const handleKeyDown = (e: KeyboardEvent) => {
-    const target = e.target as HTMLElement | null
-    if (target && (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.tagName === 'SELECT' ||
-        target.isContentEditable
-    )) {
-        return
+    const target = e.target as HTMLElement | null;
+    if (
+        target &&
+        (target.tagName === "INPUT" ||
+            target.tagName === "TEXTAREA" ||
+            target.tagName === "SELECT" ||
+            target.isContentEditable)
+    ) {
+        return;
     }
 
-    if (e.key === 'ArrowRight') {
-        next()
-    } else if (e.key === 'ArrowLeft') {
-        prev()
+    if (e.key === "ArrowRight") {
+        next();
+    } else if (e.key === "ArrowLeft") {
+        prev();
     }
-}
+};
 
 function handleRendererClick(e: Event) {
     if (definitionWord.value) {
-        const customEvent = e as CustomEvent<{ target: Node }>
-        const target = customEvent.detail?.target || e.target
-        const popoverEl = document.querySelector('.reader-definition-popover')
+        const customEvent = e as CustomEvent<{ target: Node }>;
+        const target = customEvent.detail?.target || e.target;
+        const popoverEl = document.querySelector(".reader-definition-popover");
         if (popoverEl && popoverEl.contains(target as Node)) {
-            return
+            return;
         }
-        handleClearDefinition()
+        handleClearDefinition();
     } else {
-        toggleDock()
+        toggleDock();
     }
 }
 
 const handleOutsideClick = (e: MouseEvent) => {
-    if (!definitionWord.value) return
-    const popoverEl = document.querySelector('.reader-definition-popover')
+    if (!definitionWord.value) return;
+    const popoverEl = document.querySelector(".reader-definition-popover");
     if (popoverEl && popoverEl.contains(e.target as Node)) {
-        return
+        return;
     }
-    const defineBtn = (e.target as HTMLElement).closest('[title="Define"]')
+    const defineBtn = (e.target as HTMLElement).closest('[title="Define"]');
     if (defineBtn) {
-        return
+        return;
     }
-    handleClearDefinition()
-}
+    handleClearDefinition();
+};
 
 onMounted(() => {
-    window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('click', handleOutsideClick)
-    startSession(props.book)
-})
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("click", handleOutsideClick);
+    startSession(props.book);
+});
 
 onUnmounted(() => {
-    window.removeEventListener('keydown', handleKeyDown)
-    window.removeEventListener('click', handleOutsideClick)
-    endSession()
-})
+    window.removeEventListener("keydown", handleKeyDown);
+    window.removeEventListener("click", handleOutsideClick);
+    endSession();
+});
 </script>
 
 <template>
@@ -240,10 +241,16 @@ onUnmounted(() => {
             class="relative z-0 w-full flex-1 overflow-hidden select-text transition-all duration-300 flex flex-col animate-fade-in">
             <!-- Book Header Info (Subtle) -->
             <header
-                class="mb-2 mt-5 pb-2 border-b border-(--border-color) flex justify-between items-center text-xs text-(--text-tertiary) select-none whitespace-nowrap overflow-hidden"
-                :style="{ paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingTop: 'calc(0.5rem + env(safe-area-inset-top, 0px))' }"
+                class="mb-2 pb-2 border-b border-(--border-color) flex justify-between items-center text-xs text-(--text-tertiary) select-none whitespace-nowrap overflow-hidden"
+                :style="{
+                    paddingLeft: '1.5rem',
+                    paddingRight: '1.5rem',
+                    paddingTop: 'calc(0.5rem + env(safe-area-inset-top, 0px))',
+                }"
             >
-                <span class="truncate flex-1 min-w-0 pr-4 text-left">{{ book.title }}</span>
+                <span class="truncate flex-1 min-w-0 pr-4 text-left">{{
+                    book.title
+                    }}</span>
                 <span class="shrink-0 text-right">{{ shortAuthor }}</span>
             </header>
 
