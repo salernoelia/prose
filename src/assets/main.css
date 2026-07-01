@@ -256,14 +256,14 @@
   --bg-app: #000000;
   --bg-card: #0a0a0a;
 
-  --text-primary: #9a9089;
+  --text-primary: #706862;
   --text-secondary: #6b6560;
   --text-tertiary: #403c38;
 
   --border-color: #1a1815;
   --border-color-hover: #2a2724;
 
-  --accent-color: #9a9089;
+  --accent-color: #706862;
   --accent-color-hover: #b0a69c;
   --accent-color-light: #121110;
 
@@ -271,7 +271,7 @@
   --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.5);
   --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.6);
 
-  --focus-ring: 0 0 0 2px #000000, 0 0 0 4px #9a9089;
+  --focus-ring: 0 0 0 2px #000000, 0 0 0 4px #706862;
 
   --p-button-primary-color: #000000;
 }

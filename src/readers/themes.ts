@@ -8,7 +8,7 @@ export const THEME_TOKENS = {
   dark: { bg: '#121212', fg: '#e4e4e7' },
   oled: { bg: '#000000', fg: '#f4f4f5' },
   // Night: OLED black with dim, warm text for low-light reading (issue #9).
-  night: { bg: '#000000', fg: '#9a9089' },
+  night: { bg: '#000000', fg: '#706862' },
   sepia: { bg: '#d0b580', fg: '#36291b' },
   'sepia-dark': { bg: '#1c1611', fg: '#e0cdab' },
   eink: { bg: '#ffffff', fg: '#000000' },
