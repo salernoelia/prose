@@ -77,7 +77,7 @@ impl ReadingService {
     /// from these; no aggregate is stored.
     pub fn list_sessions(&self) -> Result<Vec<ReadingSession>, DomainError> {
         let mut sessions = self.repo.list_all_reading_sessions()?;
-        sessions.sort_by(|a, b| b.started_at.cmp(&a.started_at));
+        sessions.sort_by_key(|s| std::cmp::Reverse(s.started_at));
         Ok(sessions)
     }
 }
@@ -179,7 +179,10 @@ mod tests {
 
         let sessions = service.list_sessions().unwrap();
         assert_eq!(sessions.len(), 2);
-        assert_eq!(sessions.iter().map(|s| s.duration_seconds).sum::<i64>(), 150);
+        assert_eq!(
+            sessions.iter().map(|s| s.duration_seconds).sum::<i64>(),
+            150
+        );
     }
 
     #[test]

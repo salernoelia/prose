@@ -870,6 +870,17 @@ export class Paginator extends HTMLElement {
         this.#touchScrolled = false
         if (this.scrolled) return
 
+        // A drag that ends with an active selection must never turn the page:
+        // on Android the long-press that starts a selection can race the first
+        // touchmove, leaving a stale swipe velocity that would flip the page on
+        // release. Realign to the current page with zero velocity instead.
+        if (this.#hasSelection()) {
+            requestAnimationFrame(() => {
+                if (globalThis.visualViewport.scale === 1) this.snap(0, 0)
+            })
+            return
+        }
+
         // XXX: Firefox seems to report scale as 1... sometimes...?
         // at this point I'm basically throwing `requestAnimationFrame` at
         // anything that doesn't work

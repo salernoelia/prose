@@ -419,47 +419,47 @@ onUnmounted(() => {
         <ReaderAnnotationPopover :rect="selection?.rect ?? null">
             <button
                 @click="onHighlight"
-                class="flex items-center justify-center w-8 h-8 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                class="flex items-center justify-center w-10 h-10 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
                 title="Highlight"
                 aria-label="Highlight"
             >
-                <span class="material-symbols-outlined text-base">format_ink_highlighter</span>
+                <span class="material-symbols-outlined text-xl">format_ink_highlighter</span>
             </button>
             <button
                 v-if="isSingleWord"
                 @click="onDefine"
-                class="flex items-center justify-center w-8 h-8 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                class="flex items-center justify-center w-10 h-10 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
                 title="Define"
                 aria-label="Define"
             >
-                <span class="material-symbols-outlined text-base">dictionary</span>
+                <span class="material-symbols-outlined text-xl">dictionary</span>
             </button>
             <button
                 @click="onTranslate"
-                class="flex items-center justify-center w-8 h-8 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                class="flex items-center justify-center w-10 h-10 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
                 title="Translate"
                 aria-label="Translate"
             >
-                <span class="material-symbols-outlined text-base">translate</span>
+                <span class="material-symbols-outlined text-xl">translate</span>
             </button>
             <button
                 @click="onSearch"
-                class="flex items-center justify-center w-8 h-8 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                class="flex items-center justify-center w-10 h-10 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
                 title="Search"
                 aria-label="Search"
             >
-                <span class="material-symbols-outlined text-base">search</span>
+                <span class="material-symbols-outlined text-xl">search</span>
             </button>
             <button
                 @click="onWikipedia"
-                class="group flex items-center justify-center w-8 h-8 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                class="group flex items-center justify-center w-10 h-10 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
                 title="Wikipedia"
                 aria-label="Wikipedia"
             >
                 <img
                     src="/wikipedia.webp"
                     alt=""
-                    class="h-[18px] w-[18px] object-contain select-none opacity-55 group-hover:opacity-100 transition-opacity"
+                    class="h-[22px] w-[22px] object-contain select-none opacity-55 group-hover:opacity-100 transition-opacity"
                     style="filter: invert(var(--icon-invert))"
                 />
             </button>
@@ -479,57 +479,57 @@ onUnmounted(() => {
         <ReaderAnnotationPopover :rect="definitionWord ? null : (activeHighlight?.rect ?? null)">
             <button
                 @click="onRemoveActiveHighlight"
-                class="flex items-center justify-center w-8 h-8 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                class="flex items-center justify-center w-10 h-10 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
                 title="Remove highlight"
                 aria-label="Remove highlight"
             >
-                <span class="material-symbols-outlined text-base">delete</span>
+                <span class="material-symbols-outlined text-xl">delete</span>
             </button>
             <button
                 v-if="isActiveHighlightSingleWord"
                 @click="onDefineActiveHighlight"
-                class="flex items-center justify-center w-8 h-8 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                class="flex items-center justify-center w-10 h-10 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
                 title="Define"
                 aria-label="Define"
             >
-                <span class="material-symbols-outlined text-base">dictionary</span>
+                <span class="material-symbols-outlined text-xl">dictionary</span>
             </button>
             <button
                 @click="onTranslateActiveHighlight"
-                class="flex items-center justify-center w-8 h-8 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                class="flex items-center justify-center w-10 h-10 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
                 title="Translate"
                 aria-label="Translate"
             >
-                <span class="material-symbols-outlined text-base">translate</span>
+                <span class="material-symbols-outlined text-xl">translate</span>
             </button>
             <button
                 @click="onSearchActiveHighlight"
-                class="flex items-center justify-center w-8 h-8 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                class="flex items-center justify-center w-10 h-10 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
                 title="Search"
                 aria-label="Search"
             >
-                <span class="material-symbols-outlined text-base">search</span>
+                <span class="material-symbols-outlined text-xl">search</span>
             </button>
             <button
                 @click="onWikipediaActiveHighlight"
-                class="group flex items-center justify-center w-8 h-8 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                class="group flex items-center justify-center w-10 h-10 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
                 title="Wikipedia"
                 aria-label="Wikipedia"
             >
                 <img
                     src="/wikipedia.webp"
                     alt=""
-                    class="h-[18px] w-[18px] object-contain select-none opacity-55 group-hover:opacity-100 transition-opacity"
+                    class="h-[22px] w-[22px] object-contain select-none opacity-55 group-hover:opacity-100 transition-opacity"
                     style="filter: invert(var(--icon-invert))"
                 />
             </button>
             <button
                 @click="dismissActiveHighlight"
-                class="flex items-center justify-center w-8 h-8 rounded-full text-(--text-tertiary) hover:text-(--text-primary) transition-colors focus-ring-minimal"
+                class="flex items-center justify-center w-10 h-10 rounded-full text-(--text-tertiary) hover:text-(--text-primary) transition-colors focus-ring-minimal"
                 title="Dismiss"
                 aria-label="Dismiss"
             >
-                <span class="material-symbols-outlined text-base">close</span>
+                <span class="material-symbols-outlined text-xl">close</span>
             </button>
         </ReaderAnnotationPopover>
     </div>

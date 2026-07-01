@@ -39,12 +39,15 @@ const {
 // is a device preference, not synced.
 const FILTER_MODE_KEY = "prose.library.filterMode";
 const loadFilterMode = (): "all" | "reading" | "read" => {
+    if (typeof localStorage === "undefined") return "all";
     const saved = localStorage.getItem(FILTER_MODE_KEY);
     return saved === "reading" || saved === "read" ? saved : "all";
 };
 const filterMode = ref<"all" | "reading" | "read">(loadFilterMode());
 watch(filterMode, (mode) => {
-    localStorage.setItem(FILTER_MODE_KEY, mode);
+    if (typeof localStorage !== "undefined") {
+        localStorage.setItem(FILTER_MODE_KEY, mode);
+    }
 });
 
 // Pull-to-sync: drag the library down from the top to start a sync. The gesture

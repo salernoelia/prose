@@ -97,8 +97,7 @@ fn read_file_bytes(path: &std::path::Path) -> Result<Vec<u8>, AppError> {
         });
     }
 
-    std::fs::read(path)
-        .map_err(|e| AppError::from_internal(format!("Failed to read file: {}", e)))
+    std::fs::read(path).map_err(|e| AppError::from_internal(format!("Failed to read file: {}", e)))
 }
 
 #[cfg(target_os = "ios")]
@@ -189,9 +188,11 @@ pub async fn import_book_from_path(app: &AppHandle, path: String) -> Result<Book
     {
         let bytes = bytes.clone();
         let id = BookId::from_content(&bytes);
-        let dest_path = app_data_dir
-            .join("books")
-            .join(format!("{}.{}", id.as_str(), stored_extension(format)));
+        let dest_path = app_data_dir.join("books").join(format!(
+            "{}.{}",
+            id.as_str(),
+            stored_extension(format)
+        ));
 
         tauri::async_runtime::spawn_blocking(move || -> Result<(), AppError> {
             std::fs::create_dir_all(dest_path.parent().unwrap()).map_err(|e| {

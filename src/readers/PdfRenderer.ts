@@ -22,6 +22,16 @@ import { installColorInvert } from './darkInvert'
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerSrc
 
+/**
+ * WebKit's non-standard pinch-gesture event (Safari and iOS WebView). Not in the
+ * DOM lib types, so we narrow to the fields we read.
+ */
+interface GestureEvent extends Event {
+  scale: number
+  clientX?: number
+  clientY?: number
+}
+
 /** A raw pdf.js outline node, narrowed to the fields we resolve. */
 interface PdfOutlineNode {
   title: string
@@ -252,12 +262,12 @@ export class PdfRenderer implements BookRenderer, Zoomable {
     this.zoomBy(Math.exp(-event.deltaY * 0.01), anchor)
   }
 
-  #onGestureStart = (event: any): void => {
+  #onGestureStart = (event: GestureEvent): void => {
     event.preventDefault()
     this.#gestureBaseZoom = this.#zoom
   }
 
-  #onGestureChange = (event: any): void => {
+  #onGestureChange = (event: GestureEvent): void => {
     event.preventDefault()
     if (event.scale) {
       const anchor =

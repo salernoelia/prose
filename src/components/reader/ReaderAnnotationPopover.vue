@@ -11,7 +11,12 @@ const props = defineProps<{
 
 // Approximate toolbar height, used only to decide whether a placement would run
 // off the top or bottom of the viewport.
-const TOOLBAR_HEIGHT = 48
+const TOOLBAR_HEIGHT = 56
+
+// Gap below the selection. Kept generous so the toolbar clears Android's native
+// selection menu (Copy / Select all / handles), which can sit just below the
+// selection and would otherwise cover a toolbar placed too close.
+const BELOW_GAP = 32
 
 // The toolbar's measured half-width, kept current so the horizontal clamp uses
 // the real size. The set of actions (and so the width) changes with the
@@ -45,7 +50,7 @@ const placement = computed(() => {
     const margin = halfWidth.value + 8
     const left = Math.min(Math.max(centerX, margin), window.innerWidth - margin)
 
-    const below = rect.y + rect.height + 12
+    const below = rect.y + rect.height + BELOW_GAP
     const fitsBelow = below + TOOLBAR_HEIGHT <= window.innerHeight
 
     if (fitsBelow) {

@@ -540,6 +540,7 @@ impl BookRepository for SqliteBookRepository {
                 "paper" => Theme::Paper,
                 "dark" => Theme::Dark,
                 "oled" => Theme::Oled,
+                "night" => Theme::Night,
                 "sepia" => Theme::Sepia,
                 "sepia-dark" => Theme::SepiaDark,
                 "eink" => Theme::Eink,
@@ -569,6 +570,7 @@ impl BookRepository for SqliteBookRepository {
             Theme::Paper => "paper",
             Theme::Dark => "dark",
             Theme::Oled => "oled",
+            Theme::Night => "night",
             Theme::Sepia => "sepia",
             Theme::SepiaDark => "sepia-dark",
             Theme::Eink => "eink",
@@ -634,12 +636,7 @@ impl BookRepository for SqliteBookRepository {
         let rows = stmt
             .query_map([], |row| row.get::<_, String>(0))
             .map_err(|e| DomainError::Storage(e.to_string()))?;
-        let mut ids = Vec::new();
-        for r in rows {
-            if let Ok(id) = r {
-                ids.push(id);
-            }
-        }
+        let ids: Vec<String> = rows.flatten().collect();
         Ok(ids)
     }
 

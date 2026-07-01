@@ -241,6 +241,7 @@ pub enum Theme {
     Paper,
     Dark,
     Oled,
+    Night,
     Sepia,
     SepiaDark,
     Eink,

@@ -7,6 +7,8 @@ export const THEME_TOKENS = {
   paper: { bg: '#ffffff', fg: '#111111' },
   dark: { bg: '#121212', fg: '#e4e4e7' },
   oled: { bg: '#000000', fg: '#f4f4f5' },
+  // Night: OLED black with dim, warm text for low-light reading (issue #9).
+  night: { bg: '#000000', fg: '#706862' },
   sepia: { bg: '#d0b580', fg: '#36291b' },
   'sepia-dark': { bg: '#1c1611', fg: '#e0cdab' },
   eink: { bg: '#ffffff', fg: '#000000' },
@@ -17,6 +19,7 @@ export const THEME_TOKENS = {
 export const DARK_THEMES = new Set<ReadingStyle['theme']>([
   'dark',
   'oled',
+  'night',
   'sepia-dark',
   'eink-dark',
 ])

@@ -21,6 +21,7 @@ const themeOptions = [
     { label: 'Paper', value: 'paper' as Theme },
     { label: 'Dark', value: 'dark' as Theme },
     { label: 'OLED Black', value: 'oled' as Theme },
+    { label: 'Night', value: 'night' as Theme },
     { label: 'Sepia', value: 'sepia' as Theme },
     { label: 'Sepia Dark', value: 'sepia-dark' as Theme },
     { label: 'E-Ink Light', value: 'eink' as Theme },

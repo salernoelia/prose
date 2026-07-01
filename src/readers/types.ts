@@ -29,7 +29,7 @@ export interface ReadingStyle {
   lineHeight: number
   margin: number
   /** Active reading theme; drives background and text color inside the ePub iframe. */
-  theme: 'light' | 'paper' | 'dark' | 'oled' | 'sepia' | 'sepia-dark' | 'eink' | 'eink-dark'
+  theme: 'light' | 'paper' | 'dark' | 'oled' | 'night' | 'sepia' | 'sepia-dark' | 'eink' | 'eink-dark'
 }
 
 /** Renders a single book and reports its position. */
