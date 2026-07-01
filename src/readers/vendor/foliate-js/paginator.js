@@ -157,6 +157,13 @@ const selectionIsBackward = sel => {
     return range.collapsed
 }
 
+// Touch devices (phones, tablets) where text selection is driven by long-press
+// and draggable handles. On these, panning and auto page-turns must yield to
+// selection so a drag to select never flips the page (issue #7).
+const isTouchDevice = () => /Android|iPhone|iPod|iPad/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
+    window.matchMedia('(max-width: 768px)').matches
+
 const setSelectionTo = (target, collapse) => {
     let range
     if (target.startContainer) range = target.cloneRange()
@@ -608,8 +615,13 @@ export class Paginator extends HTMLElement {
                 if (!range) return
                 const sel = doc.getSelection()
                 if (!sel.rangeCount) return
-                if (isPointerSelecting && sel.type === 'Range')
-                    checkPointerSelection(range, sel)
+                if (isPointerSelecting && sel.type === 'Range') {
+                    // Never auto-advance the page while a touch drag extends a
+                    // selection: on Android it flips the page mid-select and the
+                    // selection is lost (issue #7). Cross-page pointer selection
+                    // stays available with a mouse.
+                    if (!isTouchDevice()) checkPointerSelection(range, sel)
+                }
                 else if (isKeyboardSelecting) {
                     const selRange = sel.getRangeAt(0).cloneRange()
                     const backward = selectionIsBackward(sel)
@@ -824,10 +836,7 @@ export class Paginator extends HTMLElement {
         })
     }
     #hasSelection() {
-        const isPhone = /Android|iPhone|iPod|iPad/i.test(navigator.userAgent) || 
-            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
-            window.matchMedia('(max-width: 768px)').matches
-        if (!isPhone) return false
+        if (!isTouchDevice()) return false
 
         const docSelection = document.getSelection()
         if (docSelection && !docSelection.isCollapsed) return true
