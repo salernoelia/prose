@@ -47,7 +47,9 @@ pub async fn reading_log_session(
     duration_seconds: i64,
 ) -> Result<ReadingSessionDto, AppError> {
     let id = BookId::from_hash(&book_id);
-    let session = state.reading.log_session(&id, started_at, duration_seconds)?;
+    let session = state
+        .reading
+        .log_session(&id, started_at, duration_seconds)?;
     Ok(ReadingSessionDto::from(session))
 }
 

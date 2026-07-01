@@ -48,6 +48,7 @@ export type Theme =
   | 'paper'
   | 'dark'
   | 'oled'
+  | 'night'
   | 'sepia'
   | 'sepia-dark'
   | 'eink'

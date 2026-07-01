@@ -62,7 +62,8 @@ impl LibraryService {
         let book = Book::new(id, format, metadata);
         self.repo.insert_book(&book)?;
         self.repo.remove_deleted_book(book.id.as_str())?;
-        self.repo.delete_sync_state(&format!("state:book:{}", book.id.as_str()))?;
+        self.repo
+            .delete_sync_state(&format!("state:book:{}", book.id.as_str()))?;
         Ok(book)
     }
 
@@ -89,7 +90,8 @@ impl LibraryService {
     pub fn remove(&self, id: &BookId) -> Result<(), DomainError> {
         self.repo.remove_book(id)?;
         self.repo.add_deleted_book(id.as_str())?;
-        self.repo.delete_sync_state(&format!("state:book:{}", id.as_str()))?;
+        self.repo
+            .delete_sync_state(&format!("state:book:{}", id.as_str()))?;
         Ok(())
     }
 

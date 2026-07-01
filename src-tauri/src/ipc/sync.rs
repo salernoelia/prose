@@ -438,8 +438,8 @@ fn normalize_remote_path(path: &str) -> String {
     let segments: Vec<&str> = normalized.split('/').filter(|s| !s.is_empty()).collect();
     if let Some(pos) = segments.iter().position(|&s| s == "prose") {
         let mut best_pos = pos;
-        for i in (pos + 1)..segments.len() {
-            if segments[i] == "prose" {
+        for (i, seg) in segments.iter().enumerate().skip(pos + 1) {
+            if *seg == "prose" {
                 best_pos = i;
             }
         }
@@ -785,7 +785,10 @@ fn sync_books(
     for id_str in &tombstones_to_process {
         if local_ids.contains(id_str) {
             let state_key = format!("state:book:{}", id_str);
-            let has_synced = repo.get_sync_state(&state_key).unwrap_or_default().is_some();
+            let has_synced = repo
+                .get_sync_state(&state_key)
+                .unwrap_or_default()
+                .is_some();
 
             if has_synced {
                 let book_id = crate::domain::model::BookId::from_hash(id_str);
@@ -895,7 +898,8 @@ fn sync_books(
                 let app_state = app.state::<AppState>();
                 if let Ok(book) = app_state.library.import(&bytes, format) {
                     imported_any = true;
-                    let _ = repo.save_sync_state(&format!("state:book:{}", book.id.as_str()), "synced");
+                    let _ =
+                        repo.save_sync_state(&format!("state:book:{}", book.id.as_str()), "synced");
                 }
             }
         }
@@ -968,7 +972,11 @@ mod tests {
         fn download(&self, path: &str) -> Result<Vec<u8>, crate::domain::error::DomainError> {
             self.inner.download(path)
         }
-        fn upload(&self, path: &str, bytes: &[u8]) -> Result<(), crate::domain::error::DomainError> {
+        fn upload(
+            &self,
+            path: &str,
+            bytes: &[u8],
+        ) -> Result<(), crate::domain::error::DomainError> {
             self.uploads
                 .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             self.inner.upload(path, bytes)

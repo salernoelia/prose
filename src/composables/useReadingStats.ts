@@ -161,7 +161,7 @@ export function useReadingStats() {
     const uniqueDates = [...new Set(sessions.value.map((s) => s.date))].sort().reverse()
 
     let streak = 0
-    let cursor = isoToDate(today)
+    const cursor = isoToDate(today)
 
     for (let i = 0; i < uniqueDates.length; i++) {
       const cursorISO = dateToISO(cursor)

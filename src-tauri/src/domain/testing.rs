@@ -10,8 +10,8 @@ use std::sync::Mutex;
 
 use crate::domain::error::DomainError;
 use crate::domain::model::{
-    Book, BookId, BookMetadata, Bookmark, Format, Highlight, LibraryEntry, Progress, ReadingSession,
-    Settings,
+    Book, BookId, BookMetadata, Bookmark, Format, Highlight, LibraryEntry, Progress,
+    ReadingSession, Settings,
 };
 use crate::domain::ports::{
     BookRepository, Clock, CredentialStore, ReaderAdapter, RemoteEntry, RemoteStore,

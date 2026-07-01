@@ -63,13 +63,14 @@ const THEME_CLASSES: Record<string, string[]> = {
     paper: ['paper'],
     dark: ['dark'],
     oled: ['dark', 'oled'],
+    night: ['dark', 'night'],
     sepia: ['sepia'],
     'sepia-dark': ['dark', 'sepia-dark'],
     eink: ['eink'],
     'eink-dark': ['dark', 'eink-dark'],
 }
 
-const ALL_THEME_CLASSES = ['dark', 'sepia', 'paper', 'oled', 'sepia-dark', 'eink', 'eink-dark']
+const ALL_THEME_CLASSES = ['dark', 'sepia', 'paper', 'oled', 'night', 'sepia-dark', 'eink', 'eink-dark']
 
 watchEffect(() => {
     if (!loaded.value) return
@@ -114,10 +115,10 @@ onMounted(async () => {
         unlistenDragLeave = await listen("tauri://drag-leave", () => {
             isDraggingOver.value = false
         })
-        unlistenDragDrop = await listen("tauri://drag-drop", async (event: any) => {
+        unlistenDragDrop = await listen<{ paths?: string[] }>("tauri://drag-drop", async (event) => {
             isDraggingOver.value = false
             if (currentView.value !== 'library') return
-            const paths = event.payload?.paths as string[]
+            const paths = event.payload?.paths
             if (paths && paths.length > 0) {
                 const validPaths = paths.filter(p => {
                     const ext = p.split('.').pop()?.toLowerCase()
