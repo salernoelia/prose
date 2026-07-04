@@ -30,6 +30,7 @@ pub struct ReadingStylePatch {
     pub font_size: Option<f32>,
     pub line_height: Option<f32>,
     pub margin: Option<f32>,
+    pub text_align: Option<String>,
 }
 
 /// Reads and updates the one settings record.
@@ -79,7 +80,13 @@ fn apply_reading(style: &mut ReadingStyle, patch: &ReadingStylePatch) {
     if let Some(margin) = patch.margin {
         style.margin = margin;
     }
+    if let Some(text_align) = &patch.text_align {
+        style.text_align = text_align.clone();
+    }
 }
+
+/// The alignment keywords the reader accepts; anything else falls back to default.
+const TEXT_ALIGNS: [&str; 4] = ["left", "justify", "center", "right"];
 
 /// Normalize settings into a coherent, current-version struct: clamp numeric
 /// fields to sane bounds, replace a blank font with the default, and stamp the
@@ -95,6 +102,9 @@ fn validate(mut settings: Settings) -> Settings {
     settings.reading.line_height =
         clamp(settings.reading.line_height, 1.0, 3.0, defaults.line_height);
     settings.reading.margin = clamp(settings.reading.margin, 0.0, 5.0, defaults.margin);
+    if !TEXT_ALIGNS.contains(&settings.reading.text_align.as_str()) {
+        settings.reading.text_align = defaults.text_align;
+    }
     settings
 }
 
@@ -185,6 +195,32 @@ mod tests {
     }
 
     #[test]
+    fn patch_sets_text_align_and_rejects_unknown_values() {
+        let (_repo, service) = service();
+        let patched = service
+            .patch(&SettingsPatch {
+                theme: None,
+                reading: Some(ReadingStylePatch {
+                    text_align: Some("justify".to_string()),
+                    ..ReadingStylePatch::default()
+                }),
+            })
+            .unwrap();
+        assert_eq!(patched.reading.text_align, "justify");
+
+        let patched = service
+            .patch(&SettingsPatch {
+                theme: None,
+                reading: Some(ReadingStylePatch {
+                    text_align: Some("sideways".to_string()),
+                    ..ReadingStylePatch::default()
+                }),
+            })
+            .unwrap();
+        assert_eq!(patched.reading.text_align, "left");
+    }
+
+    #[test]
     fn get_normalizes_an_off_version_stored_record() {
         let (repo, service) = service();
         // A record written by a different build: unknown version, blank font,
@@ -197,6 +233,7 @@ mod tests {
                 font_size: f32::NAN,
                 line_height: 1.5,
                 margin: 1.0,
+                text_align: "left".to_string(),
             },
         })
         .unwrap();

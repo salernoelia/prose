@@ -21,6 +21,7 @@ describe('settings IPC wrappers', () => {
       fontSize: 18,
       lineHeight: 1.5,
       margin: 1,
+      textAlign: 'left' as const,
     }
     mockedInvoke.mockResolvedValue(fakeSettings)
 
@@ -39,6 +40,7 @@ describe('settings IPC wrappers', () => {
       fontSize: 18,
       lineHeight: 1.5,
       margin: 1,
+      textAlign: 'left' as const,
     }
     mockedInvoke.mockResolvedValue(expected)
 

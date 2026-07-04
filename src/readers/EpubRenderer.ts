@@ -114,11 +114,12 @@ function readingCss(style: ReadingStyle): string {
     body { background-color: ${bg} !important; }
     a { text-decoration: underline; }
     /* Normalize spacing and layout the author may have exaggerated: collapse odd
-       letter/word spacing, left-align body text some books center across the
-       whole screen, and drop heavy first-line indents and side gutters. */
+       letter/word spacing, force the reader's chosen alignment over the book's
+       own (some books center or right-align across the whole screen), and drop
+       heavy first-line indents and side gutters. */
     p, li, blockquote, dd, dt, div, section, article {
       line-height: ${style.lineHeight} !important;
-      text-align: start !important;
+      text-align: ${style.textAlign} !important;
       letter-spacing: normal !important;
       word-spacing: normal !important;
     }

@@ -204,6 +204,10 @@ pub struct ReadingStyle {
     /// Page margin as a multiple of a base margin unit.
     #[serde(default = "ReadingStyle::default_margin")]
     pub margin: f32,
+    /// Text alignment forced onto body text: `left`, `justify`, `center`, or
+    /// `right`. Overrides the book's own alignment so the library reads uniformly.
+    #[serde(default = "ReadingStyle::default_text_align")]
+    pub text_align: String,
 }
 
 impl ReadingStyle {
@@ -219,6 +223,9 @@ impl ReadingStyle {
     fn default_margin() -> f32 {
         1.0
     }
+    fn default_text_align() -> String {
+        "left".to_string()
+    }
 }
 
 impl Default for ReadingStyle {
@@ -228,6 +235,7 @@ impl Default for ReadingStyle {
             font_size: Self::default_font_size(),
             line_height: Self::default_line_height(),
             margin: Self::default_margin(),
+            text_align: Self::default_text_align(),
         }
     }
 }

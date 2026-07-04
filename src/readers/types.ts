@@ -28,6 +28,8 @@ export interface ReadingStyle {
   fontSize: number
   lineHeight: number
   margin: number
+  /** Forced text alignment; overrides the book's own alignment. */
+  textAlign: 'left' | 'justify' | 'center' | 'right'
   /** Active reading theme; drives background and text color inside the ePub iframe. */
   theme: 'light' | 'paper' | 'dark' | 'oled' | 'night' | 'sepia' | 'sepia-dark' | 'eink' | 'eink-dark'
 }

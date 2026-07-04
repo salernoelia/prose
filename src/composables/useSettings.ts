@@ -1,6 +1,6 @@
 import { computed, ref, watch } from 'vue'
 import { settingsState, updateSettings, initSettingsStore } from '../stores/settings'
-import type { Theme } from '../ipc/types'
+import type { Theme, TextAlign } from '../ipc/types'
 import type { TranslationLanguage } from '../lib/externalLookup'
 import { defaultTranslationLanguage } from '../lib/externalLookup'
 
@@ -75,6 +75,13 @@ export function useSettings() {
     },
   })
 
+  const textAlign = computed({
+    get: () => settingsState.settings.textAlign,
+    set: (value: TextAlign) => {
+      updateSettings({ textAlign: value })
+    },
+  })
+
   const clickZone = computed({
     get: () => clickZoneSize.value,
     set: (value: number) => {
@@ -103,6 +110,7 @@ export function useSettings() {
     fontSize,
     lineHeight,
     margin,
+    textAlign,
     clickZoneSize: clickZone,
     translationLanguage: translation,
     showClickZonePreview,

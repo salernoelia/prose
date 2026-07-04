@@ -13,7 +13,7 @@ import Slider from 'primevue/slider'
 import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Button from 'primevue/button'
-import type { Theme } from '../ipc/types'
+import type { Theme, TextAlign } from '../ipc/types'
 
 const {
     settings,
@@ -23,11 +23,19 @@ const {
     fontSize,
     lineHeight,
     margin,
+    textAlign,
     clickZoneSize,
     translationLanguage,
 } = useSettings()
 
 const translationOptions = [...TRANSLATION_LANGUAGES]
+
+const alignOptions: { value: TextAlign; icon: string; label: string }[] = [
+    { value: 'left', icon: 'format_align_left', label: 'Left' },
+    { value: 'justify', icon: 'format_align_justify', label: 'Justify' },
+    { value: 'center', icon: 'format_align_center', label: 'Center' },
+    { value: 'right', icon: 'format_align_right', label: 'Right' },
+]
 
 const themeOptions = [
     { label: 'Light', value: 'light' as Theme },
@@ -236,6 +244,33 @@ async function handleSyncDisconnect() {
                         :step="0.1"
                         class="w-full focus-ring-minimal"
                     />
+                </div>
+            </div>
+
+            <!-- Text Alignment -->
+            <div class="flex flex-col gap-1.5">
+                <div
+                    class="flex justify-between items-center text-xs font-medium uppercase tracking-wider text-(--text-secondary)">
+                    <label>Alignment</label>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button
+                        v-for="opt in alignOptions"
+                        :key="opt.value"
+                        type="button"
+                        @click="textAlign = opt.value"
+                        :class="[
+                            'flex-1 flex items-center justify-center h-9 rounded-md border transition-colors focus-ring-minimal',
+                            textAlign === opt.value
+                                ? 'border-(--accent-color) text-(--accent-color) bg-(--accent-color)/10'
+                                : 'border-(--border-color) text-(--text-secondary) hover:text-(--text-primary)',
+                        ]"
+                        :title="opt.label"
+                        :aria-label="opt.label"
+                        :aria-pressed="textAlign === opt.value"
+                    >
+                        <span class="material-symbols-outlined text-base">{{ opt.icon }}</span>
+                    </button>
                 </div>
             </div>
 

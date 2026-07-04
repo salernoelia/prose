@@ -4,7 +4,7 @@
 >
 import { useSettings } from '../../composables/useSettings'
 import Select from 'primevue/select'
-import type { Theme } from '../../ipc/types'
+import type { Theme, TextAlign } from '../../ipc/types'
 
 defineProps<{
     visible: boolean
@@ -14,7 +14,14 @@ const emit = defineEmits<{
     (e: 'close'): void
 }>()
 
-const { theme, fontSize, lineHeight } = useSettings()
+const { theme, fontSize, lineHeight, textAlign } = useSettings()
+
+const alignOptions: { value: TextAlign; icon: string; label: string }[] = [
+    { value: 'left', icon: 'format_align_left', label: 'Left' },
+    { value: 'justify', icon: 'format_align_justify', label: 'Justify' },
+    { value: 'center', icon: 'format_align_center', label: 'Center' },
+    { value: 'right', icon: 'format_align_right', label: 'Right' },
+]
 
 const themeOptions = [
     { label: 'Light', value: 'light' as Theme },
@@ -126,6 +133,31 @@ function stepLine(delta: number) {
                         aria-label="Looser line spacing"
                     >
                         <span class="material-symbols-outlined text-base">add</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Alignment -->
+            <div class="flex items-center justify-between gap-2">
+                <span class="text-[11px] font-medium uppercase tracking-wider text-(--text-tertiary) select-none">
+                    Alignment
+                </span>
+                <div class="flex items-center gap-1">
+                    <button
+                        v-for="opt in alignOptions"
+                        :key="opt.value"
+                        @click="textAlign = opt.value"
+                        :class="[
+                            'flex items-center justify-center w-8 h-8 rounded-full transition-all duration-100 active:scale-90 focus-ring-minimal',
+                            textAlign === opt.value
+                                ? 'text-(--accent-color) bg-(--accent-color)/10'
+                                : 'text-(--text-secondary) hover:text-(--text-primary)',
+                        ]"
+                        :title="opt.label"
+                        :aria-label="opt.label"
+                        :aria-pressed="textAlign === opt.value"
+                    >
+                        <span class="material-symbols-outlined text-base">{{ opt.icon }}</span>
                     </button>
                 </div>
             </div>

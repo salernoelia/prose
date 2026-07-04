@@ -29,6 +29,7 @@ describe('Settings Store and Composable', () => {
       fontSize: 20,
       lineHeight: 1.6,
       margin: 1.5,
+      textAlign: 'left' as const,
     }
     mockedInvoke.mockResolvedValue(mockSettings)
 
@@ -47,6 +48,7 @@ describe('Settings Store and Composable', () => {
       fontSize: 20,
       lineHeight: 1.6,
       margin: 1.5,
+      textAlign: 'left' as const,
     }
     mockedInvoke.mockResolvedValue(updatedSettings)
 

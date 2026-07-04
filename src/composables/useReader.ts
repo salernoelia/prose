@@ -73,6 +73,7 @@ export function useReader(book: Ref<BookDto>) {
       fontSize: settings.value.fontSize,
       lineHeight: settings.value.lineHeight,
       margin: settings.value.margin,
+      textAlign: settings.value.textAlign,
       theme: settings.value.theme,
     }
   }
@@ -196,6 +197,7 @@ export function useReader(book: Ref<BookDto>) {
       settings.value.fontSize,
       settings.value.lineHeight,
       settings.value.margin,
+      settings.value.textAlign,
       settings.value.theme,
     ],
     () => renderer.value?.applyStyle(readingStyle()),

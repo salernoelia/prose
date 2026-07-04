@@ -10,6 +10,7 @@ const defaults: SettingsDto = {
   fontSize: 18,
   lineHeight: 1.5,
   margin: 1.0,
+  textAlign: 'left',
 }
 
 const state = reactive<{

@@ -23,6 +23,9 @@ export interface AppError {
 
 // Settings
 
+/** Forced alignment for reflowable body text; overrides the book's own CSS. */
+export type TextAlign = 'left' | 'justify' | 'center' | 'right'
+
 /** The full, flattened settings as returned by `settings_get`. */
 export interface SettingsDto {
   schemaVersion: number
@@ -31,6 +34,7 @@ export interface SettingsDto {
   fontSize: number
   lineHeight: number
   margin: number
+  textAlign: TextAlign
 }
 
 /** Partial settings update sent by `settings_patch`. Only present fields change. */
@@ -40,6 +44,7 @@ export interface SettingsPatchDto {
   fontSize?: number
   lineHeight?: number
   margin?: number
+  textAlign?: TextAlign
 }
 
 /** The supported reading themes. */

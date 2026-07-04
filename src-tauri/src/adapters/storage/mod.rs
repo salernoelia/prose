@@ -147,6 +147,12 @@ impl SqliteBookRepository {
                 CREATE INDEX idx_reading_sessions_book_id ON reading_sessions(book_id);
                 "#,
             ],
+            // Migration 4: Forced text alignment for reflowable content
+            vec![
+                r#"
+                ALTER TABLE settings ADD COLUMN text_align TEXT NOT NULL DEFAULT 'left';
+                "#,
+            ],
         ];
 
         for (idx, statements) in migrations.into_iter().enumerate() {
@@ -507,7 +513,7 @@ impl BookRepository for SqliteBookRepository {
     fn get_settings(&self) -> Result<Option<Settings>, DomainError> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn
-            .prepare("SELECT schema_version, theme, font_family, font_size, line_height, margin FROM settings WHERE id = 1;")
+            .prepare("SELECT schema_version, theme, font_family, font_size, line_height, margin, text_align FROM settings WHERE id = 1;")
             .map_err(|e| DomainError::Storage(e.to_string()))?;
         let mut rows = stmt
             .query([])
@@ -534,6 +540,9 @@ impl BookRepository for SqliteBookRepository {
             let margin: f32 = row
                 .get(5)
                 .map_err(|e| DomainError::Storage(e.to_string()))?;
+            let text_align: String = row
+                .get(6)
+                .map_err(|e| DomainError::Storage(e.to_string()))?;
 
             let theme = match theme_str.as_str() {
                 "light" => Theme::Light,
@@ -556,6 +565,7 @@ impl BookRepository for SqliteBookRepository {
                     font_size,
                     line_height,
                     margin,
+                    text_align,
                 },
             }))
         } else {
@@ -577,7 +587,7 @@ impl BookRepository for SqliteBookRepository {
             Theme::EinkDark => "eink-dark",
         };
         conn.execute(
-            "INSERT OR REPLACE INTO settings (id, schema_version, theme, font_family, font_size, line_height, margin) VALUES (1, ?1, ?2, ?3, ?4, ?5, ?6);",
+            "INSERT OR REPLACE INTO settings (id, schema_version, theme, font_family, font_size, line_height, margin, text_align) VALUES (1, ?1, ?2, ?3, ?4, ?5, ?6, ?7);",
             (
                 settings.schema_version,
                 theme_str,
@@ -585,6 +595,7 @@ impl BookRepository for SqliteBookRepository {
                 settings.reading.font_size,
                 settings.reading.line_height,
                 settings.reading.margin,
+                &settings.reading.text_align,
             ),
         ).map_err(|e| DomainError::Storage(e.to_string()))?;
         Ok(())
@@ -855,6 +866,7 @@ mod tests {
                 font_size: 19.0,
                 line_height: 1.6,
                 margin: 1.2,
+                text_align: "justify".to_string(),
             },
         };
         repo.save_settings(&settings).unwrap();
@@ -864,6 +876,7 @@ mod tests {
         assert_eq!(loaded.theme, Theme::Sepia);
         assert_eq!(loaded.reading.font_family, "Georgia");
         assert_eq!(loaded.reading.font_size, 19.0);
+        assert_eq!(loaded.reading.text_align, "justify");
     }
 
     #[test]

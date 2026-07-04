@@ -27,6 +27,7 @@ pub struct SettingsDto {
     pub font_size: f32,
     pub line_height: f32,
     pub margin: f32,
+    pub text_align: String,
 }
 
 impl From<Settings> for SettingsDto {
@@ -38,6 +39,7 @@ impl From<Settings> for SettingsDto {
             font_size: settings.reading.font_size,
             line_height: settings.reading.line_height,
             margin: settings.reading.margin,
+            text_align: settings.reading.text_align,
         }
     }
 }
@@ -53,6 +55,7 @@ pub struct SettingsPatchDto {
     pub font_size: Option<f32>,
     pub line_height: Option<f32>,
     pub margin: Option<f32>,
+    pub text_align: Option<String>,
 }
 
 impl TryFrom<SettingsPatchDto> for SettingsPatch {
@@ -65,6 +68,7 @@ impl TryFrom<SettingsPatchDto> for SettingsPatch {
             font_size: dto.font_size,
             line_height: dto.line_height,
             margin: dto.margin,
+            text_align: dto.text_align,
         };
         // Collapse an all-absent typography patch to `None`, so a theme-only
         // update carries no reading patch at all.
