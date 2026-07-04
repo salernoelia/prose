@@ -791,9 +791,12 @@ fn sync_books(
                 .is_some();
 
             if has_synced {
+                // Apply the deletion locally but do not record a local tombstone:
+                // the remote tombstone already carries the deletion, and a local
+                // copy would be pushed back to the remote on every future sync,
+                // deleting the book again if another device re-imports it.
                 let book_id = crate::domain::model::BookId::from_hash(id_str);
                 let _ = repo.remove_book(&book_id);
-                let _ = repo.add_deleted_book(id_str);
                 let _ = repo.delete_sync_state(&state_key);
 
                 for ext in &["epub", "pdf"] {
@@ -817,12 +820,20 @@ fn sync_books(
         }
     }
 
-    // 4. Process local tombstones on remote server
+    // 4. Push local tombstones to the remote, then forget them. Book ids are
+    // content hashes, so re-importing the same file on any device resurrects the
+    // same id: a local tombstone kept past its propagation would re-delete that
+    // book from the remote on every sync, and the importing device would then
+    // drop its local copy on the next tombstone pass (the "book gets lost after
+    // another device syncs" failure). Once the tombstone is on the remote it
+    // carries the deletion for every device, so the local record has done its job.
     for id_str in &local_deleted_ids {
-        if !remote_deleted_ids.contains(id_str) {
+        let propagated = if remote_deleted_ids.contains(id_str) {
+            true
+        } else {
             let remote_tombstone_path = format!("prose/tombstones/{}", id_str);
-            let _ = store.upload(&remote_tombstone_path, &[]);
-        }
+            store.upload(&remote_tombstone_path, &[]).is_ok()
+        };
         if remote_ids.contains(id_str) {
             for ext in &["epub", "pdf"] {
                 let remote_book_path = format!("prose/books/{}.{}", id_str, ext);
@@ -832,6 +843,9 @@ fn sync_books(
             let _ = store.delete(&format!("prose/bookmarks/{}.json", id_str));
             let _ = store.delete(&format!("prose/highlights/{}.json", id_str));
             let _ = store.delete(&format!("prose/sessions/{}.json", id_str));
+        }
+        if propagated {
+            let _ = repo.remove_deleted_book(id_str);
         }
     }
 
