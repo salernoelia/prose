@@ -237,6 +237,26 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
 
           if ((e.target as HTMLElement).closest('a, button, input, textarea, select')) return
 
+          // A tap on an image opens the lightbox instead of turning the page. The
+          // src is already an absolute prose:// (or blob:) URL that loads outside
+          // the iframe.
+          const img = (e.target as HTMLElement).closest('img, svg image')
+          if (img) {
+            const src =
+              (img as HTMLImageElement).currentSrc ||
+              (img as HTMLImageElement).src ||
+              img.getAttribute('href') ||
+              img.getAttribute('xlink:href') ||
+              ''
+            if (src) {
+              container.dispatchEvent(new CustomEvent('image-click', {
+                bubbles: true,
+                detail: { src }
+              }))
+              return
+            }
+          }
+
           // The click lands inside the section iframe, so its clientX is relative
           // to that frame. Lift it into outer-window coordinates by the frame's
           // own offset, so the reader can map the tap to a page-turn zone.

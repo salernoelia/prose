@@ -13,6 +13,7 @@ import ReaderAnnotationsDrawer from "../components/reader/ReaderAnnotationsDrawe
 import ReaderAnnotationPopover from "../components/reader/ReaderAnnotationPopover.vue";
 import ReaderDefinitionPopover from "../components/reader/ReaderDefinitionPopover.vue";
 import ReaderQuickSettings from "../components/reader/ReaderQuickSettings.vue";
+import ReaderImageViewer from "../components/reader/ReaderImageViewer.vue";
 import { useDictionary } from "../composables/useDictionary";
 import { useSync } from "../composables/useSync";
 import { startSession, endSession } from "../composables/useReadingTracker";
@@ -115,6 +116,12 @@ const showDock = ref(true);
 const showToc = ref(false);
 const showAnnotations = ref(false);
 const showQuickSettings = ref(false);
+const imageViewerSrc = ref<string | null>(null);
+
+function handleImageClick(e: Event) {
+    const detail = (e as CustomEvent<{ src?: string }>).detail;
+    if (detail?.src) imageViewerSrc.value = detail.src;
+}
 
 const canPrev = computed(() => progress.value > 0);
 const canNext = computed(() => progress.value < 100);
@@ -353,6 +360,7 @@ onUnmounted(() => {
                     class="absolute inset-x-0 top-0"
                     style="bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px))"
                     @renderer-click="handleRendererClick"
+                    @image-click="handleImageClick"
                 ></div>
 
                 <!-- Loading state -->
@@ -400,6 +408,11 @@ onUnmounted(() => {
         <ReaderQuickSettings
             :visible="showQuickSettings"
             @close="showQuickSettings = false"
+        />
+
+        <ReaderImageViewer
+            :src="imageViewerSrc"
+            @close="imageViewerSrc = null"
         />
 
         <ReaderTocDrawer
