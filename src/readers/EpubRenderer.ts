@@ -123,6 +123,11 @@ function readingCss(style: ReadingStyle): string {
       letter-spacing: normal !important;
       word-spacing: normal !important;
     }
+    /* Headings and captions follow the chosen alignment too, but keep their
+       own line-height. */
+    h1, h2, h3, h4, h5, h6, figcaption, caption {
+      text-align: ${style.textAlign} !important;
+    }
     p { text-indent: 0 !important; }
     body, section, article, div, p, blockquote {
       margin-left: 0 !important;
