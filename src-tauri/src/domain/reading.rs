@@ -80,6 +80,15 @@ impl ReadingService {
         sessions.sort_by_key(|s| std::cmp::Reverse(s.started_at));
         Ok(sessions)
     }
+
+    /// Delete a recorded session, e.g. one logged by mistake. A tombstone is
+    /// kept so sync propagates the deletion instead of resurrecting the session
+    /// from the remote copy.
+    pub fn delete_session(&self, session_id: &str) -> Result<(), DomainError> {
+        self.repo.delete_reading_session(session_id)?;
+        self.repo.add_deleted_session(session_id)?;
+        Ok(())
+    }
 }
 
 /// Derive a stable, unique session id. The content (book, start instant) plus a

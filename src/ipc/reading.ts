@@ -33,3 +33,12 @@ export function readingLogSession(
 export function readingListSessions(): Promise<ReadingSessionDto[]> {
   return invoke('reading_list_sessions')
 }
+
+/**
+ * Delete a recorded session, e.g. one logged by mistake. The Rust core keeps a
+ * tombstone so the deletion propagates through sync instead of the session
+ * resurrecting from the remote copy.
+ */
+export function readingDeleteSession(sessionId: string): Promise<void> {
+  return invoke('reading_delete_session', { sessionId })
+}

@@ -30,6 +30,7 @@ struct RepoState {
     settings: Option<Settings>,
     sync_state: HashMap<String, String>,
     deleted_books: Vec<String>,
+    deleted_sessions: Vec<String>,
 }
 
 impl InMemoryBookRepository {
@@ -151,6 +152,28 @@ impl BookRepository for InMemoryBookRepository {
 
     fn list_all_reading_sessions(&self) -> Result<Vec<ReadingSession>, DomainError> {
         Ok(self.lock().sessions.clone())
+    }
+
+    fn delete_reading_session(&self, session_id: &str) -> Result<(), DomainError> {
+        self.lock().sessions.retain(|s| s.id != session_id);
+        Ok(())
+    }
+
+    fn get_deleted_sessions(&self) -> Result<Vec<String>, DomainError> {
+        Ok(self.lock().deleted_sessions.clone())
+    }
+
+    fn add_deleted_session(&self, id: &str) -> Result<(), DomainError> {
+        let mut state = self.lock();
+        if !state.deleted_sessions.contains(&id.to_string()) {
+            state.deleted_sessions.push(id.to_string());
+        }
+        Ok(())
+    }
+
+    fn remove_deleted_session(&self, id: &str) -> Result<(), DomainError> {
+        self.lock().deleted_sessions.retain(|s| s != id);
+        Ok(())
     }
 
     fn get_settings(&self) -> Result<Option<Settings>, DomainError> {

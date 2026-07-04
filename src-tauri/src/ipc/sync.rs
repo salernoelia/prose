@@ -289,7 +289,9 @@ fn ensure_remote_dirs(
         .url
         .clone()
         .unwrap_or_default();
-    let dirs_key = format!("state:dirs_created:{url}");
+    // v2: provisioning gained prose/tombstones/sessions/, so servers marked
+    // under the old key are provisioned once more to create it.
+    let dirs_key = format!("state:dirs_created:v2:{url}");
     if repo.get_sync_state(&dirs_key).ok().flatten().is_some() {
         app_state
             .sync_dirs_created
@@ -305,6 +307,7 @@ fn ensure_remote_dirs(
         "prose/sessions/",
         "prose/books/",
         "prose/tombstones/",
+        "prose/tombstones/sessions/",
     ] {
         store.ensure_collection(dir)?;
     }
@@ -567,6 +570,8 @@ fn sync_bookmarks(
         store,
         repo,
         remote_index,
+        &Default::default(),
+        |_| Ok(()),
         "bookmarks",
         |book_id| repo.list_bookmarks(book_id),
         |record| repo.add_bookmark(record),
@@ -582,21 +587,58 @@ fn sync_highlights(
         store,
         repo,
         remote_index,
+        &Default::default(),
+        |_| Ok(()),
         "highlights",
         |book_id| repo.list_highlights(book_id),
         |record| repo.add_highlight(record),
     )
 }
 
+/// The remote folder holding one empty tombstone file per deleted session, kept
+/// apart from the book tombstones so `sync_books` never mistakes one for a book.
+const SESSION_TOMBSTONE_DIR: &str = "prose/tombstones/sessions/";
+
 fn sync_sessions(
     store: &dyn RemoteStore,
     repo: &Arc<dyn BookRepository>,
     remote_index: &RemoteIndex,
 ) -> Result<(), crate::domain::error::DomainError> {
+    // Deletions known to the remote, plus this device's own pending ones. The
+    // merged set filters every merge below, so a deleted session can never be
+    // resurrected from a stale remote file or another device's copy.
+    let mut deleted: std::collections::HashSet<String> = remote_index
+        .keys()
+        .filter(|p| p.starts_with(SESSION_TOMBSTONE_DIR))
+        .filter_map(|p| {
+            std::path::Path::new(p)
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .map(|s| s.to_string())
+        })
+        .filter(|id| !id.is_empty())
+        .collect();
+
+    // Push local deletions, then forget them: once the tombstone is on the
+    // remote it carries the deletion for every device (same one-shot rule as
+    // book tombstones). A failed upload keeps the local record for retry.
+    for id in repo.get_deleted_sessions()? {
+        let propagated = deleted.contains(&id)
+            || store
+                .upload(&format!("{}{}", SESSION_TOMBSTONE_DIR, id), &[])
+                .is_ok();
+        if propagated {
+            let _ = repo.remove_deleted_session(&id);
+        }
+        deleted.insert(id);
+    }
+
     sync_collection(
         store,
         repo,
         remote_index,
+        &deleted,
+        |id| repo.delete_reading_session(id),
         "sessions",
         |book_id| repo.list_reading_sessions(book_id),
         |record| repo.add_reading_session(record),
@@ -611,10 +653,17 @@ fn sync_sessions(
 /// snapshot, so no per-kind PROPFIND is issued here. `kind` names the remote
 /// subfolder and the sync-state key; `load` and `store_local` bind the kind's
 /// repository methods.
+///
+/// `deleted` holds tombstoned record ids: they are dropped from the local store
+/// (through `remove_local`), filtered out of every merge, and never written back
+/// to the remote. Kinds without deletion support pass an empty set.
+#[allow(clippy::too_many_arguments)]
 fn sync_collection<T>(
     store: &dyn RemoteStore,
     repo: &Arc<dyn BookRepository>,
     remote_entries: &RemoteIndex,
+    deleted: &std::collections::HashSet<String>,
+    remove_local: impl Fn(&str) -> Result<(), crate::domain::error::DomainError>,
     kind: &str,
     load: impl Fn(&crate::domain::model::BookId) -> Result<Vec<T>, crate::domain::error::DomainError>,
     store_local: impl Fn(&T) -> Result<(), crate::domain::error::DomainError>,
@@ -628,7 +677,16 @@ where
         let book_id = &entry.book.id;
         let remote_path = format!("prose/{}/{}.json", kind, book_id.as_str());
 
-        let local = load(book_id)?;
+        let mut local = load(book_id)?;
+        if !deleted.is_empty() {
+            // Apply tombstones from other devices before anything is compared:
+            // the drop changes the local serialization, which also breaks the
+            // unchanged fast path below so the deletion is processed.
+            for record in local.iter().filter(|r| deleted.contains(r.sync_id())) {
+                let _ = remove_local(record.sync_id());
+            }
+            local.retain(|r| !deleted.contains(r.sync_id()));
+        }
         let local_serialized = canonical_serialized(&local);
 
         let state_key = format!("state:{}:{}", kind, book_id.as_str());
@@ -676,7 +734,11 @@ where
                 Vec::new()
             };
 
-            let winner = merge_by_id(&local, &remote);
+            let mut winner = merge_by_id(&local, &remote);
+            // Never merge a tombstoned record back in from the remote copy.
+            if !deleted.is_empty() {
+                winner.retain(|r| !deleted.contains(r.sync_id()));
+            }
             let winner_serialized = canonical_serialized(&winner);
 
             // Write locally only if the merge changed our local set.
@@ -737,9 +799,10 @@ fn sync_books(
     use crate::domain::model::Format;
 
     // 1. Read remote tombstones and remote books from the prefetched index.
+    // Session tombstones live in a subfolder and belong to `sync_sessions`.
     let mut remote_deleted_ids: std::collections::HashSet<String> = remote_index
         .keys()
-        .filter(|p| p.starts_with("prose/tombstones/"))
+        .filter(|p| p.starts_with("prose/tombstones/") && !p.starts_with(SESSION_TOMBSTONE_DIR))
         .map(|p| {
             std::path::Path::new(p)
                 .file_stem()
@@ -1180,6 +1243,65 @@ mod tests {
         assert_eq!(local.len(), 2);
         assert!(local.iter().any(|s| s.id == "s1"));
         assert!(local.iter().any(|s| s.id == "s2"));
+    }
+
+    #[test]
+    fn sync_sessions_deletion_propagates_and_never_resurrects() {
+        use crate::domain::model::{Book, BookId, BookMetadata, Format, ReadingSession};
+        use crate::domain::testing::{InMemoryBookRepository, InMemoryRemoteStore};
+        use std::sync::Arc;
+
+        let store = InMemoryRemoteStore::new();
+        let repo_a: Arc<dyn BookRepository> = Arc::new(InMemoryBookRepository::new());
+        let repo_b: Arc<dyn BookRepository> = Arc::new(InMemoryBookRepository::new());
+
+        let book_id = BookId::from_content(b"test-book");
+        let book = Book::new(
+            book_id.clone(),
+            Format::Epub,
+            BookMetadata {
+                title: "Test".to_string(),
+                author: None,
+                cover: None,
+            },
+        );
+        repo_a.insert_book(&book).unwrap();
+        repo_b.insert_book(&book).unwrap();
+
+        // Device A records a session; both devices converge on it.
+        let s1 = ReadingSession {
+            id: "s1".to_string(),
+            book_id: book_id.clone(),
+            started_at: 1_000,
+            duration_seconds: 60_000,
+        };
+        repo_a.add_reading_session(&s1).unwrap();
+        sync_sessions(&store, &repo_a, &remote_index(&store)).unwrap();
+        sync_sessions(&store, &repo_b, &remote_index(&store)).unwrap();
+        assert_eq!(repo_b.list_reading_sessions(&book_id).unwrap().len(), 1);
+
+        // Device A deletes it (what ReadingService::delete_session records) and
+        // syncs: the tombstone reaches the remote and the local one is dropped.
+        repo_a.delete_reading_session("s1").unwrap();
+        repo_a.add_deleted_session("s1").unwrap();
+        sync_sessions(&store, &repo_a, &remote_index(&store)).unwrap();
+        assert!(repo_a.get_deleted_sessions().unwrap().is_empty());
+
+        // Device B still holds the session; its sync applies the deletion
+        // instead of merging its copy back onto the remote.
+        sync_sessions(&store, &repo_b, &remote_index(&store)).unwrap();
+        assert!(repo_b.list_reading_sessions(&book_id).unwrap().is_empty());
+
+        // Later syncs on either device never resurrect it.
+        sync_sessions(&store, &repo_a, &remote_index(&store)).unwrap();
+        sync_sessions(&store, &repo_b, &remote_index(&store)).unwrap();
+        assert!(repo_a.list_reading_sessions(&book_id).unwrap().is_empty());
+        assert!(repo_b.list_reading_sessions(&book_id).unwrap().is_empty());
+
+        let remote_path = format!("prose/sessions/{}.json", book_id.as_str());
+        let remote: Vec<ReadingSession> =
+            serde_json::from_slice(&store.download(&remote_path).unwrap()).unwrap();
+        assert!(remote.is_empty(), "remote file must not keep the session");
     }
 
     #[test]

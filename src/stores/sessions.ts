@@ -9,8 +9,9 @@
  */
 import { reactive, readonly } from 'vue'
 import type { ReadingSessionDto } from '../ipc/types'
-import { readingListSessions, readingLogSession } from '../ipc/reading'
+import { readingDeleteSession, readingListSessions, readingLogSession } from '../ipc/reading'
 import { onLibraryChanged, onSyncFinished } from '../ipc/events'
+import { syncState, triggerSync } from './sync'
 
 const state = reactive<{
   sessions: ReadingSessionDto[]
@@ -58,6 +59,17 @@ export async function refreshSessions(): Promise<void> {
   } catch (err) {
     console.error('Failed to load reading sessions:', err)
   }
+}
+
+/**
+ * Delete a recorded session, e.g. one logged by mistake. The core tombstones
+ * it so sync removes it from the remote and every other device instead of
+ * resurrecting it. The deletion is pushed promptly, as logging a session does.
+ */
+export async function deleteSession(id: string): Promise<void> {
+  await readingDeleteSession(id)
+  await refreshSessions()
+  if (syncState.configured) void triggerSync()
 }
 
 export const sessionsState = readonly(state)

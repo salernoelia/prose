@@ -62,3 +62,15 @@ pub async fn reading_list_sessions(
     let sessions = state.reading.list_sessions()?;
     Ok(sessions.into_iter().map(ReadingSessionDto::from).collect())
 }
+
+/// Delete a recorded session, e.g. one logged by mistake. The core keeps a
+/// tombstone so the deletion propagates through sync instead of the session
+/// resurrecting from the remote copy.
+#[tauri::command]
+pub async fn reading_delete_session(
+    state: tauri::State<'_, AppState>,
+    session_id: String,
+) -> Result<(), AppError> {
+    state.reading.delete_session(&session_id)?;
+    Ok(())
+}

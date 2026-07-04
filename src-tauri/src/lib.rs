@@ -110,6 +110,7 @@ pub fn run() {
             ipc::reading::reading_get_position,
             ipc::reading::reading_log_session,
             ipc::reading::reading_list_sessions,
+            ipc::reading::reading_delete_session,
             ipc::annotation::annotation_add_bookmark,
             ipc::annotation::annotation_list_bookmarks,
             ipc::annotation::annotation_delete_bookmark,

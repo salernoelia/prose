@@ -4,6 +4,7 @@
 >
 import { computed } from 'vue'
 import { useReadingStats } from '../composables/useReadingStats'
+import { deleteSession } from '../stores/sessions'
 import ReadingChart from '../components/stats/ReadingChart.vue'
 
 const {
@@ -11,6 +12,7 @@ const {
     booksFinished,
     booksInProgress,
     totalReadingSeconds,
+    sessionHistory,
     currentStreak,
     bestStreak,
     weeklyActivity,
@@ -18,6 +20,18 @@ const {
     allTimeDaily,
     formatDuration,
 } = useReadingStats()
+
+function onDeleteSession(id: string) {
+    void deleteSession(id)
+}
+
+function formatSessionDate(ms: number): string {
+    return new Date(ms).toLocaleDateString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    })
+}
 
 /** Max bar height in px for the weekly chart */
 const CHART_MAX_HEIGHT = 64
@@ -221,6 +235,39 @@ const topBook = computed(() => bookActivity.value[0] ?? null)
                     class="material-symbols-outlined text-2xl text-(--text-tertiary) block mb-2 select-none">schedule</span>
                 <p class="text-sm text-(--text-secondary)">Reading time will appear here</p>
                 <p class="text-xs text-(--text-tertiary) mt-1">Open a book to start tracking.</p>
+            </div>
+
+            <!-- ── Session history ──────────────────────────────────────── -->
+            <div
+                v-if="sessionHistory.length > 0"
+                class="bg-(--bg-card) border border-(--border-color) rounded-2xl p-4 mb-3"
+            >
+                <p class="text-xs font-medium tracking-wider text-(--text-tertiary) mb-1">History</p>
+                <ul class="max-h-80 overflow-y-auto">
+                    <li
+                        v-for="session in sessionHistory"
+                        :key="session.id"
+                        class="py-2.5 border-b border-(--border-color) last:border-b-0 flex items-center justify-between gap-2"
+                    >
+                        <div class="min-w-0">
+                            <p class="text-sm font-medium text-(--text-primary) truncate">{{ session.bookTitle }}</p>
+                            <p class="text-xs text-(--text-tertiary) mt-0.5">{{ formatSessionDate(session.startedAt) }}</p>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <span class="text-xs font-semibold tabular-nums text-(--text-secondary)">
+                                {{ formatDuration(session.durationSeconds) }}
+                            </span>
+                            <button
+                                @click="onDeleteSession(session.id)"
+                                class="flex items-center justify-center w-7 h-7 rounded-full text-(--text-tertiary) hover:text-(--danger-color,#dc2626) transition-colors focus-ring-minimal"
+                                title="Delete session"
+                                aria-label="Delete session"
+                            >
+                                <span class="material-symbols-outlined text-base">delete</span>
+                            </button>
+                        </div>
+                    </li>
+                </ul>
             </div>
         </template>
     </div>

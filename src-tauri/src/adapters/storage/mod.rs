@@ -153,6 +153,15 @@ impl SqliteBookRepository {
                 ALTER TABLE settings ADD COLUMN text_align TEXT NOT NULL DEFAULT 'left';
                 "#,
             ],
+            // Migration 5: Deleted reading-session tombstones
+            vec![
+                r#"
+                CREATE TABLE deleted_sessions (
+                    id TEXT PRIMARY KEY,
+                    deleted_at INTEGER NOT NULL
+                );
+                "#,
+            ],
         ];
 
         for (idx, statements) in migrations.into_iter().enumerate() {
@@ -508,6 +517,49 @@ impl BookRepository for SqliteBookRepository {
             .collect::<Result<Vec<_>, _>>()
             .map_err(|e| DomainError::Storage(e.to_string()))?;
         Ok(entries)
+    }
+
+    fn delete_reading_session(&self, session_id: &str) -> Result<(), DomainError> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "DELETE FROM reading_sessions WHERE id = ?1;",
+            [session_id],
+        )
+        .map_err(|e| DomainError::Storage(e.to_string()))?;
+        Ok(())
+    }
+
+    fn get_deleted_sessions(&self) -> Result<Vec<String>, DomainError> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn
+            .prepare("SELECT id FROM deleted_sessions ORDER BY deleted_at ASC;")
+            .map_err(|e| DomainError::Storage(e.to_string()))?;
+        let rows = stmt
+            .query_map([], |row| row.get::<_, String>(0))
+            .map_err(|e| DomainError::Storage(e.to_string()))?;
+        let ids: Vec<String> = rows.flatten().collect();
+        Ok(ids)
+    }
+
+    fn add_deleted_session(&self, id: &str) -> Result<(), DomainError> {
+        let conn = self.conn.lock().unwrap();
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+        conn.execute(
+            "INSERT OR REPLACE INTO deleted_sessions (id, deleted_at) VALUES (?1, ?2);",
+            rusqlite::params![id, now],
+        )
+        .map_err(|e| DomainError::Storage(e.to_string()))?;
+        Ok(())
+    }
+
+    fn remove_deleted_session(&self, id: &str) -> Result<(), DomainError> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute("DELETE FROM deleted_sessions WHERE id = ?1;", [id])
+            .map_err(|e| DomainError::Storage(e.to_string()))?;
+        Ok(())
     }
 
     fn get_settings(&self) -> Result<Option<Settings>, DomainError> {

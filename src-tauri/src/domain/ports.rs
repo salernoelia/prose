@@ -41,6 +41,15 @@ pub trait BookRepository: Send + Sync {
     fn list_reading_sessions(&self, id: &BookId) -> Result<Vec<ReadingSession>, DomainError>;
     /// Every session across the whole library, for the statistics view.
     fn list_all_reading_sessions(&self) -> Result<Vec<ReadingSession>, DomainError>;
+    /// Remove one recorded session, e.g. one logged by mistake.
+    fn delete_reading_session(&self, session_id: &str) -> Result<(), DomainError>;
+
+    /// Session tombstones: deletions waiting to be propagated to the remote,
+    /// mirroring the book tombstones below. Sync drops each one once it has
+    /// been pushed, so a deletion propagates exactly once.
+    fn get_deleted_sessions(&self) -> Result<Vec<String>, DomainError>;
+    fn add_deleted_session(&self, id: &str) -> Result<(), DomainError>;
+    fn remove_deleted_session(&self, id: &str) -> Result<(), DomainError>;
 
     fn get_settings(&self) -> Result<Option<Settings>, DomainError>;
     fn save_settings(&self, settings: &Settings) -> Result<(), DomainError>;

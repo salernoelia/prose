@@ -38,6 +38,14 @@ export interface BookActivity {
   totalSeconds: number
 }
 
+/** One row of the session history list: a raw session with its book resolved. */
+export interface SessionEntry {
+  id: string
+  bookTitle: string
+  startedAt: number
+  durationSeconds: number
+}
+
 export interface ChartPoint {
   /** ISO date label (YYYY-MM-DD for daily, week-start for weekly) */
   date: string
@@ -143,6 +151,21 @@ export function useReadingStats() {
   const totalReadingSeconds = computed(() =>
     sessions.value.reduce((acc, s) => acc + s.durationSeconds, 0),
   )
+
+  /**
+   * Raw sessions for the history list, newest first (the store keeps that
+   * order). Unlike the aggregates above these carry the session id, so a row
+   * can be deleted, e.g. one logged by mistake.
+   */
+  const sessionHistory = computed<SessionEntry[]>(() => {
+    const byId = new Map(entries.value.map((e) => [e.book.id, e.book]))
+    return sessionsState.sessions.map((s) => ({
+      id: s.id,
+      bookTitle: byId.get(s.bookId)?.title ?? 'Unknown book',
+      startedAt: s.startedAt,
+      durationSeconds: s.durationSeconds,
+    }))
+  })
 
   /** Map of ISO date → total seconds read on that date. */
   const sessionsByDate = computed(() => {
@@ -339,6 +362,7 @@ export function useReadingStats() {
     lastReadEntry,
     // Sessions
     totalReadingSeconds,
+    sessionHistory,
     currentStreak,
     bestStreak,
     weeklyActivity,
