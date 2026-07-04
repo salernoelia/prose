@@ -10,6 +10,7 @@ defineProps<{
     bookmarked: boolean
     hasToc: boolean
     canZoom: boolean
+    canUndoJump: boolean
 }>()
 
 const emit = defineEmits<{
@@ -19,10 +20,10 @@ const emit = defineEmits<{
     (e: 'toggle-bookmark'): void
     (e: 'prev'): void
     (e: 'next'): void
+    (e: 'undo-jump'): void
     (e: 'zoom-in'): void
     (e: 'zoom-out'): void
     (e: 'quick-settings'): void
-    (e: 'hide'): void
     (e: 'show'): void
 }>()
 </script>
@@ -144,14 +145,16 @@ const emit = defineEmits<{
                 <span class="material-symbols-outlined text-xl leading-none select-none">tune</span>
             </button>
 
-            <!-- Hide Dock Action -->
+            <!-- Undo the last jump (TOC, link, bookmark): back to the page it left.
+                 The dock itself is hidden by tapping the page center. -->
             <button
-                @click="emit('hide')"
-                class="flex items-center justify-center w-8 h-8 rounded-full text-(--text-tertiary) hover:text-(--text-primary) transition-all duration-100 active:scale-90 active:opacity-80 focus-ring-minimal"
-                title="Hide Controls"
-                aria-label="Hide Controls"
+                @click="emit('undo-jump')"
+                :disabled="!canUndoJump"
+                class="flex items-center justify-center w-8 h-8 rounded-full text-(--text-secondary) hover:text-(--text-primary) transition-all duration-100 active:scale-90 active:opacity-80 focus-ring-minimal disabled:opacity-20 disabled:hover:text-(--text-secondary) disabled:active:scale-100"
+                title="Back to previous position"
+                aria-label="Back to previous position"
             >
-                <span class="material-symbols-outlined text-xl leading-none select-none">visibility_off</span>
+                <span class="material-symbols-outlined text-xl leading-none select-none">undo</span>
             </button>
         </div>
     </div>

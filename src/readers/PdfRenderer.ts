@@ -16,7 +16,7 @@ import type {
   RenderTask,
 } from 'pdfjs-dist'
 import workerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url'
-import type { BookRenderer, Locator, ReadingStyle, TocItem, Zoomable } from './types'
+import type { BookRenderer, JumpHistory, Locator, ReadingStyle, TocItem, Zoomable } from './types'
 import { isDarkTheme } from './themes'
 import { installColorInvert } from './darkInvert'
 
@@ -39,7 +39,7 @@ interface PdfOutlineNode {
   items: PdfOutlineNode[]
 }
 
-export class PdfRenderer implements BookRenderer, Zoomable {
+export class PdfRenderer implements BookRenderer, Zoomable, JumpHistory {
   #container: HTMLElement | null = null
   /** A stable, non-scrolling ancestor measured for the fit calculation. */
   #viewport: HTMLElement | null = null
@@ -52,6 +52,9 @@ export class PdfRenderer implements BookRenderer, Zoomable {
   #resizeObserver: ResizeObserver | null = null
   #repaintHandle: number | null = null
   #locationListeners: Array<(locator: Locator) => void> = []
+  #jumpHistoryListeners: Array<(canUndo: boolean) => void> = []
+  /** Pages left behind by jumps (TOC, bookmarks), most recent last (JumpHistory). */
+  #jumpHistory: number[] = []
   #toc: TocItem[] = []
   #page = 1
   #pageCount = 1
@@ -150,6 +153,8 @@ export class PdfRenderer implements BookRenderer, Zoomable {
     this.#loadingTask = null
     this.#doc = null
     this.#locationListeners = []
+    this.#jumpHistoryListeners = []
+    this.#jumpHistory = []
   }
 
   next(): void {
@@ -167,13 +172,42 @@ export class PdfRenderer implements BookRenderer, Zoomable {
   }
 
   async goToLocator(locator: Locator): Promise<void> {
-    const page = Number.parseInt(locator.payload, 10)
-    if (Number.isFinite(page)) await this.#setPage(page)
+    await this.#jumpTo(Number.parseInt(locator.payload, 10))
   }
 
   async goToHref(href: string): Promise<void> {
-    const page = Number.parseInt(href, 10)
-    if (Number.isFinite(page)) await this.#setPage(page)
+    await this.#jumpTo(Number.parseInt(href, 10))
+  }
+
+  /** A jump (as opposed to a page turn) records the page it left for undo. */
+  async #jumpTo(page: number): Promise<void> {
+    if (!Number.isFinite(page)) return
+    const before = this.#page
+    await this.#setPage(page)
+    if (this.#page !== before) {
+      this.#jumpHistory.push(before)
+      this.#emitJumpHistory()
+    }
+  }
+
+  undoJump(): void {
+    const page = this.#jumpHistory.pop()
+    if (page === undefined) return
+    void this.#setPage(page)
+    this.#emitJumpHistory()
+  }
+
+  onJumpHistoryChange(cb: (canUndo: boolean) => void): void {
+    this.#jumpHistoryListeners.push(cb)
+  }
+
+  resetJumpHistory(): void {
+    this.#jumpHistory = []
+    this.#emitJumpHistory()
+  }
+
+  #emitJumpHistory(): void {
+    for (const listener of this.#jumpHistoryListeners) listener(this.#jumpHistory.length > 0)
   }
 
   toc(): TocItem[] {

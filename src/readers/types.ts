@@ -106,6 +106,26 @@ export function isAnnotatable(renderer: BookRenderer): renderer is BookRenderer 
   return typeof (renderer as Partial<Annotatable>).addHighlight === 'function'
 }
 
+/**
+ * Optional capability for renderers that record jumps (TOC, internal links,
+ * bookmarks, highlights) so the reader can offer an undo back to the position
+ * left behind. Sequential page turns never create history; they update the
+ * position a pending undo returns to.
+ */
+export interface JumpHistory {
+  /** Return to the position before the most recent jump. */
+  undoJump(): void
+  /** Fire with whether an undo is available, on every history change. */
+  onJumpHistoryChange(cb: (canUndo: boolean) => void): void
+  /** Forget recorded jumps, e.g. after restoring the saved position on open. */
+  resetJumpHistory(): void
+}
+
+/** Narrow a renderer to {@link JumpHistory} when it records jumps. */
+export function hasJumpHistory(renderer: BookRenderer): renderer is BookRenderer & JumpHistory {
+  return typeof (renderer as Partial<JumpHistory>).undoJump === 'function'
+}
+
 /** Optional capability for fixed-layout renderers that support zoom (FR-READ-05). */
 export interface Zoomable {
   /** Set the zoom multiplier, where 1 is the default fit-to-page. */

@@ -9,6 +9,7 @@
 import { computed, onUnmounted, ref, shallowRef, watch, type Ref } from 'vue'
 import {
   createRenderer,
+  hasJumpHistory,
   isAnnotatable,
   isZoomable,
   type Annotatable,
@@ -41,6 +42,8 @@ export function useReader(book: Ref<BookDto>) {
   const hasToc = computed(() => toc.value.length > 0)
 
   const canZoom = ref(false)
+  // Whether a jump (TOC, link, bookmark) can be undone back to the page it left.
+  const canUndoJump = ref(false)
   const ZOOM_FACTOR = 1.25
   let saveTimer: ReturnType<typeof setTimeout> | null = null
   // The latest position not yet written, kept so a pending save can be flushed
@@ -120,6 +123,13 @@ export function useReader(book: Ref<BookDto>) {
       if (saved) {
         await instance.goToLocator(saved.locator)
       }
+      if (hasJumpHistory(instance)) {
+        instance.onJumpHistoryChange((canUndo) => {
+          canUndoJump.value = canUndo
+        })
+        // Restoring the saved position is not a jump the reader should undo.
+        instance.resetJumpHistory()
+      }
       isInitializing = false
       const currentLocator = locator.value as Locator | null
       if (currentLocator) {
@@ -139,6 +149,7 @@ export function useReader(book: Ref<BookDto>) {
     renderer.value?.destroy()
     renderer.value = null
     annotatable.value = null
+    canUndoJump.value = false
   }
 
   function next() {
@@ -155,6 +166,11 @@ export function useReader(book: Ref<BookDto>) {
 
   async function goToLocator(target: Locator) {
     await renderer.value?.goToLocator(target)
+  }
+
+  function undoJump() {
+    const instance = renderer.value
+    if (instance && hasJumpHistory(instance)) instance.undoJump()
   }
 
   function zoomIn() {
@@ -200,12 +216,14 @@ export function useReader(book: Ref<BookDto>) {
     toc,
     hasToc,
     canZoom,
+    canUndoJump,
     ready,
     annotatable,
     next,
     prev,
     goToHref,
     goToLocator,
+    undoJump,
     zoomIn,
     zoomOut,
   }

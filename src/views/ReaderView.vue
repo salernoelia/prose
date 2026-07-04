@@ -62,12 +62,14 @@ const {
     toc,
     hasToc,
     canZoom,
+    canUndoJump,
     ready,
     annotatable,
     next,
     prev,
     goToHref,
     goToLocator,
+    undoJump,
     zoomIn,
     zoomOut,
 } = useReader(toRef(props, "book"));
@@ -381,7 +383,9 @@ onUnmounted(() => {
             :bookmarked="isBookmarked"
             :has-toc="hasToc"
             :can-zoom="canZoom"
+            :can-undo-jump="canUndoJump"
             @back="handleBack"
+            @undo-jump="undoJump"
             @toc="showToc = true"
             @annotations="showAnnotations = true"
             @toggle-bookmark="toggleBookmark"
@@ -390,7 +394,6 @@ onUnmounted(() => {
             @zoom-in="zoomIn"
             @zoom-out="zoomOut"
             @quick-settings="showQuickSettings = !showQuickSettings"
-            @hide="showDock = false"
             @show="showDock = true"
         />
 

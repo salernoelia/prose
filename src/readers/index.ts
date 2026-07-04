@@ -3,6 +3,7 @@
 export type {
   Annotatable,
   BookRenderer,
+  JumpHistory,
   Locator,
   ReadingStyle,
   TextSelection,
@@ -10,5 +11,5 @@ export type {
   TocItem,
   Zoomable,
 } from './types'
-export { isAnnotatable, isZoomable } from './types'
+export { hasJumpHistory, isAnnotatable, isZoomable } from './types'
 export { createRenderer } from './registry'

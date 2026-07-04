@@ -11,6 +11,7 @@ import * as CFI from './vendor/foliate-js/epubcfi.js'
 import type {
   Annotatable,
   BookRenderer,
+  JumpHistory,
   Locator,
   ReadingStyle,
   TextSelection,
@@ -34,6 +35,13 @@ interface FoliateView extends HTMLElement {
     toc?: FoliateTocItem[]
     sections?: FoliateSection[]
     landmarks?: FoliateLandmark[]
+  }
+  lastLocation?: { cfi?: string }
+  history: EventTarget & {
+    back(): void
+    clear(): void
+    pushState(state: unknown): void
+    readonly canGoBack: boolean
   }
   open(source: string): Promise<void>
   init(options: { lastLocation?: string; showTextStart?: boolean }): Promise<void>
@@ -138,10 +146,11 @@ function mapToc(items: FoliateTocItem[] | undefined): TocItem[] {
   }))
 }
 
-export class EpubRenderer implements BookRenderer, Annotatable {
+export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
   #view: FoliateView | null = null
   #style: ReadingStyle | null = null
   #locationListeners: Array<(locator: Locator) => void> = []
+  #jumpHistoryListeners: Array<(canUndo: boolean) => void> = []
   #selectionListeners: Array<(selection: TextSelection | null) => void> = []
   #highlightClickListeners: Array<(payload: string, rect: ViewportRect) => void> = []
   // Drawn highlights, keyed by their CFI payload, so they can be redrawn each
@@ -240,6 +249,12 @@ export class EpubRenderer implements BookRenderer, Annotatable {
         }, 0)
       })
     })
+    // foliate's history records every jump (goTo for TOC, links, annotations)
+    // and folds plain page turns into the top entry via replaceState, so
+    // canGoBack flips exactly when there is a jump to undo.
+    view.history.addEventListener('index-change', () => {
+      for (const listener of this.#jumpHistoryListeners) listener(view.history.canGoBack)
+    })
     container.append(view)
     this.#view = view
   }
@@ -260,6 +275,7 @@ export class EpubRenderer implements BookRenderer, Annotatable {
     this.#view?.remove()
     this.#view = null
     this.#locationListeners = []
+    this.#jumpHistoryListeners = []
     this.#selectionListeners = []
     this.#highlightClickListeners = []
     this.#highlights.clear()
@@ -305,6 +321,26 @@ export class EpubRenderer implements BookRenderer, Annotatable {
 
   onLocationChange(cb: (locator: Locator) => void): void {
     this.#locationListeners.push(cb)
+  }
+
+  undoJump(): void {
+    this.#view?.history.back()
+  }
+
+  onJumpHistoryChange(cb: (canUndo: boolean) => void): void {
+    this.#jumpHistoryListeners.push(cb)
+  }
+
+  resetJumpHistory(): void {
+    const view = this.#view
+    if (!view) return
+    view.history.clear()
+    // Re-seed the history with the current page so the first jump after the
+    // reset has an entry to return to (back() needs a predecessor, and page
+    // turns keep this entry current via replaceState).
+    const cfi = view.lastLocation?.cfi
+    if (cfi) view.history.pushState(cfi)
+    for (const listener of this.#jumpHistoryListeners) listener(false)
   }
 
   onSelection(cb: (selection: TextSelection | null) => void): void {
