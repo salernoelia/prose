@@ -52,6 +52,10 @@
                 "ext": [
                     "epub"
                 ],
+                "contentTypes": [
+                    "org.idpf.epub-container"
+                ],
+                "mimeType": "application/epub+zip",
                 "name": "EPUB Book",
                 "role": "Viewer"
             },
