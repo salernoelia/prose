@@ -1,0 +1,362 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout>
+	<!-- Simple Glass Header -->
+	<header class="navbar">
+		<div class="navbar-container">
+			<a href="/" class="logo">
+				<img class="logo-icon" src="/app-icon.svg" alt="Prose Logo" />
+				<span>Prose</span>
+			</a>
+			
+			<nav class="nav-links">
+				<a href="/">Back to Home</a>
+			</nav>
+		</div>
+	</header>
+
+	<main class="privacy-container">
+		<article class="privacy-content">
+			<span class="category">Legal</span>
+			<h1 class="title">Privacy Policy</h1>
+			<p class="updated">Last updated: July 15, 2026</p>
+			
+			<hr class="separator" />
+			
+			<section class="section">
+				<h2>Overview</h2>
+				<p>
+					Prose is designed from the ground up to be a local-first, privacy-respecting ePub and PDF reader. 
+					We believe your reading habits, library collection, highlights, and notes should belong to you. 
+					Therefore, Prose is built to run entirely on your own hardware without transmitting data to us or any third parties.
+				</p>
+			</section>
+
+			<section class="section">
+				<h2>1. No Data Collection</h2>
+				<p>
+					Prose does not collect, monitor, store, or transmit any personal data.
+				</p>
+				<ul>
+					<li><strong>No Telemetry:</strong> We do not gather usage statistics, crash logs, or activity patterns.</li>
+					<li><strong>No Tracking:</strong> There are no advertising trackers, analytics packages, or marketing SDKs integrated into the application.</li>
+					<li><strong>No Accounts:</strong> You do not need to register an account or provide an email address to use Prose.</li>
+				</ul>
+			</section>
+
+			<section class="section">
+				<h2>2. Local Storage</h2>
+				<p>
+					All data created or imported within Prose is stored locally on your device. This includes:
+				</p>
+				<ul>
+					<li>Your library catalog (metadata, book names, authors, and cover art).</li>
+					<li>Your book files (.epub and .pdf format).</li>
+					<li>Your bookmarks, text highlights, and progress locator records.</li>
+					<li>Your custom reading configuration settings.</li>
+				</ul>
+				<p>
+					This data is saved in a secure SQLite database and filesystem storage within the application sandbox. It never leaves your device unless you choose to configure cloud synchronization.
+				</p>
+			</section>
+
+			<section class="section">
+				<h2>3. WebDAV Synchronization</h2>
+				<p>
+					Prose offers an optional synchronization feature that connects to a WebDAV server of your choice. If you choose to enable this feature:
+				</p>
+				<ul>
+					<li>Your book files, reading positions, bookmarks, highlights, and settings will be synchronized directly with your own WebDAV server.</li>
+					<li>All transmissions are performed over a secure, encrypted HTTPS protocol.</li>
+					<li>We do not operate any synchronization servers. We never see, transit, or store your WebDAV server credentials or book database files.</li>
+					<li>Your WebDAV server username and password are saved directly in your operating system's native secure credential store (such as Apple Keychain on macOS/iOS or Windows Credential Manager) and are never stored in plaintext.</li>
+				</ul>
+			</section>
+
+			<section class="section">
+				<h2>4. Third-Party Services</h2>
+				<p>
+					Because Prose runs locally and syncs directly to your own server, the application does not communicate with any third-party APIs. There are no external databases, hosting providers, or CDNs involved in your daily reading workflow.
+				</p>
+			</section>
+
+			<section class="section">
+				<h2>5. Contact Information</h2>
+				<p>
+					If you have any questions or feedback regarding our commitment to privacy or the security of the Prose application, please contact us at:
+				</p>
+				<p class="email-link">
+					<a href="mailto:hello@eliasalerno.ch">hello@eliasalerno.ch</a>
+				</p>
+			</section>
+		</article>
+	</main>
+
+	<!-- Footer -->
+	<footer class="footer">
+		<div class="footer-container">
+			<div class="footer-brand">
+				<a href="/" class="logo">
+					<img class="logo-icon" src="/app-icon.svg" alt="Prose Logo" />
+					<span>Prose</span>
+				</a>
+				<p>A private, local-first reading space.</p>
+			</div>
+			
+			<div class="footer-links">
+				<div class="links-column">
+					<h4>Application</h4>
+					<a href="/#features">Features</a>
+					<a href="/#screenshots">Gallery</a>
+				</div>
+				<div class="links-column">
+					<h4>Legal & Contact</h4>
+					<a href="/privacy">Privacy Policy</a>
+					<a href="mailto:hello@eliasalerno.ch">hello@eliasalerno.ch</a>
+				</div>
+			</div>
+		</div>
+		<div class="footer-bottom">
+			<p>&copy; 2026 Elia Salerno. All rights reserved.</p>
+		</div>
+	</footer>
+</Layout>
+
+<style>
+	/* Navbar Layout */
+	.navbar {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 70px;
+		background-color: var(--glass-bg);
+		backdrop-filter: blur(16px) saturate(120%);
+		-webkit-backdrop-filter: blur(16px) saturate(120%);
+		border-bottom: 1px solid var(--glass-border);
+		z-index: 100;
+	}
+
+	.navbar-container {
+		max-width: 800px;
+		height: 100%;
+		margin: 0 auto;
+		padding: 0 24px;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.logo {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		font-family: var(--font-serif);
+		font-size: 21px;
+		font-weight: 500;
+		color: var(--text-primary);
+		text-decoration: none;
+		transition: opacity 0.2s ease;
+	}
+
+	.logo-icon {
+		width: 32px;
+		height: 32px;
+		border-radius: 8px;
+	}
+
+	.nav-links a {
+		font-size: 14px;
+		font-weight: 500;
+		color: var(--text-muted);
+		text-decoration: none;
+		transition: color 0.2s ease;
+	}
+
+	.nav-links a:hover {
+		color: var(--text-primary);
+	}
+
+	/* Privacy Layout */
+	.privacy-container {
+		max-width: 800px;
+		margin: 0 auto;
+		padding: 140px 24px 80px;
+	}
+
+	.privacy-content {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.category {
+		color: var(--accent);
+		font-size: 13px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 1px;
+		margin-bottom: 12px;
+	}
+
+	.title {
+		font-family: var(--font-serif);
+		font-size: 46px;
+		font-weight: 500;
+		margin: 0 0 8px;
+		color: var(--text-primary);
+	}
+
+	.updated {
+		font-size: 14px;
+		color: var(--text-muted);
+		margin: 0 0 32px;
+	}
+
+	.separator {
+		border: 0;
+		height: 1px;
+		background-color: var(--border);
+		margin: 0 0 40px;
+	}
+
+	.section {
+		margin-bottom: 40px;
+	}
+
+	.section h2 {
+		font-family: var(--font-serif);
+		font-size: 22px;
+		font-weight: 500;
+		margin: 0 0 16px;
+		color: var(--text-primary);
+	}
+
+	.section p {
+		font-size: 15px;
+		line-height: 1.6;
+		color: var(--text-muted);
+		margin: 0 0 20px;
+	}
+
+	.section ul {
+		margin: 0 0 20px;
+		padding-left: 20px;
+	}
+
+	.section li {
+		font-size: 15px;
+		line-height: 1.6;
+		color: var(--text-muted);
+		margin-bottom: 10px;
+	}
+
+	.section li strong {
+		color: var(--text-primary);
+	}
+
+	.email-link {
+		margin-top: 10px;
+	}
+
+	.email-link a {
+		font-size: 16px;
+		color: var(--accent);
+		text-decoration: none;
+		font-weight: 500;
+		transition: color 0.2s ease;
+	}
+
+	.email-link a:hover {
+		color: var(--accent-hover);
+	}
+
+	/* Footer Layout */
+	.footer {
+		border-top: 1px solid var(--border);
+		background-color: var(--bg-primary);
+		padding: 80px 24px 40px;
+	}
+
+	.footer-container {
+		max-width: 800px;
+		margin: 0 auto 60px;
+		display: flex;
+		justify-content: space-between;
+		gap: 60px;
+	}
+
+	.footer-brand {
+		max-width: 320px;
+	}
+
+	.footer-brand p {
+		margin-top: 16px;
+		font-size: 14px;
+		line-height: 1.5;
+		color: var(--text-muted);
+	}
+
+	.footer-links {
+		display: flex;
+		gap: 80px;
+	}
+
+	.links-column {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
+	.links-column h4 {
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--text-primary);
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		margin: 0 0 8px;
+	}
+
+	.links-column a {
+		font-size: 14px;
+		color: var(--text-muted);
+		text-decoration: none;
+		transition: color 0.2s ease;
+	}
+
+	.links-column a:hover {
+		color: var(--text-primary);
+	}
+
+	.footer-bottom {
+		border-top: 1px solid var(--border);
+		max-width: 800px;
+		margin: 0 auto;
+		padding-top: 32px;
+		display: flex;
+		justify-content: center;
+	}
+
+	.footer-bottom p {
+		font-size: 13px;
+		color: var(--text-muted);
+		margin: 0;
+	}
+
+	/* Responsive Media Queries */
+	@media (max-width: 768px) {
+		.privacy-container {
+			padding-top: 110px;
+		}
+
+		.title {
+			font-size: 36px;
+		}
+
+		.footer-container {
+			flex-direction: column;
+			gap: 40px;
+		}
+	}
+</style>

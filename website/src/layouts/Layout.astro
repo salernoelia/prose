@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		
+		<!-- SEO Meta Tags -->
+		<title>Prose - Local-First ePub & PDF Reader</title>
+		<meta name="description" content="A clean, minimalist, and private reader for ePub and PDF. Organize your library locally and sync across devices using your own WebDAV server." />
+		<meta name="keywords" content="epub reader, pdf reader, local-first ebook, webdav sync, offline book reader, clean ereader, privacy ebook" />
+		<meta name="author" content="Elia Salerno" />
+		
+		<!-- Open Graph / Facebook -->
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content="Prose - Local-First ePub & PDF Reader" />
+		<meta property="og:description" content="A clean, minimalist, and private reader for ePub and PDF. Organize your library locally and sync across devices using your own WebDAV server." />
+		
+		<!-- Google Fonts -->
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+	</head>
+	<body>
+		<slot />
+	</body>
+</html>
+
+<style is:global>
+	:root {
+		--bg-primary: #12100e;
+		--bg-secondary: #1a1714;
+		--bg-tertiary: #24201c;
+		--text-primary: #e6dfd5;
+		--text-muted: #9e9182;
+		--accent: #d49b5c;
+		--accent-hover: #e5b37b;
+		--border: #2a241f;
+		--glass-bg: rgba(18, 16, 14, 0.8);
+		--glass-border: rgba(42, 36, 31, 0.7);
+		
+		--font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+		--font-serif: 'Lora', Georgia, serif;
+	}
+
+	html {
+		background-color: var(--bg-primary);
+		color: var(--text-primary);
+		font-family: var(--font-sans);
+		scroll-behavior: smooth;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+	}
+
+	body {
+		margin: 0;
+		padding: 0;
+		width: 100%;
+		min-height: 100%;
+		overflow-x: hidden;
+	}
+
+	/* Simple custom scrollbar to match the sepia theme */
+	::-webkit-scrollbar {
+		width: 8px;
+		height: 8px;
+	}
+	::-webkit-scrollbar-track {
+		background: var(--bg-primary);
+	}
+	::-webkit-scrollbar-thumb {
+		background: var(--bg-tertiary);
+		border-radius: 4px;
+	}
+	::-webkit-scrollbar-thumb:hover {
+		background: var(--accent);
+	}
+</style>
+

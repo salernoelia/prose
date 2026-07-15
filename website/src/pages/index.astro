@@ -1,0 +1,741 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout>
+	<!-- Glass Header -->
+	<header class="navbar">
+		<div class="navbar-container">
+			<a href="#" class="logo">
+				<img class="logo-icon" src="/app-icon.svg" alt="Prose Logo" />
+				<span>Prose</span>
+			</a>
+			
+			<nav class="nav-links">
+				<a href="#features">Features</a>
+				<a href="#screenshots">Gallery</a>
+				<a href="/privacy">Privacy</a>
+				<a href="mailto:hello@eliasalerno.ch" class="btn btn-primary btn-sm">Contact</a>
+			</nav>
+		</div>
+	</header>
+
+	<!-- Hero Section -->
+	<section class="hero">
+		<div class="hero-content">
+			<span class="badge fade-in">Local-First eReader</span>
+			<h1 class="hero-title fade-in-delay-1">Read peacefully.</h1>
+			<p class="hero-subtitle fade-in-delay-2">
+				A minimalist, fast, and secure reader for ePub and PDF. Organize your personal library locally and synchronize across devices on your own terms.
+			</p>
+			<div class="hero-actions fade-in-delay-3">
+				<a href="mailto:hello@eliasalerno.ch" class="btn btn-primary">Get in Touch</a>
+				<a href="#features" class="btn btn-secondary">Learn More</a>
+			</div>
+		</div>
+
+		<!-- Hero iPhone Mockup -->
+		<div class="hero-mockup-wrapper fade-in-delay-3">
+			<div class="iphone-mockup">
+				<div class="notch"></div>
+				<div class="screen">
+					<img src="/screenshots/IMG_4673.PNG" alt="Prose Library View" />
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Features Grid -->
+	<section id="features" class="features-section">
+		<div class="section-header">
+			<h2 class="section-title">Designed for readers.</h2>
+			<p class="section-desc">Every detail is optimized for comfort, distraction-free reading, and absolute control over your library.</p>
+		</div>
+
+		<div class="features-grid">
+			<div class="feature-card">
+				<div class="feature-icon">
+					<span class="material-symbols-outlined">shield</span>
+				</div>
+				<h3>Privacy by Design</h3>
+				<p>Your library and reading habits are private. No analytics, tracking, or telemetry. Your books stay strictly on your device.</p>
+			</div>
+
+			<div class="feature-card">
+				<div class="feature-icon">
+					<span class="material-symbols-outlined">database</span>
+				</div>
+				<h3>Local-First Database</h3>
+				<p>Powered by a native SQLite core. Enjoy lightning-fast startup, page turns under 100 ms, and offline access to 1,000+ books.</p>
+			</div>
+
+			<div class="feature-card">
+				<div class="feature-icon">
+					<span class="material-symbols-outlined">cloud_sync</span>
+				</div>
+				<h3>Private Cloud Sync</h3>
+				<p>Synchronize reading positions, highlights, and annotations seamlessly using your own private WebDAV server.</p>
+			</div>
+
+			<div class="feature-card">
+				<div class="feature-icon">
+					<span class="material-symbols-outlined">edit</span>
+				</div>
+				<h3>Active Annotations</h3>
+				<p>Create bookmarks, highlight text, and perform offline dictionary lookups instantly inside the reading interface.</p>
+			</div>
+
+			<div class="feature-card">
+				<div class="feature-icon">
+					<span class="material-symbols-outlined">text_fields</span>
+				</div>
+				<h3>Custom Typographies</h3>
+				<p>Personalize font size, family, margins, and line spacing. Read comfortably using light, dark, or sepia color modes.</p>
+			</div>
+
+			<div class="feature-card">
+				<div class="feature-icon">
+					<span class="material-symbols-outlined">bar_chart</span>
+				</div>
+				<h3>Detailed Analytics</h3>
+				<p>Gain insights into your reading routine. Track pages per minute, daily sessions, and weekly progress charts offline.</p>
+			</div>
+		</div>
+	</section>
+
+	<!-- Screenshots Showcase -->
+	<section id="screenshots" class="screenshots-section">
+		<div class="section-header">
+			<h2 class="section-title">Interface Showcase</h2>
+			<p class="section-desc">Take a visual tour of Prose. Clean layouts, adaptive typography, and structured statistics.</p>
+		</div>
+
+		<div class="carousel-container">
+			<div class="carousel-track">
+				<div class="carousel-item">
+					<div class="iphone-mockup">
+						<div class="notch"></div>
+						<div class="screen">
+							<img src="/screenshots/IMG_4673.PNG" alt="Personal Library Grid" />
+						</div>
+					</div>
+					<p class="carousel-caption">Personal Library Grid</p>
+				</div>
+
+				<div class="carousel-item">
+					<div class="iphone-mockup">
+						<div class="notch"></div>
+						<div class="screen">
+							<img src="/screenshots/IMG_4674.PNG" alt="Reading Statistics" />
+						</div>
+					</div>
+					<p class="carousel-caption">Reading Statistics</p>
+				</div>
+
+				<div class="carousel-item">
+					<div class="iphone-mockup">
+						<div class="notch"></div>
+						<div class="screen">
+							<img src="/screenshots/IMG_4679.PNG" alt="Typography Settings" />
+						</div>
+					</div>
+					<p class="carousel-caption">Typography Settings</p>
+				</div>
+
+				<div class="carousel-item">
+					<div class="iphone-mockup">
+						<div class="notch"></div>
+						<div class="screen">
+							<img src="/screenshots/IMG_4680.PNG" alt="ePub Reading Mode" />
+						</div>
+					</div>
+					<p class="carousel-caption">ePub Reading Mode</p>
+				</div>
+
+				<div class="carousel-item">
+					<div class="iphone-mockup">
+						<div class="notch"></div>
+						<div class="screen">
+							<img src="/screenshots/IMG_4681.PNG" alt="Quick Formatting Menu" />
+						</div>
+					</div>
+					<p class="carousel-caption">Quick Formatting Menu</p>
+				</div>
+
+				<div class="carousel-item">
+					<div class="iphone-mockup">
+						<div class="notch"></div>
+						<div class="screen">
+							<img src="/screenshots/IMG_4682.PNG" alt="Text Highlighting and Notes" />
+						</div>
+					</div>
+					<p class="carousel-caption">Text Selection & Notes</p>
+				</div>
+
+				<div class="carousel-item">
+					<div class="iphone-mockup">
+						<div class="notch"></div>
+						<div class="screen">
+							<img src="/screenshots/IMG_4684.PNG" alt="Table of Contents Sidebar" />
+						</div>
+					</div>
+					<p class="carousel-caption">Table of Contents Sidebar</p>
+				</div>
+
+				<div class="carousel-item">
+					<div class="iphone-mockup">
+						<div class="notch"></div>
+						<div class="screen">
+							<img src="/screenshots/IMG_4685.PNG" alt="Bookmarks and Highlights List" />
+						</div>
+					</div>
+					<p class="carousel-caption">Bookmarks & Highlights List</p>
+				</div>
+
+				<div class="carousel-item">
+					<div class="iphone-mockup">
+						<div class="notch"></div>
+						<div class="screen">
+							<img src="/screenshots/IMG_4686.PNG" alt="Fixed-Layout PDF Reader" />
+						</div>
+					</div>
+					<p class="carousel-caption">Fixed-Layout PDF Reader</p>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Footer -->
+	<footer class="footer">
+		<div class="footer-container">
+			<div class="footer-brand">
+				<a href="#" class="logo">
+					<img class="logo-icon" src="/app-icon.svg" alt="Prose Logo" />
+					<span>Prose</span>
+				</a>
+				<p>A private, local-first reading space.</p>
+			</div>
+			
+			<div class="footer-links">
+				<div class="links-column">
+					<h4>Application</h4>
+					<a href="#features">Features</a>
+					<a href="#screenshots">Gallery</a>
+				</div>
+				<div class="links-column">
+					<h4>Legal & Contact</h4>
+					<a href="/privacy">Privacy Policy</a>
+					<a href="mailto:hello@eliasalerno.ch">hello@eliasalerno.ch</a>
+				</div>
+			</div>
+		</div>
+		<div class="footer-bottom">
+			<p>&copy; 2026 Elia Salerno. All rights reserved.</p>
+		</div>
+	</footer>
+</Layout>
+
+<style>
+	/* Navbar Layout */
+	.navbar {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 70px;
+		background-color: var(--glass-bg);
+		backdrop-filter: blur(16px) saturate(120%);
+		-webkit-backdrop-filter: blur(16px) saturate(120%);
+		border-bottom: 1px solid var(--glass-border);
+		z-index: 100;
+	}
+
+	.navbar-container {
+		max-width: 1100px;
+		height: 100%;
+		margin: 0 auto;
+		padding: 0 24px;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.logo {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		font-family: var(--font-serif);
+		font-size: 21px;
+		font-weight: 500;
+		color: var(--text-primary);
+		text-decoration: none;
+		transition: opacity 0.2s ease;
+	}
+
+	.logo:hover {
+		opacity: 0.9;
+	}
+
+	.logo-icon {
+		width: 32px;
+		height: 32px;
+		border-radius: 8px;
+	}
+
+	.nav-links {
+		display: flex;
+		align-items: center;
+		gap: 28px;
+	}
+
+	.nav-links a {
+		font-size: 14px;
+		font-weight: 500;
+		color: var(--text-muted);
+		text-decoration: none;
+		transition: color 0.2s ease;
+	}
+
+	.nav-links a:hover {
+		color: var(--text-primary);
+	}
+
+	.nav-links .btn {
+		margin-left: 8px;
+	}
+
+	/* Hero Section */
+	.hero {
+		max-width: 1100px;
+		margin: 0 auto;
+		padding: 160px 24px 80px;
+		display: grid;
+		grid-template-columns: 1.2fr 1fr;
+		gap: 60px;
+		align-items: center;
+	}
+
+	.hero-content {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.badge {
+		background-color: var(--bg-tertiary);
+		border: 1px solid var(--border);
+		color: var(--accent);
+		font-size: 12px;
+		font-weight: 500;
+		letter-spacing: 0.5px;
+		padding: 6px 14px;
+		border-radius: 20px;
+		margin-bottom: 24px;
+	}
+
+	.hero-title {
+		font-family: var(--font-serif);
+		font-size: 58px;
+		line-height: 1.15;
+		font-weight: 500;
+		margin: 0 0 20px;
+		color: var(--text-primary);
+	}
+
+	.hero-subtitle {
+		font-size: 18px;
+		line-height: 1.6;
+		color: var(--text-muted);
+		margin: 0 0 36px;
+		max-width: 500px;
+	}
+
+	.hero-actions {
+		display: flex;
+		gap: 16px;
+	}
+
+	/* iPhone Mockups styling */
+	.hero-mockup-wrapper {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.iphone-mockup {
+		position: relative;
+		width: 280px;
+		height: 605px;
+		border: 10px solid #28221b;
+		border-radius: 40px;
+		background-color: #0b0a09;
+		box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7);
+		overflow: hidden;
+	}
+
+	.iphone-mockup::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		border: 1px solid rgba(230, 223, 213, 0.08);
+		border-radius: 30px;
+		pointer-events: none;
+		z-index: 15;
+	}
+
+	.notch {
+		position: absolute;
+		top: 12px;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 100px;
+		height: 26px;
+		background-color: #0b0a09;
+		border-radius: 13px;
+		z-index: 20;
+	}
+
+	.screen {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		background-color: var(--bg-secondary);
+		z-index: 5;
+	}
+
+	.screen img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	/* Features Grid Section */
+	.features-section {
+		border-top: 1px solid var(--border);
+		max-width: 1100px;
+		margin: 0 auto;
+		padding: 100px 24px;
+	}
+
+	.section-header {
+		text-align: center;
+		max-width: 600px;
+		margin: 0 auto 64px;
+	}
+
+	.section-title {
+		font-family: var(--font-serif);
+		font-size: 38px;
+		font-weight: 500;
+		margin: 0 0 16px;
+	}
+
+	.section-desc {
+		font-size: 16px;
+		line-height: 1.5;
+		color: var(--text-muted);
+		margin: 0;
+	}
+
+	.features-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 32px;
+	}
+
+	.feature-card {
+		background-color: var(--bg-secondary);
+		border: 1px solid var(--border);
+		padding: 36px;
+		border-radius: 16px;
+		transition: border-color 0.25s ease, transform 0.25s ease;
+	}
+
+	.feature-card:hover {
+		border-color: var(--accent);
+		transform: translateY(-4px);
+	}
+
+	.feature-icon {
+		width: 48px;
+		height: 48px;
+		border-radius: 10px;
+		background-color: var(--bg-tertiary);
+		color: var(--accent);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		margin-bottom: 24px;
+	}
+
+	.feature-icon svg,
+	.feature-icon .material-symbols-outlined {
+		width: 24px;
+		height: 24px;
+		font-size: 24px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.feature-card h3 {
+		font-family: var(--font-serif);
+		font-size: 20px;
+		font-weight: 500;
+		margin: 0 0 12px;
+	}
+
+	.feature-card p {
+		font-size: 14px;
+		line-height: 1.6;
+		color: var(--text-muted);
+		margin: 0;
+	}
+
+	/* Screenshots Showcase Carousel */
+	.screenshots-section {
+		border-top: 1px solid var(--border);
+		padding: 100px 0;
+		background-color: var(--bg-secondary);
+	}
+
+	.carousel-container {
+		width: 100%;
+		overflow-x: auto;
+		padding: 20px 0 60px;
+		display: flex;
+		scroll-snap-type: x mandatory;
+		scrollbar-width: none; /* Hide standard Firefox scrollbar */
+	}
+
+	.carousel-container::-webkit-scrollbar {
+		display: none; /* Hide Safari/Chrome scrollbar */
+	}
+
+	.carousel-track {
+		display: flex;
+		gap: 40px;
+		padding: 0 80px;
+	}
+
+	.carousel-item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		scroll-snap-align: center;
+	}
+
+	.carousel-caption {
+		margin-top: 20px;
+		font-size: 14px;
+		font-weight: 500;
+		color: var(--text-muted);
+	}
+
+
+
+	.btn-group {
+		display: flex;
+		gap: 12px;
+		width: 100%;
+	}
+
+	.btn-group .btn {
+		flex: 1;
+	}
+
+	/* Footer Layout */
+	.footer {
+		border-top: 1px solid var(--border);
+		background-color: var(--bg-primary);
+		padding: 80px 24px 40px;
+	}
+
+	.footer-container {
+		max-width: 1100px;
+		margin: 0 auto 60px;
+		display: flex;
+		justify-content: space-between;
+		gap: 60px;
+	}
+
+	.footer-brand {
+		max-width: 320px;
+	}
+
+	.footer-brand p {
+		margin-top: 16px;
+		font-size: 14px;
+		line-height: 1.5;
+		color: var(--text-muted);
+	}
+
+	.footer-links {
+		display: flex;
+		gap: 80px;
+	}
+
+	.links-column {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
+	.links-column h4 {
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--text-primary);
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		margin: 0 0 8px;
+	}
+
+	.links-column a {
+		font-size: 14px;
+		color: var(--text-muted);
+		text-decoration: none;
+		transition: color 0.2s ease;
+	}
+
+	.links-column a:hover {
+		color: var(--text-primary);
+	}
+
+	.footer-bottom {
+		border-top: 1px solid var(--border);
+		max-width: 1100px;
+		margin: 0 auto;
+		padding-top: 32px;
+		display: flex;
+		justify-content: center;
+	}
+
+	.footer-bottom p {
+		font-size: 13px;
+		color: var(--text-muted);
+		margin: 0;
+	}
+
+	/* Buttons CSS Utilities */
+	.btn {
+		display: inline-flex;
+		justify-content: center;
+		align-items: center;
+		padding: 12px 28px;
+		border-radius: 8px;
+		font-size: 14px;
+		font-weight: 500;
+		text-decoration: none;
+		cursor: pointer;
+		transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+	}
+
+	.btn-sm {
+		padding: 8px 18px;
+		font-size: 13px;
+		border-radius: 6px;
+	}
+
+	.btn-primary {
+		background-color: var(--accent);
+		color: #12100e !important;
+		border: 1px solid var(--accent);
+	}
+
+	.btn-primary:hover {
+		background-color: var(--accent-hover);
+		border-color: var(--accent-hover);
+		color: #12100e !important;
+	}
+
+	.btn-secondary {
+		background-color: transparent;
+		color: var(--text-primary);
+		border: 1px solid var(--border);
+	}
+
+	.btn-secondary:hover {
+		background-color: var(--bg-tertiary);
+		border-color: var(--text-muted);
+	}
+
+	/* Micro Animations */
+	.fade-in {
+		animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+	}
+
+	.fade-in-delay-1 {
+		opacity: 0;
+		animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+	}
+
+	.fade-in-delay-2 {
+		opacity: 0;
+		animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+	}
+
+	.fade-in-delay-3 {
+		opacity: 0;
+		animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.45s forwards;
+	}
+
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+			transform: translateY(15px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	/* Responsive Media Queries */
+	@media (max-width: 900px) {
+		.hero {
+			grid-template-columns: 1fr;
+			padding-top: 120px;
+			gap: 40px;
+			text-align: center;
+		}
+
+		.hero-content {
+			align-items: center;
+		}
+
+		.hero-subtitle {
+			margin-left: auto;
+			margin-right: auto;
+		}
+
+		.features-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+
+		.footer-container {
+			flex-direction: column;
+			gap: 40px;
+		}
+	}
+
+	@media (max-width: 600px) {
+		.features-grid {
+			grid-template-columns: 1fr;
+		}
+
+		.nav-links {
+			display: none; /* Hide navbar on mobile for simplicity */
+		}
+
+		.hero-title {
+			font-size: 40px;
+		}
+
+		.carousel-track {
+			padding: 0 24px;
+		}
+	}
+</style>
