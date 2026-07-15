@@ -295,3 +295,23 @@ pub async fn library_remove(
 
     Ok(())
 }
+
+#[tauri::command]
+pub async fn library_set_archived(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    id: String,
+    archived: bool,
+) -> Result<(), AppError> {
+    let book_id = BookId::from_hash(&id);
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis() as i64)
+        .unwrap_or(0);
+    state.library.set_archived(&book_id, archived, now)?;
+
+    app.emit(LIBRARY_CHANGED, ())
+        .map_err(|e| AppError::from_internal(e.to_string()))?;
+
+    Ok(())
+}

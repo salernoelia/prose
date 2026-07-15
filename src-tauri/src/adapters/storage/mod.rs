@@ -8,8 +8,8 @@ use std::sync::Mutex;
 
 use crate::domain::error::DomainError;
 use crate::domain::model::{
-    Book, BookId, BookMetadata, Bookmark, Format, Highlight, LibraryEntry, Locator, Progress,
-    ReadingSession, ReadingStyle, Settings, Theme,
+    ArchivedState, Book, BookId, BookMetadata, Bookmark, Format, Highlight, LibraryEntry, Locator,
+    Progress, ReadingSession, ReadingStyle, Settings, Theme,
 };
 use crate::domain::ports::BookRepository;
 
@@ -162,6 +162,19 @@ impl SqliteBookRepository {
                 );
                 "#,
             ],
+            // Migration 6: Book archiving flag
+            vec![
+                r#"
+                ALTER TABLE books ADD COLUMN archived INTEGER NOT NULL DEFAULT 0;
+                "#,
+            ],
+            // Migration 7: Archived change timestamp for last-write-wins sync.
+            // 0 means the flag has never been set, so there is nothing to sync.
+            vec![
+                r#"
+                ALTER TABLE books ADD COLUMN archived_at INTEGER NOT NULL DEFAULT 0;
+                "#,
+            ],
         ];
 
         for (idx, statements) in migrations.into_iter().enumerate() {
@@ -255,9 +268,9 @@ impl BookRepository for SqliteBookRepository {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn
             .prepare(
-                "SELECT 
+                "SELECT
                 b.id, b.format, b.title, b.author, b.cover,
-                p.payload, p.progression, p.updated_at
+                p.payload, p.progression, p.updated_at, b.archived
              FROM books b
              LEFT JOIN progress p ON b.id = p.book_id",
             )
@@ -273,6 +286,7 @@ impl BookRepository for SqliteBookRepository {
 
                 let progress_progression: Option<f32> = row.get(6)?;
                 let progress_updated_at: Option<i64> = row.get(7)?;
+                let archived: bool = row.get(8)?;
 
                 let format = match format_str.as_str() {
                     "epub" => Format::Epub,
@@ -301,6 +315,7 @@ impl BookRepository for SqliteBookRepository {
                     ),
                     progress: progress_progression.unwrap_or(0.0),
                     last_read: progress_updated_at,
+                    archived,
                 })
             })
             .map_err(|e| DomainError::Storage(e.to_string()))?
@@ -319,6 +334,52 @@ impl BookRepository for SqliteBookRepository {
             return Err(DomainError::BookNotFound(id.as_str().to_string()));
         }
         Ok(())
+    }
+
+    fn set_archived(&self, id: &BookId, state: &ArchivedState) -> Result<(), DomainError> {
+        let conn = self.conn.lock().unwrap();
+        let rows_affected = conn
+            .execute(
+                "UPDATE books SET archived = ?1, archived_at = ?2 WHERE id = ?3;",
+                (state.archived, state.updated_at, id.as_str()),
+            )
+            .map_err(|e| DomainError::Storage(e.to_string()))?;
+        if rows_affected == 0 {
+            return Err(DomainError::BookNotFound(id.as_str().to_string()));
+        }
+        Ok(())
+    }
+
+    fn get_archived(&self, id: &BookId) -> Result<Option<ArchivedState>, DomainError> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn
+            .prepare("SELECT archived, archived_at FROM books WHERE id = ?1;")
+            .map_err(|e| DomainError::Storage(e.to_string()))?;
+        let mut rows = stmt
+            .query([id.as_str()])
+            .map_err(|e| DomainError::Storage(e.to_string()))?;
+        if let Some(row) = rows
+            .next()
+            .map_err(|e| DomainError::Storage(e.to_string()))?
+        {
+            let archived: bool = row
+                .get(0)
+                .map_err(|e| DomainError::Storage(e.to_string()))?;
+            let updated_at: i64 = row
+                .get(1)
+                .map_err(|e| DomainError::Storage(e.to_string()))?;
+            // A zero timestamp marks a book whose flag was never set: nothing to sync.
+            if updated_at == 0 {
+                Ok(None)
+            } else {
+                Ok(Some(ArchivedState {
+                    archived,
+                    updated_at,
+                }))
+            }
+        } else {
+            Ok(None)
+        }
     }
 
     fn save_progress(&self, id: &BookId, progress: &Progress) -> Result<(), DomainError> {

@@ -100,6 +100,7 @@ export interface LibraryEntryDto {
   book: BookDto
   progress: number
   lastRead: number | null
+  archived: boolean
 }
 
 export type SortKey = 'title' | 'author' | 'last_read' | 'progress'

@@ -5,6 +5,7 @@ import {
   updateLibraryQuery,
   importBook,
   removeBook,
+  setBookArchived,
 } from '../stores/library'
 
 export function useLibrary() {
@@ -27,5 +28,6 @@ export function useLibrary() {
     updateLibraryQuery,
     importBook,
     removeBook,
+    setBookArchived,
   }
 }

@@ -21,3 +21,8 @@ export function libraryList(query: LibraryQueryDto): Promise<LibraryEntryDto[]> 
 export function libraryRemove(id: string): Promise<void> {
   return invoke<void>('library_remove', { id })
 }
+
+/** Archive or unarchive a book, toggling its visibility in the default view. */
+export function librarySetArchived(id: string, archived: boolean): Promise<void> {
+  return invoke<void>('library_set_archived', { id, archived })
+}

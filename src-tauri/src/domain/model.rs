@@ -104,6 +104,9 @@ pub struct LibraryEntry {
     pub progress: f32,
     /// When the book was last read, epoch milliseconds, if ever.
     pub last_read: Option<i64>,
+    /// Whether the reader has archived the book. Archived books are hidden from
+    /// the default catalog view but kept in the library.
+    pub archived: bool,
 }
 
 /// A format-neutral reading position. `payload` is opaque to the domain (a CFI
@@ -131,6 +134,16 @@ impl Locator {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Progress {
     pub locator: Locator,
+    pub updated_at: i64,
+}
+
+/// A book's archived flag with the time it was last changed (epoch
+/// milliseconds), so the state resolves by last-write-wins across devices like
+/// [`Progress`]. Absent state means the book has never been archived or
+/// unarchived, and it does not sync.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ArchivedState {
+    pub archived: bool,
     pub updated_at: i64,
 }
 

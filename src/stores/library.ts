@@ -1,6 +1,6 @@
 import { reactive, readonly } from 'vue'
 import type { LibraryEntryDto, LibraryQueryDto, BookDto } from '../ipc/types'
-import { libraryList, libraryImportBook, libraryRemove } from '../ipc/library'
+import { libraryList, libraryImportBook, libraryRemove, librarySetArchived } from '../ipc/library'
 import { onLibraryChanged, onImportProgress } from '../ipc/events'
 import { syncState, triggerSync } from './sync'
 
@@ -137,6 +137,19 @@ export async function removeBook(id: string): Promise<void> {
     }
   } catch (err) {
     console.error('Failed to remove book:', err)
+    throw err
+  }
+}
+
+export async function setBookArchived(id: string, archived: boolean): Promise<void> {
+  try {
+    // The command emits `library:changed`, which reloads the catalog.
+    await librarySetArchived(id, archived)
+    if (syncState.configured) {
+      void triggerSync()
+    }
+  } catch (err) {
+    console.error('Failed to archive book:', err)
     throw err
   }
 }

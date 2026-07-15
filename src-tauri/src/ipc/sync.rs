@@ -251,6 +251,11 @@ fn run_full_sync(
     emit_progress(app, "syncing_progress", 0.2);
     sync_progress(store.as_ref(), &repo, &remote_index)?;
 
+    emit_progress(app, "syncing_archived", 0.4);
+    if sync_archived(store.as_ref(), &repo, &remote_index)? {
+        let _ = app.emit(LIBRARY_CHANGED, ());
+    }
+
     emit_progress(app, "syncing_bookmarks", 0.5);
     sync_bookmarks(store.as_ref(), &repo, &remote_index)?;
 
@@ -289,9 +294,9 @@ fn ensure_remote_dirs(
         .url
         .clone()
         .unwrap_or_default();
-    // v2: provisioning gained prose/tombstones/sessions/, so servers marked
-    // under the old key are provisioned once more to create it.
-    let dirs_key = format!("state:dirs_created:v2:{url}");
+    // v3: provisioning gained prose/archived/, so servers marked under an older
+    // key are provisioned once more to create it (v2 added tombstones/sessions/).
+    let dirs_key = format!("state:dirs_created:v3:{url}");
     if repo.get_sync_state(&dirs_key).ok().flatten().is_some() {
         app_state
             .sync_dirs_created
@@ -306,6 +311,7 @@ fn ensure_remote_dirs(
         "prose/highlights/",
         "prose/sessions/",
         "prose/books/",
+        "prose/archived/",
         "prose/tombstones/",
         "prose/tombstones/sessions/",
     ] {
@@ -340,6 +346,7 @@ fn build_remote_index(
         "prose/bookmarks/",
         "prose/highlights/",
         "prose/sessions/",
+        "prose/archived/",
         "prose/tombstones/",
     ] {
         if let Ok(entries) = store.list(folder) {
@@ -559,6 +566,125 @@ fn sync_progress(
         }
     }
     Ok(())
+}
+
+/// Sync each book's archived flag, resolved last-write-wins by change timestamp
+/// (mirrors [`sync_progress`]). Only books held locally are visited; a remote
+/// archived state for a book not yet downloaded is picked up once its file
+/// arrives. Returns `true` when a remote change was applied locally, so the
+/// caller can refresh the catalog.
+fn sync_archived(
+    store: &dyn RemoteStore,
+    repo: &Arc<dyn BookRepository>,
+    remote_entries: &RemoteIndex,
+) -> Result<bool, crate::domain::error::DomainError> {
+    use crate::domain::model::ArchivedState;
+
+    let books = repo.list_entries()?;
+    let mut changed_local = false;
+
+    for entry in &books {
+        let book_id = &entry.book.id;
+        let remote_path = format!("prose/archived/{}.json", book_id.as_str());
+
+        let local = repo.get_archived(book_id)?;
+        let local_serialized = serde_json::to_string(&local).unwrap_or_default();
+
+        let state_key = format!("state:archived:{}", book_id.as_str());
+        let stored_state: Option<StoredSyncState> = repo
+            .get_sync_state(&state_key)
+            .ok()
+            .flatten()
+            .and_then(|s| serde_json::from_str(&s).ok());
+
+        let current_remote_etag = remote_entries.get(&remote_path).cloned().flatten();
+        let remote_exists = remote_entries.contains_key(&remote_path);
+
+        let stored_etag = stored_state.as_ref().and_then(|s| s.remote_etag.clone());
+        let remote_etag_matches =
+            remote_exists && current_remote_etag.is_some() && current_remote_etag == stored_etag;
+        let stored_local = stored_state
+            .as_ref()
+            .map(|s| s.local_serialized.as_str())
+            .unwrap_or("");
+
+        if remote_exists && remote_etag_matches && stored_local == local_serialized {
+            // Neither side moved since the last sync.
+            continue;
+        }
+
+        let mut new_etag = current_remote_etag.clone();
+        let mut upload_needed = false;
+
+        let winner = if remote_exists && remote_etag_matches {
+            // Remote unchanged, local moved: local wins, push it.
+            if let Some(winner_val) = local.clone() {
+                let json = serde_json::to_vec(&winner_val)
+                    .map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
+                store.upload(&remote_path, &json)?;
+                upload_needed = true;
+                winner_val
+            } else {
+                continue;
+            }
+        } else {
+            let remote: Option<ArchivedState> = if remote_exists {
+                store
+                    .download(&remote_path)
+                    .ok()
+                    .and_then(|b| serde_json::from_slice(&b).ok())
+            } else {
+                None
+            };
+
+            // Last-write-wins by timestamp; a tie keeps local.
+            let winner = match (local.as_ref(), remote.as_ref()) {
+                (Some(l), Some(r)) => {
+                    if r.updated_at > l.updated_at {
+                        r.clone()
+                    } else {
+                        l.clone()
+                    }
+                }
+                (Some(l), None) => l.clone(),
+                (None, Some(r)) => r.clone(),
+                (None, None) => continue,
+            };
+
+            if local.as_ref() != Some(&winner) {
+                repo.set_archived(book_id, &winner)?;
+                changed_local = true;
+            }
+
+            if remote.as_ref() != Some(&winner) {
+                let json = serde_json::to_vec(&winner)
+                    .map_err(|e| crate::domain::error::DomainError::Storage(e.to_string()))?;
+                store.upload(&remote_path, &json)?;
+                upload_needed = true;
+            }
+
+            winner
+        };
+
+        if upload_needed {
+            if let Ok(entries) = store.list(&remote_path) {
+                if let Some(entry) = entries.into_iter().next() {
+                    new_etag = entry.etag;
+                }
+            }
+        }
+
+        let updated_local_serialized = serde_json::to_string(&winner).unwrap_or_default();
+        let state_to_save = StoredSyncState {
+            remote_etag: new_etag,
+            local_serialized: updated_local_serialized,
+        };
+        if let Ok(serialized_state) = serde_json::to_string(&state_to_save) {
+            let _ = repo.save_sync_state(&state_key, &serialized_state);
+        }
+    }
+
+    Ok(changed_local)
 }
 
 fn sync_bookmarks(
@@ -903,6 +1029,7 @@ fn sync_books(
                 let _ = store.delete(&remote_book_path);
             }
             let _ = store.delete(&format!("prose/progress/{}.json", id_str));
+            let _ = store.delete(&format!("prose/archived/{}.json", id_str));
             let _ = store.delete(&format!("prose/bookmarks/{}.json", id_str));
             let _ = store.delete(&format!("prose/highlights/{}.json", id_str));
             let _ = store.delete(&format!("prose/sessions/{}.json", id_str));
@@ -1243,6 +1370,62 @@ mod tests {
         assert_eq!(local.len(), 2);
         assert!(local.iter().any(|s| s.id == "s1"));
         assert!(local.iter().any(|s| s.id == "s2"));
+    }
+
+    #[test]
+    fn sync_archived_propagates_state_and_resolves_by_timestamp() {
+        use crate::domain::model::{ArchivedState, Book, BookId, BookMetadata, Format};
+        use crate::domain::testing::{InMemoryBookRepository, InMemoryRemoteStore};
+        use std::sync::Arc;
+
+        let store = InMemoryRemoteStore::new();
+        let repo_a: Arc<dyn BookRepository> = Arc::new(InMemoryBookRepository::new());
+        let repo_b: Arc<dyn BookRepository> = Arc::new(InMemoryBookRepository::new());
+
+        let book_id = BookId::from_content(b"test-book");
+        let book = Book::new(
+            book_id.clone(),
+            Format::Epub,
+            BookMetadata {
+                title: "Test".to_string(),
+                author: None,
+                cover: None,
+            },
+        );
+        repo_a.insert_book(&book).unwrap();
+        repo_b.insert_book(&book).unwrap();
+
+        // Device A archives the book, then pushes it up.
+        repo_a
+            .set_archived(
+                &book_id,
+                &ArchivedState {
+                    archived: true,
+                    updated_at: 100,
+                },
+            )
+            .unwrap();
+        assert!(!sync_archived(&store, &repo_a, &remote_index(&store)).unwrap());
+
+        // Device B pulls the archived state.
+        let changed = sync_archived(&store, &repo_b, &remote_index(&store)).unwrap();
+        assert!(changed);
+        assert!(repo_b.get_archived(&book_id).unwrap().unwrap().archived);
+
+        // Device B unarchives later; the newer timestamp wins on A.
+        repo_b
+            .set_archived(
+                &book_id,
+                &ArchivedState {
+                    archived: false,
+                    updated_at: 200,
+                },
+            )
+            .unwrap();
+        sync_archived(&store, &repo_b, &remote_index(&store)).unwrap();
+        sync_archived(&store, &repo_a, &remote_index(&store)).unwrap();
+
+        assert!(!repo_a.get_archived(&book_id).unwrap().unwrap().archived);
     }
 
     #[test]

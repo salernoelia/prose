@@ -87,6 +87,25 @@ impl LibraryService {
         Ok(entries)
     }
 
+    /// Archive or unarchive a book (FR-LIB-07). The book stays in the library;
+    /// only its visibility in the default catalog view changes. `updated_at`
+    /// (epoch milliseconds) keys last-write-wins so the state syncs across
+    /// devices.
+    pub fn set_archived(
+        &self,
+        id: &BookId,
+        archived: bool,
+        updated_at: i64,
+    ) -> Result<(), DomainError> {
+        self.repo.set_archived(
+            id,
+            &crate::domain::model::ArchivedState {
+                archived,
+                updated_at,
+            },
+        )
+    }
+
     pub fn remove(&self, id: &BookId) -> Result<(), DomainError> {
         self.repo.remove_book(id)?;
         self.repo.add_deleted_book(id.as_str())?;
@@ -232,6 +251,33 @@ mod tests {
         assert!(matches!(
             service.import(b"corrupt", Format::Epub),
             Err(DomainError::InvalidFormat)
+        ));
+    }
+
+    #[test]
+    fn set_archived_toggles_the_entry_flag() {
+        let repo = Arc::new(InMemoryBookRepository::new());
+        let imported = book(b"1", "Dune", Some("Frank Herbert"));
+        repo.insert_book(&imported).unwrap();
+        let service = LibraryService::new(repo.clone(), ReaderRegistry::default());
+
+        assert!(!repo.list_entries().unwrap()[0].archived);
+
+        service.set_archived(&imported.id, true, 100).unwrap();
+        assert!(repo.list_entries().unwrap()[0].archived);
+
+        service.set_archived(&imported.id, false, 200).unwrap();
+        assert!(!repo.list_entries().unwrap()[0].archived);
+    }
+
+    #[test]
+    fn set_archived_on_a_missing_book_errors() {
+        let repo = Arc::new(InMemoryBookRepository::new());
+        let service = LibraryService::new(repo, ReaderRegistry::default());
+
+        assert!(matches!(
+            service.set_archived(&BookId::from_content(b"ghost"), true, 100),
+            Err(DomainError::BookNotFound(_))
         ));
     }
 

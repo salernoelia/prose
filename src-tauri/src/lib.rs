@@ -106,6 +106,7 @@ pub fn run() {
             ipc::library::library_import_book,
             ipc::library::library_list,
             ipc::library::library_remove,
+            ipc::library::library_set_archived,
             ipc::reading::reading_save_position,
             ipc::reading::reading_get_position,
             ipc::reading::reading_log_session,

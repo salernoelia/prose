@@ -9,8 +9,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::domain::error::DomainError;
 use crate::domain::model::{
-    Book, BookId, BookMetadata, Bookmark, Definition, Format, Highlight, LibraryEntry, Progress,
-    ReadingSession, Settings,
+    ArchivedState, Book, BookId, BookMetadata, Bookmark, Definition, Format, Highlight,
+    LibraryEntry, Progress, ReadingSession, Settings,
 };
 
 /// The single local persistence port: catalog, reading position, annotations,
@@ -22,6 +22,12 @@ pub trait BookRepository: Send + Sync {
     /// Every book with its derived progress and last-read time, in one pass.
     fn list_entries(&self) -> Result<Vec<LibraryEntry>, DomainError>;
     fn remove_book(&self, id: &BookId) -> Result<(), DomainError>;
+    /// Set a book's archived state (flag plus change timestamp), hiding it from
+    /// the default catalog view when archived.
+    fn set_archived(&self, id: &BookId, state: &ArchivedState) -> Result<(), DomainError>;
+    /// The book's archived state, or `None` if it has never been archived or
+    /// unarchived (so there is nothing to sync).
+    fn get_archived(&self, id: &BookId) -> Result<Option<ArchivedState>, DomainError>;
 
     fn save_progress(&self, id: &BookId, progress: &Progress) -> Result<(), DomainError>;
     fn get_progress(&self, id: &BookId) -> Result<Option<Progress>, DomainError>;

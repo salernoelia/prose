@@ -137,6 +137,7 @@ pub struct LibraryEntryDto {
     pub book: BookDto,
     pub progress: f32,
     pub last_read: Option<i64>,
+    pub archived: bool,
 }
 
 impl From<LibraryEntry> for LibraryEntryDto {
@@ -145,6 +146,7 @@ impl From<LibraryEntry> for LibraryEntryDto {
             book: BookDto::from(entry.book),
             progress: entry.progress,
             last_read: entry.last_read,
+            archived: entry.archived,
         }
     }
 }

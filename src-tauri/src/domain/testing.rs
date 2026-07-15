@@ -10,7 +10,7 @@ use std::sync::Mutex;
 
 use crate::domain::error::DomainError;
 use crate::domain::model::{
-    Book, BookId, BookMetadata, Bookmark, Format, Highlight, LibraryEntry, Progress,
+    ArchivedState, Book, BookId, BookMetadata, Bookmark, Format, Highlight, LibraryEntry, Progress,
     ReadingSession, Settings,
 };
 use crate::domain::ports::{
@@ -34,6 +34,7 @@ struct RepoState {
     sync_state: HashMap<String, String>,
     deleted_books: Vec<String>,
     deleted_sessions: Vec<String>,
+    archived: HashMap<BookId, ArchivedState>,
 }
 
 impl InMemoryBookRepository {
@@ -67,6 +68,7 @@ impl BookRepository for InMemoryBookRepository {
                     book: book.clone(),
                     progress: progress.map(|p| p.locator.progression).unwrap_or(0.0),
                     last_read: progress.map(|p| p.updated_at),
+                    archived: state.archived.get(&book.id).is_some_and(|s| s.archived),
                 }
             })
             .collect())
@@ -78,10 +80,24 @@ impl BookRepository for InMemoryBookRepository {
             return Err(DomainError::BookNotFound(id.as_str().to_string()));
         }
         state.progress.remove(id);
+        state.archived.remove(id);
         state.bookmarks.retain(|b| &b.book_id != id);
         state.highlights.retain(|h| &h.book_id != id);
         state.sessions.retain(|s| &s.book_id != id);
         Ok(())
+    }
+
+    fn set_archived(&self, id: &BookId, new_state: &ArchivedState) -> Result<(), DomainError> {
+        let mut state = self.lock();
+        if !state.books.contains_key(id) {
+            return Err(DomainError::BookNotFound(id.as_str().to_string()));
+        }
+        state.archived.insert(id.clone(), new_state.clone());
+        Ok(())
+    }
+
+    fn get_archived(&self, id: &BookId) -> Result<Option<ArchivedState>, DomainError> {
+        Ok(self.lock().archived.get(id).cloned())
     }
 
     fn save_progress(&self, id: &BookId, progress: &Progress) -> Result<(), DomainError> {

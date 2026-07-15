@@ -9,10 +9,11 @@ import { convertFileSrc } from "@tauri-apps/api/core";
 import DataView from "primevue/dataview";
 import Dialog from "primevue/dialog";
 import Select from "primevue/select";
+import Menu from "primevue/menu";
 import { useLibrary } from "../composables/useLibrary";
 import { useSync } from "../composables/useSync";
 import { usePullToSync } from "../composables/usePullToSync";
-import type { BookDto } from "../ipc/types";
+import type { BookDto, LibraryEntryDto } from "../ipc/types";
 
 const emit = defineEmits<{
     (e: "select-book", book: BookDto): void;
@@ -25,6 +26,7 @@ const {
     updateLibraryQuery,
     importBook,
     removeBook,
+    setBookArchived,
 } = useLibrary();
 
 const {
@@ -37,13 +39,16 @@ const {
 
 // Filter mode persists locally so the library reopens with the same view. This
 // is a device preference, not synced.
+type FilterMode = "all" | "reading" | "read" | "archived";
 const FILTER_MODE_KEY = "prose.library.filterMode";
-const loadFilterMode = (): "all" | "reading" | "read" => {
+const loadFilterMode = (): FilterMode => {
     if (typeof localStorage === "undefined") return "all";
     const saved = localStorage.getItem(FILTER_MODE_KEY);
-    return saved === "reading" || saved === "read" ? saved : "all";
+    return saved === "reading" || saved === "read" || saved === "archived"
+        ? saved
+        : "all";
 };
-const filterMode = ref<"all" | "reading" | "read">(loadFilterMode());
+const filterMode = ref<FilterMode>(loadFilterMode());
 watch(filterMode, (mode) => {
     if (typeof localStorage !== "undefined") {
         localStorage.setItem(FILTER_MODE_KEY, mode);
@@ -83,6 +88,12 @@ const pullIndicatorStyle = computed(() => {
 
 const dataViewEntries = computed(() => {
     let list = [...entries.value];
+    if (filterMode.value === "archived") {
+        // The archived view shows only archived books.
+        return list.filter((entry) => entry.archived);
+    }
+    // Every other view hides archived books.
+    list = list.filter((entry) => !entry.archived);
     if (filterMode.value === "reading") {
         list = list.filter((entry) => entry.progress > 0 && entry.progress < 1);
     } else if (filterMode.value === "read") {
@@ -138,8 +149,46 @@ const handleImport = async () => {
     }
 };
 
-const triggerDelete = (book: BookDto, event: Event) => {
+// Per-book action menu. A single popup Menu instance is retargeted to whichever
+// book's button was clicked; its items depend on that book's archived state.
+const bookMenu = ref<InstanceType<typeof Menu> | null>(null);
+const menuEntry = ref<LibraryEntryDto | null>(null);
+
+const openMenu = (entry: LibraryEntryDto, event: Event) => {
     event.stopPropagation();
+    menuEntry.value = entry;
+    bookMenu.value?.toggle(event);
+};
+
+const menuItems = computed(() => {
+    const archived = menuEntry.value?.archived ?? false;
+    return [
+        {
+            label: archived ? "Unarchive" : "Archive",
+            icon: archived ? "unarchive" : "archive",
+            command: () => toggleArchive(),
+        },
+        {
+            label: "Remove",
+            icon: "delete",
+            danger: true,
+            command: () => {
+                if (menuEntry.value) triggerDelete(menuEntry.value.book);
+            },
+        },
+    ];
+});
+
+const toggleArchive = async () => {
+    if (!menuEntry.value) return;
+    try {
+        await setBookArchived(menuEntry.value.book.id, !menuEntry.value.archived);
+    } catch (err) {
+        console.error("Failed to archive book:", err);
+    }
+};
+
+const triggerDelete = (book: BookDto) => {
     bookToDelete.value = book;
     showDeleteDialog.value = true;
 };
@@ -168,7 +217,8 @@ const handleSortChange = (
 const filterOptions = [
     { label: "All Books", value: "all" },
     { label: "In Progress", value: "reading" },
-    { label: "Read", value: "read" }
+    { label: "Read", value: "read" },
+    { label: "Archived", value: "archived" }
 ];
 
 const sortOptions = [
@@ -182,6 +232,7 @@ const getFilterIcon = (mode: string) => {
     switch (mode) {
         case "reading": return "menu_book";
         case "read": return "task_alt";
+        case "archived": return "inventory_2";
         default: return "all_inclusive";
     }
 };
@@ -427,14 +478,14 @@ const getSyncButtonText = computed(() => {
                                 class="text-base font-medium tracking-tight text-(--text-primary) group-hover:translate-x-0.5 transition-transform duration-200">
                                 {{ entry.book.title }}
                             </h2>
-                            <!-- Circular Trash Button (top-right) -->
+                            <!-- Circular Actions Button (top-right) -->
                             <button
-                                @click="(e) => triggerDelete(entry.book, e)"
-                                class="w-7 h-7 rounded-full flex items-center justify-center text-(--text-tertiary) hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all cursor-pointer shrink-0"
-                                title="Remove Book"
-                                aria-label="Remove Book"
+                                @click="(e) => openMenu(entry, e)"
+                                class="w-7 h-7 rounded-full flex items-center justify-center text-(--text-tertiary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer shrink-0"
+                                title="Book Actions"
+                                aria-label="Book Actions"
                             >
-                                <span class="material-symbols-outlined text-base select-none">delete</span>
+                                <span class="material-symbols-outlined text-base select-none">more_vert</span>
                             </button>
                         </div>
                         <div class="flex justify-between items-center text-xs">
@@ -481,14 +532,14 @@ const getSyncButtonText = computed(() => {
                         <!-- Typographic cover container -->
                         <div
                             class="aspect-3/4 w-full bg-(--bg-card) border border-(--border-color) rounded overflow-hidden relative shadow-sm group-hover:shadow transition-shadow flex items-center justify-center">
-                            <!-- Floating Trash Button on Card Cover -->
+                            <!-- Floating Actions Button on Card Cover -->
                             <button
-                                @click="(e) => triggerDelete(entry.book, e)"
-                                class="absolute top-2 right-2 w-7 h-7 rounded-full bg-(--bg-card)/90 backdrop-blur border border-(--border-color) flex items-center justify-center text-(--text-tertiary) hover:text-red-500 shadow-sm active:scale-90 transition-all duration-200 cursor-pointer z-10"
-                                title="Remove Book"
-                                aria-label="Remove Book"
+                                @click="(e) => openMenu(entry, e)"
+                                class="absolute top-2 right-2 w-7 h-7 rounded-full bg-(--bg-card)/90 backdrop-blur border border-(--border-color) flex items-center justify-center text-(--text-tertiary) hover:text-(--text-primary) shadow-sm active:scale-90 transition-all duration-200 cursor-pointer z-10"
+                                title="Book Actions"
+                                aria-label="Book Actions"
                             >
-                                <span class="material-symbols-outlined text-base select-none">delete</span>
+                                <span class="material-symbols-outlined text-base select-none">more_vert</span>
                             </button>
 
                             <img
@@ -565,6 +616,30 @@ const getSyncButtonText = computed(() => {
                 </div>
             </template>
         </DataView>
+
+        <!-- Per-book Actions Menu (Archive / Remove) -->
+        <Menu
+            ref="bookMenu"
+            :model="menuItems"
+            popup
+            class="font-serif"
+            :pt="{
+                root: { class: '!bg-(--bg-card) !border-(--border-color) rounded-lg shadow-lg text-sm min-w-40' },
+            }"
+        >
+            <template #item="{ item, props }">
+                <a
+                    v-bind="props.action"
+                    class="flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors"
+                    :class="item.danger
+                        ? 'text-red-600 dark:text-red-400 hover:!bg-red-50 dark:hover:!bg-red-950/20'
+                        : 'text-(--text-primary) hover:!bg-(--accent-color-light)'"
+                >
+                    <span class="material-symbols-outlined text-base leading-none select-none">{{ item.icon }}</span>
+                    <span class="font-medium">{{ item.label }}</span>
+                </a>
+            </template>
+        </Menu>
 
         <!-- Delete Confirmation Dialog (Zero Icons, Large Padding) -->
         <Dialog
