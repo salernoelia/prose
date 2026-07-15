@@ -316,4 +316,6 @@ export class FixedLayout extends HTMLElement {
     }
 }
 
-customElements.define('foliate-fxl', FixedLayout)
+// Guard against a double define when this module is re-evaluated (e.g. Vite HMR
+// re-imports it): registering the same tag name twice throws.
+if (!customElements.get('foliate-fxl')) customElements.define('foliate-fxl', FixedLayout)

@@ -157,10 +157,18 @@ const selectionIsBackward = sel => {
     return range.collapsed
 }
 
-// Touch devices (phones, tablets) where text selection is driven by long-press
-// and draggable handles. On these, panning and auto page-turns must yield to
-// selection so a drag to select never flips the page (issue #7).
-const isTouchDevice = () => /Android|iPhone|iPod|iPad/i.test(navigator.userAgent) ||
+// Native text selection on both mobile WebViews scrolls the paginated column
+// container to keep the selection handles in view, which drags the page "halfway
+// back" mid-select and lets the selection spill onto the previous column. A
+// scroll lock while selecting pins the page on both. The two WebViews differ on
+// touchmove though: Android's selection survives preventDefault (and needs the
+// pan suppressed), while iOS/WebKit cancels its selection if the touchmove
+// default is prevented, so that suppression stays Android-only (issue #7).
+const isAndroid = () => /Android/i.test(navigator.userAgent)
+
+// Any touch phone/tablet, where selection is driven by a long-press and draggable
+// handles rather than a mouse. Used to tell a selection gesture from a swipe.
+const isPhone = () => /Android|iPhone|iPod|iPad/i.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
     window.matchMedia('(max-width: 768px)').matches
 
@@ -459,6 +467,11 @@ export class Paginator extends HTMLElement {
     #touchState
     #touchScrolled
     #lastVisibleRange
+    // While a selection is active on Android, the column-page scroll offset to
+    // pin. Native selection tries to scroll the container to reveal the handles,
+    // which would drift the page; any such scroll is snapped back to this value.
+    // `null` when not selecting, so normal paging scrolls freely.
+    #selectionScrollLock = null
     constructor() {
         super()
         this.#root.innerHTML = `<style>
@@ -566,6 +579,16 @@ export class Paginator extends HTMLElement {
         this.#footer = this.#root.getElementById('footer')
 
         this.#observer.observe(this.#container)
+        // Undo any native scroll of the paginated container while a selection is
+        // held (phones): keep the page pinned so selecting never drifts it back.
+        // Both WebViews scroll the column to keep the selection handles in view,
+        // which would drift the page and flicker it back on release.
+        this.#container.addEventListener('scroll', () => {
+            const lock = this.#selectionScrollLock
+            if (lock == null || this.scrolled) return
+            const prop = this.scrollProp
+            if (this.#container[prop] !== lock) this.#container[prop] = lock
+        })
         this.#container.addEventListener('scroll', () => this.dispatchEvent(new Event('scroll')))
         this.#container.addEventListener('scroll', debounce(() => {
             if (this.scrolled) {
@@ -620,13 +643,30 @@ export class Paginator extends HTMLElement {
                     // selection: on Android it flips the page mid-select and the
                     // selection is lost (issue #7). Cross-page pointer selection
                     // stays available with a mouse.
-                    if (!isTouchDevice()) checkPointerSelection(range, sel)
+                    if (!isAndroid()) checkPointerSelection(range, sel)
                 }
                 else if (isKeyboardSelecting) {
                     const selRange = sel.getRangeAt(0).cloneRange()
                     const backward = selectionIsBackward(sel)
                     if (!backward) selRange.collapse()
                     this.#scrollToAnchor(selRange)
+                }
+            })
+            // Phones: pin the page while a selection is held, and release the pin
+            // when it collapses. Captured as the page-aligned offset so a scroll
+            // that already drifted before the first event still snaps to the
+            // current page (issue #7).
+            doc.addEventListener('selectionchange', () => {
+                if (!isPhone() || this.scrolled) return
+                const sel = doc.getSelection()
+                const active = sel && sel.rangeCount > 0 && !sel.isCollapsed
+                if (!active) {
+                    this.#selectionScrollLock = null
+                } else if (this.#selectionScrollLock == null) {
+                    const prop = this.scrollProp
+                    const size = this.size
+                    const cur = this.#container[prop]
+                    this.#selectionScrollLock = size ? Math.round(cur / size) * size : cur
                 }
             })
             doc.addEventListener('focusin', e => this.scrolled ? null :
@@ -835,26 +875,51 @@ export class Paginator extends HTMLElement {
             })
         })
     }
+    // Whether a text selection is currently active. On phones the selection lives
+    // inside the section iframe; a live selection means a finger drag is editing
+    // it, not swiping, so paging must yield.
     #hasSelection() {
-        if (!isTouchDevice()) return false
-
+        if (!isPhone()) return false
         const docSelection = document.getSelection()
         if (docSelection && !docSelection.isCollapsed) return true
         const viewSelection = this.#view?.document?.getSelection()
         if (viewSelection && !viewSelection.isCollapsed) return true
         return false
     }
+    // A drag that only begins after the finger has rested this long is the start
+    // of an Android long-press selection, not a swipe.
+    static #SELECT_HOLD_MS = 500
     #onTouchStart(e) {
         const touch = e.changedTouches[0]
         this.#touchState = {
             x: touch?.screenX, y: touch?.screenY,
             t: e.timeStamp,
-            vx: 0, xy: 0,
+            // Touch-down time, kept apart from `t` (last move, for velocity) so a
+            // long hold before the first move can be told from a swipe.
+            t0: e.timeStamp,
+            vx: 0, vy: 0,
         }
     }
     #onTouchMove(e) {
-        if (this.#hasSelection()) return
         const state = this.#touchState
+        // A selection drag must never pan the page (issue #7). Recognise it, and
+        // latch it for the rest of this touch so a mid-drag collapse can't let a
+        // pan slip through:
+        //  - a live selection means the finger is extending it or dragging a handle
+        //  - on Android the scroll lock engaging means a selection just started
+        //  - a first move after a long hold is a long-press selection starting
+        //    (a quick first move is a swipe, so paging still works)
+        if (this.#hasSelection() || this.#selectionScrollLock != null) state.selecting = true
+        if (isPhone() && !this.#touchScrolled
+            && e.timeStamp - state.t0 > Paginator.#SELECT_HOLD_MS) state.selecting = true
+        if (state.selecting) {
+            // Android's native selection survives a cancelled touchmove and needs
+            // the pan suppressed so it doesn't drift the page. iOS/WebKit drives
+            // selection and its drag handles from the raw touch stream, so calling
+            // preventDefault here cancels the selection outright: let it through.
+            if (isAndroid()) e.preventDefault()
+            return
+        }
         if (state.pinched) return
         state.pinched = globalThis.visualViewport.scale > 1
         if (this.scrolled || state.pinched) return
@@ -879,11 +944,9 @@ export class Paginator extends HTMLElement {
         this.#touchScrolled = false
         if (this.scrolled) return
 
-        // A drag that ends with an active selection must never turn the page:
-        // on Android the long-press that starts a selection can race the first
-        // touchmove, leaving a stale swipe velocity that would flip the page on
-        // release. Realign to the current page with zero velocity instead.
-        if (this.#hasSelection()) {
+        // A gesture spent selecting must not fling a page turn: realign to the
+        // current page with no velocity instead (issue #7).
+        if (this.#touchState?.selecting || this.#hasSelection()) {
             requestAnimationFrame(() => {
                 if (globalThis.visualViewport.scale === 1) this.snap(0, 0)
             })
@@ -1057,6 +1120,8 @@ export class Paginator extends HTMLElement {
     }
     async goTo(target) {
         if (this.#locked) return
+        // A deliberate jump releases the selection scroll pin so it can move.
+        this.#selectionScrollLock = null
         const resolved = await target
         if (this.#canGoToIndex(resolved.index)) return this.#goTo(resolved)
     }
@@ -1095,6 +1160,8 @@ export class Paginator extends HTMLElement {
     }
     async #turnPage(dir, distance) {
         if (this.#locked) return
+        // A deliberate page turn releases the selection scroll pin so it can move.
+        this.#selectionScrollLock = null
         this.#locked = true
         const prev = dir === -1
         const shouldGo = await (prev ? this.#scrollPrev(distance) : this.#scrollNext(distance))
@@ -1163,4 +1230,6 @@ export class Paginator extends HTMLElement {
     }
 }
 
-customElements.define('foliate-paginator', Paginator)
+// Guard against a double define when this module is re-evaluated (e.g. Vite HMR
+// re-imports it): registering the same tag name twice throws.
+if (!customElements.get('foliate-paginator')) customElements.define('foliate-paginator', Paginator)
