@@ -582,11 +582,8 @@ impl BookRepository for SqliteBookRepository {
 
     fn delete_reading_session(&self, session_id: &str) -> Result<(), DomainError> {
         let conn = self.conn.lock().unwrap();
-        conn.execute(
-            "DELETE FROM reading_sessions WHERE id = ?1;",
-            [session_id],
-        )
-        .map_err(|e| DomainError::Storage(e.to_string()))?;
+        conn.execute("DELETE FROM reading_sessions WHERE id = ?1;", [session_id])
+            .map_err(|e| DomainError::Storage(e.to_string()))?;
         Ok(())
     }
 
