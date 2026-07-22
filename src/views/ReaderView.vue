@@ -170,6 +170,14 @@ function onDefine() {
     dismissSelection();
 }
 
+function onCopy() {
+    const text = selection.value?.text;
+    if (text && navigator.clipboard) {
+        void navigator.clipboard.writeText(text);
+    }
+    dismissSelection();
+}
+
 function onTranslate() {
     const text = selection.value?.text.trim();
     if (text) void openExternal(translateUrl(text, translationLanguage.value));
@@ -196,6 +204,14 @@ watch(locator, () => {
 function onRemoveActiveHighlight() {
     const active = activeHighlight.value;
     if (active) void removeHighlight(active.highlight.id);
+}
+
+function onCopyActiveHighlight() {
+    const text = activeHighlight.value?.highlight.text;
+    if (text && navigator.clipboard) {
+        void navigator.clipboard.writeText(text);
+    }
+    dismissActiveHighlight();
 }
 
 function onDefineActiveHighlight() {
@@ -418,6 +434,14 @@ onUnmounted(() => {
                 <span class="material-symbols-outlined text-xl">format_ink_highlighter</span>
             </button>
             <button
+                @click="onCopy"
+                class="flex items-center justify-center w-10 h-10 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                title="Copy"
+                aria-label="Copy"
+            >
+                <span class="material-symbols-outlined text-xl">content_copy</span>
+            </button>
+            <button
                 v-if="isSingleWord"
                 @click="onDefine"
                 class="flex items-center justify-center w-10 h-10 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
@@ -476,6 +500,14 @@ onUnmounted(() => {
                 aria-label="Remove highlight"
             >
                 <span class="material-symbols-outlined text-xl">delete</span>
+            </button>
+            <button
+                @click="onCopyActiveHighlight"
+                class="flex items-center justify-center w-10 h-10 rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors focus-ring-minimal"
+                title="Copy"
+                aria-label="Copy"
+            >
+                <span class="material-symbols-outlined text-xl">content_copy</span>
             </button>
             <button
                 v-if="isActiveHighlightSingleWord"
