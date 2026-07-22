@@ -172,6 +172,8 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
   #lastActiveSelectionTime = 0
   #clearSelectionTimeout: ReturnType<typeof setTimeout> | null = null
   #lastEmittedSelection: TextSelection | null = null
+  #isTouchActive = false
+  #lastTouchEndTime = 0
 
   async mount(container: HTMLElement): Promise<void> {
     const view = document.createElement('foliate-view') as FoliateView
@@ -228,6 +230,7 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
       let hadSelectionOnPointerDown = false
 
       doc.addEventListener('pointerdown', () => {
+        this.#isTouchActive = true
         const now = Date.now()
         if (now - lastPointerUpTime < 350) {
           isDoubleTapGesture = true
@@ -237,8 +240,23 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
       })
 
       doc.addEventListener('pointerup', () => {
+        this.#isTouchActive = false
+        this.#lastTouchEndTime = Date.now()
         lastPointerUpTime = Date.now()
       })
+
+      doc.addEventListener('touchstart', () => {
+        this.#isTouchActive = true
+      }, { passive: true })
+
+      doc.addEventListener('touchend', () => {
+        this.#isTouchActive = false
+        this.#lastTouchEndTime = Date.now()
+      }, { passive: true })
+
+      doc.addEventListener('touchcancel', () => {
+        this.#isTouchActive = false
+      }, { passive: true })
 
       doc.addEventListener('click', (e) => {
         // Defer click evaluation by 120ms to allow WebKit's text selection engine
@@ -247,11 +265,14 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
           const selection = doc.defaultView?.getSelection()
           const isCurrentlySelected = Boolean(selection && !selection.isCollapsed)
           const isRecentlySelected = (Date.now() - this.#lastActiveSelectionTime) < 1500
+          const isRecentTouch = (Date.now() - this.#lastTouchEndTime) < 500
 
           if (
+            this.#isTouchActive ||
             this.#hasActiveSelection ||
             isCurrentlySelected ||
             isRecentlySelected ||
+            isRecentTouch ||
             hadSelectionOnPointerDown ||
             isDoubleTapGesture
           ) {
@@ -487,15 +508,21 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
   }
 
   #scheduleClearSelection(): void {
+    if (this.#isTouchActive) return
+    if (Date.now() - this.#lastTouchEndTime < 450) return
     if (this.#clearSelectionTimeout) return
+
     this.#clearSelectionTimeout = setTimeout(() => {
       this.#clearSelectionTimeout = null
+      if (this.#isTouchActive) return
+      if (Date.now() - this.#lastTouchEndTime < 450) return
+
       const docSelection = this.#currentDoc?.defaultView?.getSelection()
       if (!docSelection || docSelection.isCollapsed) {
         this.#hasActiveSelection = false
         this.#emitSelection(null)
       }
-    }, 300)
+    }, 400)
   }
 
   #emitSelection(selection: TextSelection | null): void {
