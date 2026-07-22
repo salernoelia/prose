@@ -1,4 +1,4 @@
-it #pragma once
+#pragma once
 
 namespace ffi {
     extern "C" {
