@@ -169,11 +169,7 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
   #currentDoc: Document | null = null
   #clickedHighlight = false
   #hasActiveSelection = false
-  #lastActiveSelectionTime = 0
-  #clearSelectionTimeout: ReturnType<typeof setTimeout> | null = null
   #lastEmittedSelection: TextSelection | null = null
-  #isTouchActive = false
-  #lastTouchEndTime = 0
 
   async mount(container: HTMLElement): Promise<void> {
     const view = document.createElement('foliate-view') as FoliateView
@@ -225,59 +221,20 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
         }
       })
 
-      let lastPointerUpTime = 0
-      let isDoubleTapGesture = false
       let hadSelectionOnPointerDown = false
 
       doc.addEventListener('pointerdown', () => {
-        this.#isTouchActive = true
-        const now = Date.now()
-        if (now - lastPointerUpTime < 350) {
-          isDoubleTapGesture = true
-        }
         const selection = doc.defaultView?.getSelection()
         hadSelectionOnPointerDown = Boolean((selection && !selection.isCollapsed) || this.#hasActiveSelection)
       })
 
-      doc.addEventListener('pointerup', () => {
-        this.#isTouchActive = false
-        this.#lastTouchEndTime = Date.now()
-        lastPointerUpTime = Date.now()
-      })
-
-      doc.addEventListener('touchstart', () => {
-        this.#isTouchActive = true
-      }, { passive: true })
-
-      doc.addEventListener('touchend', () => {
-        this.#isTouchActive = false
-        this.#lastTouchEndTime = Date.now()
-      }, { passive: true })
-
-      doc.addEventListener('touchcancel', () => {
-        this.#isTouchActive = false
-      }, { passive: true })
-
       doc.addEventListener('click', (e) => {
-        // Defer click evaluation by 120ms to allow WebKit's text selection engine
-        // to settle and fire selectionchange before deciding on a page turn.
         setTimeout(() => {
           const selection = doc.defaultView?.getSelection()
           const isCurrentlySelected = Boolean(selection && !selection.isCollapsed)
-          const isRecentlySelected = (Date.now() - this.#lastActiveSelectionTime) < 1500
-          const isRecentTouch = (Date.now() - this.#lastTouchEndTime) < 500
 
-          if (
-            this.#isTouchActive ||
-            this.#hasActiveSelection ||
-            isCurrentlySelected ||
-            isRecentlySelected ||
-            isRecentTouch ||
-            hadSelectionOnPointerDown ||
-            isDoubleTapGesture
-          ) {
+          if (this.#hasActiveSelection || isCurrentlySelected || hadSelectionOnPointerDown) {
             hadSelectionOnPointerDown = false
-            isDoubleTapGesture = false
             return
           }
 
@@ -312,7 +269,7 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
             bubbles: true,
             detail: { target: e.target, x }
           }))
-        }, 120)
+        }, 0)
       })
     })
     // foliate's history records every jump (goTo for TOC, links, annotations)
@@ -428,12 +385,7 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
   }
 
   clearSelection(): void {
-    if (this.#clearSelectionTimeout) {
-      clearTimeout(this.#clearSelectionTimeout)
-      this.#clearSelectionTimeout = null
-    }
     this.#hasActiveSelection = false
-    this.#lastActiveSelectionTime = 0
     this.#lastEmittedSelection = null
     this.#currentDoc?.defaultView?.getSelection()?.removeAllRanges()
     this.#emitSelection(null)
@@ -470,57 +422,23 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
       const view = this.#view
       const selection = doc.defaultView?.getSelection()
       if (!view || !selection || selection.rangeCount === 0 || selection.isCollapsed) {
-        this.#scheduleClearSelection()
+        this.#hasActiveSelection = false
+        this.#emitSelection(null)
         return
       }
       const text = selection.toString().trim()
       if (!text) {
-        this.#scheduleClearSelection()
+        this.#hasActiveSelection = false
+        this.#emitSelection(null)
         return
       }
-      if (this.#clearSelectionTimeout) {
-        clearTimeout(this.#clearSelectionTimeout)
-        this.#clearSelectionTimeout = null
-      }
       this.#hasActiveSelection = true
-      this.#lastActiveSelectionTime = Date.now()
       const range = selection.getRangeAt(0)
       const payload = view.getCFI(index, range)
       this.#emitSelection({ payload, text, rect: this.#rectInViewport(range) })
     }
 
-    doc.addEventListener('pointerup', () => setTimeout(report, 0))
-    doc.addEventListener('touchend', () => setTimeout(report, 0))
-    doc.addEventListener('selectionchange', () => {
-      const selection = doc.defaultView?.getSelection()
-      if (!selection || selection.isCollapsed) {
-        this.#scheduleClearSelection()
-      } else {
-        if (this.#clearSelectionTimeout) {
-          clearTimeout(this.#clearSelectionTimeout)
-          this.#clearSelectionTimeout = null
-        }
-        this.#hasActiveSelection = true
-        this.#lastActiveSelectionTime = Date.now()
-        report()
-      }
-    })
-  }
-
-  #scheduleClearSelection(): void {
-    if (this.#isTouchActive) return
-    if (this.#clearSelectionTimeout) return
-
-    this.#clearSelectionTimeout = setTimeout(() => {
-      this.#clearSelectionTimeout = null
-      if (this.#isTouchActive) return
-
-      const docSelection = this.#currentDoc?.defaultView?.getSelection()
-      if (!docSelection || docSelection.isCollapsed) {
-        this.#hasActiveSelection = false
-        this.#emitSelection(null)
-      }
-    }, 200)
+    doc.addEventListener('selectionchange', report)
   }
 
   #emitSelection(selection: TextSelection | null): void {
