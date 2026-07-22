@@ -168,6 +168,7 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
   #hasActiveSelection = false
   #lastActiveSelectionTime = 0
   #clearSelectionTimeout: ReturnType<typeof setTimeout> | null = null
+  #lastEmittedSelection: TextSelection | null = null
 
   async mount(container: HTMLElement): Promise<void> {
     const view = document.createElement('foliate-view') as FoliateView
@@ -219,20 +220,40 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
         }
       })
 
+      let lastPointerUpTime = 0
+      let isDoubleTapGesture = false
       let hadSelectionOnPointerDown = false
+
       doc.addEventListener('pointerdown', () => {
+        const now = Date.now()
+        if (now - lastPointerUpTime < 350) {
+          isDoubleTapGesture = true
+        }
         const selection = doc.defaultView?.getSelection()
         hadSelectionOnPointerDown = Boolean((selection && !selection.isCollapsed) || this.#hasActiveSelection)
       })
 
+      doc.addEventListener('pointerup', () => {
+        lastPointerUpTime = Date.now()
+      })
+
       doc.addEventListener('click', (e) => {
+        // Defer click evaluation by 120ms to allow WebKit's text selection engine
+        // to settle and fire selectionchange before deciding on a page turn.
         setTimeout(() => {
           const selection = doc.defaultView?.getSelection()
           const isCurrentlySelected = Boolean(selection && !selection.isCollapsed)
           const isRecentlySelected = (Date.now() - this.#lastActiveSelectionTime) < 1500
 
-          if (this.#hasActiveSelection || isCurrentlySelected || isRecentlySelected || hadSelectionOnPointerDown) {
+          if (
+            this.#hasActiveSelection ||
+            isCurrentlySelected ||
+            isRecentlySelected ||
+            hadSelectionOnPointerDown ||
+            isDoubleTapGesture
+          ) {
             hadSelectionOnPointerDown = false
+            isDoubleTapGesture = false
             return
           }
 
@@ -267,7 +288,7 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
             bubbles: true,
             detail: { target: e.target, x }
           }))
-        }, 0)
+        }, 120)
       })
     })
     // foliate's history records every jump (goTo for TOC, links, annotations)
@@ -389,6 +410,7 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
     }
     this.#hasActiveSelection = false
     this.#lastActiveSelectionTime = 0
+    this.#lastEmittedSelection = null
     this.#currentDoc?.defaultView?.getSelection()?.removeAllRanges()
     this.#emitSelection(null)
   }
@@ -470,10 +492,24 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
         this.#hasActiveSelection = false
         this.#emitSelection(null)
       }
-    }, 250)
+    }, 300)
   }
 
   #emitSelection(selection: TextSelection | null): void {
+    if (selection === null && this.#lastEmittedSelection === null) return
+    if (selection !== null && this.#lastEmittedSelection !== null) {
+      if (
+        selection.payload === this.#lastEmittedSelection.payload &&
+        selection.text === this.#lastEmittedSelection.text &&
+        Math.abs(selection.rect.x - this.#lastEmittedSelection.rect.x) < 2 &&
+        Math.abs(selection.rect.y - this.#lastEmittedSelection.rect.y) < 2 &&
+        Math.abs(selection.rect.width - this.#lastEmittedSelection.rect.width) < 2 &&
+        Math.abs(selection.rect.height - this.#lastEmittedSelection.rect.height) < 2
+      ) {
+        return
+      }
+    }
+    this.#lastEmittedSelection = selection
     for (const listener of this.#selectionListeners) listener(selection)
   }
 
