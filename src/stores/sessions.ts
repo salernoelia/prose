@@ -92,6 +92,7 @@ interface LegacySession {
  * Best-effort: a session whose book is no longer in the library is skipped.
  */
 async function migrateLegacySessions(): Promise<void> {
+  if (typeof localStorage === 'undefined') return
   try {
     if (localStorage.getItem(MIGRATED_FLAG)) return
     const raw = localStorage.getItem(LEGACY_KEY)

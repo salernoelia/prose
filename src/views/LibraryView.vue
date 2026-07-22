@@ -1,19 +1,21 @@
-<script
-    setup
-    lang="ts"
->
+<script setup lang="ts">
 import { ref, onMounted, computed, watch } from "vue";
 import { open } from "@tauri-apps/plugin-dialog";
 import { appDataDir } from "@tauri-apps/api/path";
-import { convertFileSrc } from "@tauri-apps/api/core";
 import DataView from "primevue/dataview";
 import Dialog from "primevue/dialog";
-import Select from "primevue/select";
 import Menu from "primevue/menu";
 import { useLibrary } from "../composables/useLibrary";
 import { useSync } from "../composables/useSync";
 import { usePullToSync } from "../composables/usePullToSync";
 import type { BookDto, LibraryEntryDto } from "../ipc/types";
+import {
+    LibraryHeader,
+    LibraryToolbar,
+    BookGridCard,
+    BookListItem,
+    LibraryPullToSync,
+} from "../components/library";
 
 const emit = defineEmits<{
     (e: "select-book", book: BookDto): void;
@@ -37,9 +39,9 @@ const {
     refreshSyncConfig,
 } = useSync();
 
-// Filter mode persists locally so the library reopens with the same view. This
-// is a device preference, not synced.
 type FilterMode = "all" | "reading" | "read" | "archived";
+type SortKey = "title" | "author" | "last_read" | "progress";
+
 const FILTER_MODE_KEY = "prose.library.filterMode";
 const loadFilterMode = (): FilterMode => {
     if (typeof localStorage === "undefined") return "all";
@@ -48,6 +50,7 @@ const loadFilterMode = (): FilterMode => {
         ? saved
         : "all";
 };
+
 const filterMode = ref<FilterMode>(loadFilterMode());
 watch(filterMode, (mode) => {
     if (typeof localStorage !== "undefined") {
@@ -55,11 +58,7 @@ watch(filterMode, (mode) => {
     }
 });
 
-// Pull-to-sync: drag the library down from the top to start a sync. The gesture
-// runs on the scrolling <main> ancestor, the only scroll container on the page.
 const rootEl = ref<HTMLElement | null>(null);
-// Track whether the running sync came from the pull gesture, so the floating
-// indicator stays only for those; auto-syncs use the progress banner alone.
 const pullInitiated = ref(false);
 const { pull, dragging, threshold } = usePullToSync(
     () => rootEl.value?.closest("main") ?? null,
@@ -71,6 +70,7 @@ const { pull, dragging, threshold } = usePullToSync(
         },
     }
 );
+
 watch(syncing, (active) => {
     if (!active) pullInitiated.value = false;
 });
@@ -89,10 +89,8 @@ const pullIndicatorStyle = computed(() => {
 const dataViewEntries = computed(() => {
     let list = [...entries.value];
     if (filterMode.value === "archived") {
-        // The archived view shows only archived books.
         return list.filter((entry) => entry.archived);
     }
-    // Every other view hides archived books.
     list = list.filter((entry) => !entry.archived);
     if (filterMode.value === "reading") {
         list = list.filter((entry) => entry.progress > 0 && entry.progress < 1);
@@ -120,14 +118,6 @@ onMounted(async () => {
     }
 });
 
-// Return absolute cover source URL if cover exists
-const getCoverUrl = (coverPath: string | null) => {
-    if (!coverPath || !appDataPath.value) return "";
-    const absolutePath = `${appDataPath.value}/${coverPath}`.replace(/\/+/g, "/");
-    return convertFileSrc(absolutePath);
-};
-
-// Trigger native file picker and import selected book
 const handleImport = async () => {
     try {
         const selected = await open({
@@ -149,8 +139,6 @@ const handleImport = async () => {
     }
 };
 
-// Per-book action menu. A single popup Menu instance is retargeted to whichever
-// book's button was clicked; its items depend on that book's archived state.
 const bookMenu = ref<InstanceType<typeof Menu> | null>(null);
 const menuEntry = ref<LibraryEntryDto | null>(null);
 
@@ -204,53 +192,12 @@ const confirmDelete = async () => {
     }
 };
 
-// Sort key mapped to string representation in query DTO
-const handleSortChange = (
-    key: "title" | "author" | "last_read" | "progress"
-) => {
+const handleSortChange = (key: SortKey) => {
     updateLibraryQuery({
         sort: key,
-        descending: key === 'progress' || key === 'last_read',
+        descending: key === "progress" || key === "last_read",
     });
 };
-
-const filterOptions = [
-    { label: "All Books", value: "all" },
-    { label: "In Progress", value: "reading" },
-    { label: "Read", value: "read" },
-    { label: "Archived", value: "archived" }
-];
-
-const sortOptions = [
-    { label: "Progress", value: "progress" },
-    { label: "Title", value: "title" },
-    { label: "Author", value: "author" },
-    { label: "Recent", value: "last_read" }
-];
-
-const getFilterIcon = (mode: string) => {
-    switch (mode) {
-        case "reading": return "menu_book";
-        case "read": return "task_alt";
-        case "archived": return "inventory_2";
-        default: return "all_inclusive";
-    }
-};
-
-const getSortIcon = (sort: string) => {
-    switch (sort) {
-        case "progress": return "percent";
-        case "title": return "sort_by_alpha";
-        case "author": return "person";
-        default: return "history";
-    }
-};
-
-const getSyncButtonText = computed(() => {
-    if (syncing.value) return "Syncing";
-    if (hasSyncError.value) return "Sync error";
-    return "Sync";
-});
 </script>
 
 <template>
@@ -258,200 +205,35 @@ const getSyncButtonText = computed(() => {
         ref="rootEl"
         class="w-full animate-fade-in font-serif"
     >
-        <!-- Pull-to-sync indicator -->
-        <div
-            v-show="pullVisible"
-            class="pointer-events-none fixed top-0 left-1/2 z-40"
-            :class="dragging ? '' : 'transition-all duration-300 ease-out'"
-            :style="pullIndicatorStyle"
-        >
-            <div
-                class="w-9 h-9 rounded-full bg-(--bg-card) border border-(--border-color) shadow-md flex items-center justify-center">
-                <span
-                    class="material-symbols-outlined text-lg text-(--text-secondary) select-none"
-                    :class="{ 'animate-spin': pullActive }"
-                    :style="pullActive ? undefined : { transform: `rotate(${pullProgress * 180}deg)` }"
-                >sync</span>
-            </div>
-        </div>
+        <LibraryPullToSync
+            :visible="pullVisible"
+            :dragging="dragging"
+            :active="pullActive"
+            :progress="pullProgress"
+            :indicatorStyle="pullIndicatorStyle"
+        />
 
-        <!-- Header -->
-        <header class="pb-6 flex justify-between items-center">
-            <h1 class="text-xl lg:text-3xl font-semibold tracking-tight text-(--text-primary)">
-                Library
-            </h1>
+        <LibraryHeader
+            :configured="configured"
+            :syncing="syncing"
+            :hasSyncError="hasSyncError"
+            @sync="triggerSync"
+            @import="handleImport"
+        />
 
-            <div class="flex items-center gap-3">
-                <!-- Sync Button -->
-                <button
-                    v-if="configured"
-                    @click="triggerSync"
-                    :disabled="syncing"
-                    class="px-4 py-1.5 text-xs font-semibold rounded border text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer focus-ring-minimal flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    :class="hasSyncError
-                        ? 'border-red-500 text-red-500 dark:border-red-500 dark:text-red-400'
-                        : 'border-(--border-color)'"
-                >
-                    <span
-                        class="material-symbols-outlined text-base select-none"
-                        :class="{ 'animate-spin': syncing, 'text-red-500 dark:text-red-400': hasSyncError && !syncing }"
-                    >sync</span>
-                    <span>{{ getSyncButtonText }}</span>
-                </button>
-                <button
-                    v-else
-                    disabled
-                    title="Configure WebDAV sync in settings"
-                    class="px-4 py-1.5 text-xs font-semibold rounded border border-(--border-color) text-(--text-tertiary) opacity-50 cursor-not-allowed flex items-center gap-2"
-                >
-                    <span class="material-symbols-outlined text-base select-none">sync</span>
-                    <span>Sync</span>
-                </button>
+        <LibraryToolbar
+            :search="query.search || ''"
+            :layout="layout"
+            :filterMode="filterMode"
+            :sortKey="query.sort"
+            :descending="query.descending"
+            @update:search="(val) => updateLibraryQuery({ search: val })"
+            @update:layout="(val) => layout = val"
+            @update:filterMode="(val) => filterMode = val"
+            @update:sortKey="handleSortChange"
+            @toggle-direction="updateLibraryQuery({ descending: !query.descending })"
+        />
 
-                <!-- Import Trigger (Typographic Pill Button) -->
-                <button
-                    @click="handleImport"
-                    class="px-4 py-1.5 text-xs font-semibold rounded border border-(--border-color) text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer focus-ring-minimal flex items-center gap-2"
-                >
-                    <span class="material-symbols-outlined text-base select-none">add</span>
-                    <span>Import</span>
-                </button>
-            </div>
-        </header>
-
-        <!-- Search & Filter Bar -->
-        <div class="flex flex-col gap-4 mb-8">
-            <!-- Search bar with Icon -->
-            <div class="relative w-full">
-                <span
-                    class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-(--text-tertiary) text-lg select-none"
-                >search</span>
-                <input
-                    :value="query.search || ''"
-                    @input="
-                        (e) => updateLibraryQuery({ search: (e.target as HTMLInputElement).value || null })
-                    "
-                    type="text"
-                    placeholder="Search by title or author..."
-                    class="w-full bg-(--bg-card) border border-(--border-color) text-(--text-primary) text-sm rounded-full pl-10 pr-4 py-2.5 focus-ring-minimal focus:outline-none focus:border-(--border-color-hover) transition-all placeholder:text-(--text-tertiary)"
-                />
-            </div>
-
-            <!-- Filter & Sort Controls Row -->
-            <div class="flex items-center justify-between gap-3 w-full">
-                <div class="flex items-center gap-2 flex-nowrap min-w-0">
-                    <!-- Layout Switcher -->
-                    <div
-                        class="flex items-center border border-(--border-color) bg-(--bg-card) rounded-full p-0.5 shrink-0">
-                        <button
-                            @click="layout = 'grid'"
-                            class="flex items-center justify-center w-7 h-7 rounded-full transition-all duration-100 active:scale-90 cursor-pointer text-(--text-secondary)"
-                            :class="layout === 'grid'
-                                ? 'bg-(--accent-color-light) !text-(--text-primary) font-semibold'
-                                : 'hover:text-(--text-primary)'
-                                "
-                            title="Grid Layout"
-                            aria-label="Grid Layout"
-                        >
-                            <span class="material-symbols-outlined text-base leading-none select-none">grid_view</span>
-                        </button>
-                        <button
-                            @click="layout = 'list'"
-                            class="flex items-center justify-center w-7 h-7 rounded-full transition-all duration-100 active:scale-90 cursor-pointer text-(--text-secondary)"
-                            :class="layout === 'list'
-                                ? 'bg-(--accent-color-light) !text-(--text-primary) font-semibold'
-                                : 'hover:text-(--text-primary)'
-                                "
-                            title="List Layout"
-                            aria-label="List Layout"
-                        >
-                            <span class="material-symbols-outlined text-base leading-none select-none">view_list</span>
-                        </button>
-                    </div>
-
-
-                    <!-- Filter Dropdown -->
-                    <Select
-                        v-model="filterMode"
-                        :options="filterOptions"
-                        optionLabel="label"
-                        optionValue="value"
-                        class="select-chip focus-ring-minimal"
-                    >
-                        <template #value="slotProps">
-                            <div
-                                v-if="slotProps.value"
-                                class="flex items-center gap-1.5 text-xs font-semibold text-(--text-primary) min-w-0"
-                            >
-                                <span
-                                    class="material-symbols-outlined text-sm leading-none text-(--text-secondary) select-none shrink-0"
-                                >
-                                    {{ getFilterIcon(slotProps.value) }}
-                                </span>
-                                <span class="truncate">{{filterOptions.find(o => o.value === slotProps.value)?.label}}</span>
-                            </div>
-                        </template>
-                        <template #option="slotProps">
-                            <div class="flex items-center gap-1.5 text-xs font-semibold text-(--text-primary)">
-                                <span
-                                    class="material-symbols-outlined text-sm leading-none text-(--text-secondary) select-none"
-                                >
-                                    {{ getFilterIcon(slotProps.option.value) }}
-                                </span>
-                                <span>{{ slotProps.option.label }}</span>
-                            </div>
-                        </template>
-                    </Select>
-
-                    <!-- Sort Dropdown -->
-                    <Select
-                        :modelValue="query.sort"
-                        @update:modelValue="(val) => handleSortChange(val as any)"
-                        :options="sortOptions"
-                        optionLabel="label"
-                        optionValue="value"
-                        class="select-chip focus-ring-minimal"
-                    >
-                        <template #value="slotProps">
-                            <div
-                                v-if="slotProps.value"
-                                class="flex items-center gap-1.5 text-xs font-semibold text-(--text-primary) min-w-0"
-                            >
-                                <span
-                                    class="material-symbols-outlined text-sm leading-none text-(--text-secondary) select-none shrink-0"
-                                >
-                                    {{ getSortIcon(slotProps.value) }}
-                                </span>
-                                <span class="truncate">{{sortOptions.find(o => o.value === slotProps.value)?.label}}</span>
-                            </div>
-                        </template>
-                        <template #option="slotProps">
-                            <div class="flex items-center gap-1.5 text-xs font-semibold text-(--text-primary)">
-                                <span
-                                    class="material-symbols-outlined text-sm leading-none text-(--text-secondary) select-none"
-                                >
-                                    {{ getSortIcon(slotProps.option.value) }}
-                                </span>
-                                <span>{{ slotProps.option.label }}</span>
-                            </div>
-                        </template>
-                    </Select>
-
-                    <!-- Sort Direction Button -->
-                    <button
-                        @click="updateLibraryQuery({ descending: !query.descending })"
-                        class="flex items-center justify-center w-8 h-8 rounded-full border border-(--border-color) bg-(--bg-card) text-(--text-secondary) hover:text-(--text-primary) transition-all cursor-pointer focus-ring-minimal active:scale-90 shrink-0"
-                        title="Toggle Sort Direction"
-                    >
-                        <span class="material-symbols-outlined text-sm leading-none select-none">
-                            {{ query.descending ? "arrow_downward" : "arrow_upward" }}
-                        </span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Switchable DataView Catalog -->
         <DataView
             v-if="loaded"
             :value="dataViewEntries"
@@ -464,150 +246,31 @@ const getSyncButtonText = computed(() => {
                 footer: { class: '!bg-transparent !border-none' },
             }"
         >
-            <!-- List View Mode -->
             <template #list="slotProps">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                    <div
+                    <BookListItem
                         v-for="entry in slotProps.items"
                         :key="entry.book.id"
-                        @click="emit('select-book', entry.book)"
-                        class="group cursor-pointer py-3.5 px-4 rounded-xl hover:bg-(--accent-color-light) transition-all flex flex-col gap-2.5"
-                    >
-                        <div class="flex justify-between items-start gap-4">
-                            <h2
-                                class="text-base font-medium tracking-tight text-(--text-primary) group-hover:translate-x-0.5 transition-transform duration-200">
-                                {{ entry.book.title }}
-                            </h2>
-                            <!-- Circular Actions Button (top-right) -->
-                            <button
-                                @click="(e) => openMenu(entry, e)"
-                                class="w-7 h-7 rounded-full flex items-center justify-center text-(--text-tertiary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer shrink-0"
-                                title="Book Actions"
-                                aria-label="Book Actions"
-                            >
-                                <span class="material-symbols-outlined text-base select-none">more_vert</span>
-                            </button>
-                        </div>
-                        <div class="flex justify-between items-center text-xs">
-                            <span class="text-(--text-secondary)">{{
-                                entry.book.author || "Unknown Author"
-                            }}</span>
-
-                            <span
-                                class="text-xs font-semibold tabular-nums px-2 py-0.5 rounded shrink-0 transition-colors"
-                                :class="entry.progress >= 1
-                                    ? 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-400'
-                                    : 'bg-(--accent-color-light) text-(--text-secondary)'
-                                    "
-                            >
-                                {{ Math.round(entry.progress * 100) }}%
-                            </span>
-                        </div>
-
-                        <!-- Full-width progress line at bottom of row -->
-                        <div
-                            class="w-full h-1 bg-(--border-color) rounded-full overflow-hidden mt-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                            <div
-                                class="h-full transition-all duration-300"
-                                :class="entry.progress >= 1
-                                    ? 'bg-emerald-700 dark:bg-emerald-600'
-                                    : 'bg-(--text-primary)'
-                                    "
-                                :style="{ width: entry.progress * 100 + '%' }"
-                            ></div>
-                        </div>
-                    </div>
+                        :entry="entry"
+                        @select="emit('select-book', entry.book)"
+                        @open-menu="(e) => openMenu(entry, e)"
+                    />
                 </div>
             </template>
 
-            <!-- Grid View Mode -->
             <template #grid="slotProps">
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-                    <div
+                    <BookGridCard
                         v-for="entry in slotProps.items"
                         :key="entry.book.id"
-                        @click="emit('select-book', entry.book)"
-                        class="group cursor-pointer flex flex-col gap-3 pb-4 border-b border-transparent hover:border-(--border-color) transition-all"
-                    >
-                        <!-- Typographic cover container -->
-                        <div
-                            class="aspect-3/4 w-full bg-(--bg-card) border border-(--border-color) rounded overflow-hidden relative shadow-sm group-hover:shadow transition-shadow flex items-center justify-center">
-                            <!-- Floating Actions Button on Card Cover -->
-                            <button
-                                @click="(e) => openMenu(entry, e)"
-                                class="absolute top-2 right-2 w-7 h-7 rounded-full bg-(--bg-card)/90 backdrop-blur border border-(--border-color) flex items-center justify-center text-(--text-tertiary) hover:text-(--text-primary) shadow-sm active:scale-90 transition-all duration-200 cursor-pointer z-10"
-                                title="Book Actions"
-                                aria-label="Book Actions"
-                            >
-                                <span class="material-symbols-outlined text-base select-none">more_vert</span>
-                            </button>
-
-                            <img
-                                v-if="entry.book.cover && appDataPath"
-                                :src="getCoverUrl(entry.book.cover)"
-                                alt="Book cover"
-                                class="w-full h-full object-cover"
-                            />
-
-                            <!-- Editorial Placeholder Cover -->
-                            <div
-                                v-else
-                                class="w-full h-full p-4 flex flex-col justify-between items-start text-left bg-(--bg-card)"
-                            >
-                                <span
-                                    class="text-xs font-semibold uppercase tracking-wider text-(--text-tertiary) leading-none select-none"
-                                >
-                                    {{ entry.book.format }}
-                                </span>
-                                <span
-                                    class="text-sm font-semibold tracking-tight text-(--text-primary) line-clamp-3 select-none"
-                                >
-                                    {{ entry.book.title }}
-                                </span>
-                                <span class="text-xs text-(--text-secondary) truncate w-full select-none">
-                                    {{ entry.book.author || "Unknown Author" }}
-                                </span>
-                            </div>
-
-                            <!-- hover progress bar line at bottom of cover -->
-                            <div class="absolute bottom-0 left-0 w-full h-1 bg-(--border-color)">
-                                <div
-                                    class="h-full transition-all duration-300"
-                                    :class="entry.progress >= 1
-                                        ? 'bg-emerald-700 dark:bg-emerald-600'
-                                        : 'bg-(--text-primary)'
-                                        "
-                                    :style="{ width: entry.progress * 100 + '%' }"
-                                ></div>
-                            </div>
-                        </div>
-
-                        <!-- Meta details under card -->
-                        <div class="flex flex-col gap-1 text-left">
-                            <h2
-                                class="text-sm font-medium tracking-tight text-(--text-primary) truncate w-full group-hover:translate-x-0.5 transition-transform duration-200">
-                                {{ entry.book.title }}
-                            </h2>
-                            <div class="flex justify-between items-center text-xs">
-                                <span class="text-(--text-secondary) truncate max-w-[70%]">
-                                    {{ entry.book.author || "Unknown Author" }}
-                                </span>
-                                <span
-                                    class="tabular-nums transition-colors"
-                                    :class="entry.progress >= 1
-                                        ? 'text-emerald-700 dark:text-emerald-400 font-semibold'
-                                        : 'text-(--text-tertiary)'
-                                        "
-                                >
-                                    {{ Math.round(entry.progress * 100) }}%
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+                        :entry="entry"
+                        :appDataPath="appDataPath"
+                        @select="emit('select-book', entry.book)"
+                        @open-menu="(e) => openMenu(entry, e)"
+                    />
                 </div>
             </template>
 
-            <!-- Empty Catalog State -->
             <template #empty>
                 <div class="py-12 text-left">
                     <p class="text-base text-(--text-secondary) leading-relaxed">
@@ -617,7 +280,6 @@ const getSyncButtonText = computed(() => {
             </template>
         </DataView>
 
-        <!-- Per-book Actions Menu (Archive / Remove) -->
         <Menu
             ref="bookMenu"
             :model="menuItems"
@@ -641,7 +303,6 @@ const getSyncButtonText = computed(() => {
             </template>
         </Menu>
 
-        <!-- Delete Confirmation Dialog (Zero Icons, Large Padding) -->
         <Dialog
             v-model:visible="showDeleteDialog"
             modal
@@ -664,8 +325,7 @@ const getSyncButtonText = computed(() => {
                 from your library?
             </p>
             <p class="mt-2 text-xs text-(--text-tertiary)">
-                This will delete the book record and its locally stored file and cover
-                thumbnail.
+                This will delete the book record and its locally stored file and cover thumbnail.
             </p>
 
             <template #footer>
@@ -685,42 +345,3 @@ const getSyncButtonText = computed(() => {
         </Dialog>
     </div>
 </template>
-
-<style scoped>
-    .select-chip {
-        padding: 0.15rem 0.6rem !important;
-        height: 2rem;
-        display: inline-flex;
-        align-items: center;
-        border: 1px solid var(--border-color) !important;
-        background-color: var(--bg-card) !important;
-        border-radius: 9999px !important;
-        box-shadow: none !important;
-        transition: all 0.2s ease;
-        cursor: pointer;
-        min-width: 0;
-    }
-
-    .select-chip:hover {
-        border-color: var(--border-color-hover) !important;
-    }
-
-    :deep(.p-select-label) {
-        padding: 0 !important;
-        margin-right: 0.25rem !important;
-        display: flex;
-        align-items: center;
-        min-width: 0;
-        overflow: hidden;
-    }
-
-    :deep(.p-select-dropdown) {
-        width: auto !important;
-        height: auto !important;
-        color: var(--text-secondary) !important;
-    }
-
-    :deep(.p-select-dropdown-icon) {
-        font-size: 0.75rem !important;
-    }
-</style>

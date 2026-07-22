@@ -416,7 +416,7 @@ Goal: optional sourcing and background sync, resumable, non-blocking (FR-SYNC, N
 - [x] `sync_trigger` spawns a background task; `run_full_sync` syncs settings, progress, bookmarks, highlights, reading sessions, book files (FR-SYNC-03).
 - [x] Conflict resolution uses domain `resolve_progress` and `merge_by_id` (FR-SYNC-04).
 - [x] `sync:progress` and `sync:finished` events emitted throughout; reading never blocks (FR-SYNC-05).
-- [x] App stays fully usable with no server configured — commands return `not_configured` error (FR-SYNC-05).
+- [x] App stays fully usable with no server configured: commands return `not_configured` error (FR-SYNC-05).
 - [x] `src/ipc/events.ts`: `onSyncProgress`, `onSyncFinished` typed listeners.
 - [x] `feat(sync): background sync engine`
 

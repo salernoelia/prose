@@ -1,5 +1,5 @@
 /**
- * useReadingTracker — times active reading sessions and persists them through
+ * useReadingTracker - times active reading sessions and persists them through
  * the Rust core so they participate in WebDAV sync (streaks, weekly activity,
  * and total reading time stay consistent across devices).
  *

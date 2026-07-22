@@ -410,7 +410,7 @@
 				CODE_SIGN_ENTITLEMENTS = prose_iOS/prose_iOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 2;
-				DEVELOPMENT_TEAM = 9LKY7MBW4C;
+				DEVELOPMENT_TEAM = "9LKY7MBW4C";
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -437,7 +437,7 @@
 					"$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.elano.prose;
-				PRODUCT_NAME = Prose;
+				PRODUCT_NAME = "Prose";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;
@@ -453,7 +453,7 @@
 				CODE_SIGN_ENTITLEMENTS = prose_iOS/prose_iOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 2;
-				DEVELOPMENT_TEAM = 9LKY7MBW4C;
+				DEVELOPMENT_TEAM = "9LKY7MBW4C";
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -480,7 +480,7 @@
 					"$(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.elano.prose;
-				PRODUCT_NAME = Prose;
+				PRODUCT_NAME = "Prose";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;

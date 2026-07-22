@@ -15,6 +15,7 @@ export default defineConfigWithVueTs(
       '**/src-tauri/**',
       '**/coverage/**',
       'src/readers/vendor/**',
+      'website/**',
     ],
   },
   pluginVue.configs['flat/essential'],

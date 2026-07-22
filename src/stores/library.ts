@@ -15,6 +15,9 @@ const defaultQuery: LibraryQueryDto = {
 const SORT_PREFS_KEY = 'prose.library.sort'
 
 function loadSortPrefs(): Pick<LibraryQueryDto, 'sort' | 'descending'> {
+  if (typeof localStorage === 'undefined') {
+    return { sort: defaultQuery.sort, descending: defaultQuery.descending }
+  }
   try {
     const raw = localStorage.getItem(SORT_PREFS_KEY)
     if (raw) {
@@ -31,6 +34,7 @@ function loadSortPrefs(): Pick<LibraryQueryDto, 'sort' | 'descending'> {
 }
 
 function saveSortPrefs(query: LibraryQueryDto): void {
+  if (typeof localStorage === 'undefined') return
   try {
     localStorage.setItem(
       SORT_PREFS_KEY,

@@ -1,5 +1,5 @@
 /**
- * useReadingStats — derives reading statistics from two sources:
+ * useReadingStats - derives reading statistics from two sources:
  *   1. The library store (book count, progress, lastRead timestamps)
  *   2. The sync-backed reading session log (sessions store)
  *
@@ -196,7 +196,7 @@ export function useReadingStats() {
           streak++
           cursor.setDate(cursor.getDate() - 1)
         } else {
-          // today not read yet — check yesterday
+          // today not read yet - check yesterday
           cursor.setDate(cursor.getDate() - 1)
           if (uniqueDates[i] === dateToISO(cursor)) {
             streak++
@@ -241,7 +241,7 @@ export function useReadingStats() {
     return best
   })
 
-  /** Activity data for the current week (Mon → Sun). */
+  /** Activity data for the current week (Mon to Sun). */
   const weeklyActivity = computed<DayActivity[]>(() => {
     const dates = currentWeekDates()
     return dates.map((iso, idx) => ({
@@ -276,7 +276,7 @@ export function useReadingStats() {
 
   /**
    * Gapless all-time activity series.
-   * Buckets by day when ≤90 days of history, by week otherwise.
+   * Buckets by day when <=90 days of history, by week otherwise.
    * Always ends with today so the right edge is anchored.
    */
   const allTimeDaily = computed<ChartPoint[]>(() => {
@@ -309,7 +309,7 @@ export function useReadingStats() {
       }
       return points
     } else {
-      // Weekly buckets — group Mon–Sun
+      // Weekly buckets - group Mon to Sun
       const points: ChartPoint[] = []
       // Snap firstDate back to its Monday
       const dow = (firstDate.getDay() + 6) % 7

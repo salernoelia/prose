@@ -106,7 +106,7 @@ impl WebDavRemoteStore {
             .basic_auth(&self.username, Some(&self.password))
             .send()
             .map_err(|e| DomainError::Remote(e.to_string()))?;
-        // 201 = created, 405 = already exists — both are fine.
+        // 201 = created, 405 = already exists - both are fine.
         if resp.status().is_success() || resp.status() == 405 {
             Ok(())
         } else {
@@ -156,7 +156,7 @@ impl WebDavRemoteStore {
             .map_err(|e| DomainError::Remote(e.to_string()))?;
 
         if !resp.status().is_success() {
-            // 404 on the collection means it does not exist yet — return empty.
+            // 404 on the collection means it does not exist yet - return empty.
             if resp.status() == 404 {
                 return Ok(vec![]);
             }

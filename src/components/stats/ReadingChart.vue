@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
- * ReadingChart — a smooth SVG area+line chart for reading activity.
+ * ReadingChart - a smooth SVG area and line chart for reading activity.
  *
- * Pure SVG, no external library.  Uses cubic-bezier interpolation with
+ * Pure SVG, no external library. Uses cubic-bezier interpolation with
  * horizontal control points so the curve is smooth but never overshoots zero.
- * Fully styled via CSS custom properties so it respects light / dark / sepia.
+ * Fully styled via CSS custom properties so it respects light, dark, and sepia.
  */
 import { computed, ref } from 'vue'
 import type { ChartPoint } from '../../composables/useReadingStats'
@@ -277,7 +277,7 @@ function tooltipX(x: number): number {
         class="absolute top-1 pointer-events-none z-10 bg-(--bg-app) border border-(--border-color) rounded-lg px-2.5 py-1.5 shadow-md text-xs text-(--text-tertiary) whitespace-nowrap -translate-x-1/2"
         :style="{ left: `${(tooltipX(tooltip.x) / VW) * 100}%` }"
       >
-        {{ formatDate(tooltip.point.date) }} — no reading
+        {{ formatDate(tooltip.point.date) }}: no reading
       </div>
     </Transition>
   </div>
