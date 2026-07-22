@@ -74,6 +74,10 @@ const placement = computed(() => {
         v-if="word"
         class="fixed z-50 -translate-x-1/2 w-80 max-w-[90vw] animate-fade-in reader-definition-popover"
         :style="placement.popoverStyle"
+        @pointerdown.stop
+        @touchstart.stop
+        @mousedown.stop
+        @click.stop
     >
         <div
             class="rounded-xl bg-(--bg-card) border border-(--border-color) shadow-lg overflow-hidden"

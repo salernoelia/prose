@@ -165,7 +165,9 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
   // The currently visible section document, used to read and clear selections.
   #currentDoc: Document | null = null
   #clickedHighlight = false
+  #hasActiveSelection = false
   #lastActiveSelectionTime = 0
+  #clearSelectionTimeout: ReturnType<typeof setTimeout> | null = null
 
   async mount(container: HTMLElement): Promise<void> {
     const view = document.createElement('foliate-view') as FoliateView
@@ -217,34 +219,30 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
         }
       })
 
-      let hadSelection = false
+      let hadSelectionOnPointerDown = false
       doc.addEventListener('pointerdown', () => {
         const selection = doc.defaultView?.getSelection()
-        hadSelection = selection ? !selection.isCollapsed : false
+        hadSelectionOnPointerDown = Boolean((selection && !selection.isCollapsed) || this.#hasActiveSelection)
       })
 
       doc.addEventListener('click', (e) => {
         setTimeout(() => {
-          if (Date.now() - this.#lastActiveSelectionTime < 300) {
+          const selection = doc.defaultView?.getSelection()
+          const isCurrentlySelected = Boolean(selection && !selection.isCollapsed)
+          const isRecentlySelected = (Date.now() - this.#lastActiveSelectionTime) < 1500
+
+          if (this.#hasActiveSelection || isCurrentlySelected || isRecentlySelected || hadSelectionOnPointerDown) {
+            hadSelectionOnPointerDown = false
             return
           }
-          if (hadSelection) {
-            hadSelection = false
-            return
-          }
+
           if (this.#clickedHighlight) {
             this.#clickedHighlight = false
             return
           }
 
-          const selection = doc.defaultView?.getSelection()
-          if (selection && !selection.isCollapsed) return
-
           if ((e.target as HTMLElement).closest('a, button, input, textarea, select')) return
 
-          // A tap on an image opens the lightbox instead of turning the page. The
-          // src is already an absolute prose:// (or blob:) URL that loads outside
-          // the iframe.
           const img = (e.target as HTMLElement).closest('img, svg image')
           if (img) {
             const src =
@@ -262,9 +260,6 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
             }
           }
 
-          // The click lands inside the section iframe, so its clientX is relative
-          // to that frame. Lift it into outer-window coordinates by the frame's
-          // own offset, so the reader can map the tap to a page-turn zone.
           const frame = doc.defaultView?.frameElement?.getBoundingClientRect()
           const x = (e as MouseEvent).clientX + (frame?.left ?? 0)
 
@@ -388,7 +383,14 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
   }
 
   clearSelection(): void {
+    if (this.#clearSelectionTimeout) {
+      clearTimeout(this.#clearSelectionTimeout)
+      this.#clearSelectionTimeout = null
+    }
+    this.#hasActiveSelection = false
+    this.#lastActiveSelectionTime = 0
     this.#currentDoc?.defaultView?.getSelection()?.removeAllRanges()
+    this.#emitSelection(null)
   }
 
   /**
@@ -422,31 +424,53 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
       const view = this.#view
       const selection = doc.defaultView?.getSelection()
       if (!view || !selection || selection.rangeCount === 0 || selection.isCollapsed) {
-        this.#emitSelection(null)
+        this.#scheduleClearSelection()
         return
       }
       const text = selection.toString().trim()
       if (!text) {
-        this.#emitSelection(null)
+        this.#scheduleClearSelection()
         return
       }
+      if (this.#clearSelectionTimeout) {
+        clearTimeout(this.#clearSelectionTimeout)
+        this.#clearSelectionTimeout = null
+      }
+      this.#hasActiveSelection = true
+      this.#lastActiveSelectionTime = Date.now()
       const range = selection.getRangeAt(0)
       const payload = view.getCFI(index, range)
       this.#emitSelection({ payload, text, rect: this.#rectInViewport(range) })
     }
-    // pointerup catches mouse and touch drags; selectionchange clears the popover
-    // when the user taps away and the selection collapses.
+
     doc.addEventListener('pointerup', () => setTimeout(report, 0))
     doc.addEventListener('touchend', () => setTimeout(report, 0))
     doc.addEventListener('selectionchange', () => {
       const selection = doc.defaultView?.getSelection()
       if (!selection || selection.isCollapsed) {
-        this.#emitSelection(null)
+        this.#scheduleClearSelection()
       } else {
+        if (this.#clearSelectionTimeout) {
+          clearTimeout(this.#clearSelectionTimeout)
+          this.#clearSelectionTimeout = null
+        }
+        this.#hasActiveSelection = true
         this.#lastActiveSelectionTime = Date.now()
         report()
       }
     })
+  }
+
+  #scheduleClearSelection(): void {
+    if (this.#clearSelectionTimeout) return
+    this.#clearSelectionTimeout = setTimeout(() => {
+      this.#clearSelectionTimeout = null
+      const docSelection = this.#currentDoc?.defaultView?.getSelection()
+      if (!docSelection || docSelection.isCollapsed) {
+        this.#hasActiveSelection = false
+        this.#emitSelection(null)
+      }
+    }, 250)
   }
 
   #emitSelection(selection: TextSelection | null): void {

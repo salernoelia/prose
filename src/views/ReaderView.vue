@@ -257,6 +257,9 @@ const handleKeyDown = (e: KeyboardEvent) => {
 };
 
 function handleRendererClick(e: Event) {
+    if (selection.value || activeHighlight.value) {
+        return;
+    }
     const customEvent = e as CustomEvent<{ target: Node; x?: number }>;
     if (definitionWord.value) {
         const target = customEvent.detail?.target || e.target;

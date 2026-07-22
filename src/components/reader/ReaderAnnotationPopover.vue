@@ -69,9 +69,13 @@ const style = computed(() => {
 <template>
     <div
         v-if="placement"
-        class="fixed z-50"
+        class="fixed z-50 reader-annotation-popover"
         :class="placement.above ? '-translate-x-1/2 -translate-y-full' : '-translate-x-1/2'"
         :style="style"
+        @pointerdown.stop
+        @touchstart.stop
+        @mousedown.stop
+        @click.stop
     >
         <div class="animate-fade-in">
             <div
