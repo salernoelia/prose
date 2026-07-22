@@ -96,6 +96,9 @@ function readingCss(style: ReadingStyle): string {
       font-size: ${style.fontSize}px;
       background-color: ${bg} !important;
       color: ${fg} !important;
+      -webkit-touch-callout: default !important;
+      -webkit-user-select: text !important;
+      user-select: text !important;
     }
     /* Force the reader's font everywhere, overriding embedded fonts, but leave
        genuine monospace content (which a more specific rule re-asserts). */
