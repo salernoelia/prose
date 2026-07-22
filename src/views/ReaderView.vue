@@ -196,8 +196,17 @@ function onWikipedia() {
     dismissSelection();
 }
 
-// Automatically clear active definition popover and temporary highlights on page navigation
-watch(locator, () => {
+// Automatically clear active definition popover and temporary highlights on
+// page navigation. Same-page relocates (foliate's snap realign after a touch
+// selection) must not clear, or the popover vanishes right after it opens.
+watch(locator, (next, prev) => {
+    if (
+        next?.payload &&
+        prev?.payload &&
+        annotatable.value?.samePage(prev.payload, next.payload)
+    ) {
+        return;
+    }
     handleClearDefinition();
 });
 

@@ -13,10 +13,16 @@ const props = defineProps<{
 // off the top or bottom of the viewport.
 const TOOLBAR_HEIGHT = 56
 
-// Gap below the selection. Kept generous so the toolbar clears Android's native
-// selection menu (Copy / Select all / handles), which can sit just below the
-// selection and would otherwise cover a toolbar placed too close.
-const BELOW_GAP = 32
+// Gap between the selection and the toolbar, on whichever side it sits. Kept
+// generous so the toolbar clears the native selection menu (Copy / Look Up /
+// handles), which hugs the selection on the side with room. iOS draws a taller
+// menu that can land on either side, so it needs extra clearance. The same gap
+// applies above and below: the native menu moves to the free side too, and an
+// asymmetric gap would leave the flipped toolbar underneath it.
+const IS_IOS =
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+const SELECTION_GAP = IS_IOS ? 64 : 32
 
 // The toolbar's measured half-width, kept current so the horizontal clamp uses
 // the real size. The set of actions (and so the width) changes with the
@@ -50,13 +56,13 @@ const placement = computed(() => {
     const margin = halfWidth.value + 8
     const left = Math.min(Math.max(centerX, margin), window.innerWidth - margin)
 
-    const below = rect.y + rect.height + BELOW_GAP
+    const below = rect.y + rect.height + SELECTION_GAP
     const fitsBelow = below + TOOLBAR_HEIGHT <= window.innerHeight
 
     if (fitsBelow) {
         return { left, top: below, above: false }
     }
-    return { left, top: rect.y - 12, above: true }
+    return { left, top: rect.y - SELECTION_GAP, above: true }
 })
 
 const style = computed(() => {

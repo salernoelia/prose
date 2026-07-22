@@ -171,8 +171,19 @@ export function useAnnotations(
     { immediate: true },
   )
 
-  // Clear any active text selection and highlight popovers when navigating/changing page
-  watch(locator, () => {
+  // Clear any active text selection and highlight popovers when the reader
+  // moves to a different page. foliate also relocates on same-page settles (the
+  // snap realign after a touch selection gesture ends), and dismissing on those
+  // would collapse an iOS selection the instant the finger lifts, so page
+  // membership decides, not locator identity.
+  watch(locator, (next, prev) => {
+    if (next?.payload && prev?.payload) {
+      const renderer = annotatable.value
+      const same = renderer
+        ? renderer.samePage(prev.payload, next.payload)
+        : prev.payload === next.payload
+      if (same) return
+    }
     dismissSelection()
     dismissActiveHighlight()
   })

@@ -222,14 +222,25 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
       })
 
       let hadSelectionOnPointerDown = false
+      // iOS selects a word on double tap, and the first tap of that gesture
+      // still fires a click. Acting on it at once would turn the page or toggle
+      // the dock under the fresh selection, so on touch platforms the click
+      // action waits out the double-tap window and a second tap cancels it.
+      let pendingClickAction: ReturnType<typeof setTimeout> | null = null
+      const clickActionDelay = navigator.maxTouchPoints > 0 ? 350 : 0
 
       doc.addEventListener('pointerdown', () => {
+        if (pendingClickAction !== null) {
+          clearTimeout(pendingClickAction)
+          pendingClickAction = null
+        }
         const selection = doc.defaultView?.getSelection()
         hadSelectionOnPointerDown = Boolean((selection && !selection.isCollapsed) || this.#hasActiveSelection)
       })
 
       doc.addEventListener('click', (e) => {
-        setTimeout(() => {
+        pendingClickAction = setTimeout(() => {
+          pendingClickAction = null
           const selection = doc.defaultView?.getSelection()
           const isCurrentlySelected = Boolean(selection && !selection.isCollapsed)
 
@@ -269,7 +280,7 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
             bubbles: true,
             detail: { target: e.target, x }
           }))
-        }, 0)
+        }, clickActionDelay)
       })
     })
     // foliate's history records every jump (goTo for TOC, links, annotations)
@@ -418,19 +429,36 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
    */
   #watchSelection(doc: Document, index: number): void {
     this.#currentDoc = doc
+    // WebKit fires transient collapsed selectionchange events while a drag
+    // handle is grabbed or moved. Clearing on the first one flashes the popover
+    // off mid-drag, so a clear only lands once the collapse has held briefly.
+    let clearTimer: ReturnType<typeof setTimeout> | null = null
+    const scheduleClear = () => {
+      if (clearTimer !== null) return
+      clearTimer = setTimeout(() => {
+        clearTimer = null
+        const selection = doc.defaultView?.getSelection()
+        if (!selection || selection.isCollapsed || !selection.toString().trim()) {
+          this.#hasActiveSelection = false
+          this.#emitSelection(null)
+        }
+      }, 200)
+    }
     const report = () => {
       const view = this.#view
       const selection = doc.defaultView?.getSelection()
       if (!view || !selection || selection.rangeCount === 0 || selection.isCollapsed) {
-        this.#hasActiveSelection = false
-        this.#emitSelection(null)
+        scheduleClear()
         return
       }
       const text = selection.toString().trim()
       if (!text) {
-        this.#hasActiveSelection = false
-        this.#emitSelection(null)
+        scheduleClear()
         return
+      }
+      if (clearTimer !== null) {
+        clearTimeout(clearTimer)
+        clearTimer = null
       }
       this.#hasActiveSelection = true
       const range = selection.getRangeAt(0)
