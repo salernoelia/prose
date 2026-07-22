@@ -639,11 +639,9 @@ export class Paginator extends HTMLElement {
                 const sel = doc.getSelection()
                 if (!sel.rangeCount) return
                 if (isPointerSelecting && sel.type === 'Range') {
-                    // Never auto-advance the page while a touch drag extends a
-                    // selection: on Android it flips the page mid-select and the
-                    // selection is lost (issue #7). Cross-page pointer selection
-                    // stays available with a mouse.
-                    if (!isAndroid()) checkPointerSelection(range, sel)
+                    // Never auto-advance the page while a touch drag extends a selection.
+                    // Flips the page mid-select and selection is lost (issue #7).
+                    if (!isAndroid() && !('ontouchstart' in window)) checkPointerSelection(range, sel)
                 }
                 else if (isKeyboardSelecting) {
                     const selRange = sel.getRangeAt(0).cloneRange()
@@ -669,9 +667,13 @@ export class Paginator extends HTMLElement {
                     this.#selectionScrollLock = size ? Math.round(cur / size) * size : cur
                 }
             })
-            doc.addEventListener('focusin', e => this.scrolled ? null :
+            doc.addEventListener('focusin', e => {
+                if (this.scrolled) return
+                const sel = doc.getSelection()
+                if (sel && !sel.isCollapsed) return
                 // NOTE: `requestAnimationFrame` is needed in WebKit
-                requestAnimationFrame(() => this.#scrollToAnchor(e.target)))
+                requestAnimationFrame(() => this.#scrollToAnchor(e.target))
+            })
         })
 
         this.#mediaQueryListener = () => {

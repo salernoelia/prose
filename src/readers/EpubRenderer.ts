@@ -509,20 +509,18 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
 
   #scheduleClearSelection(): void {
     if (this.#isTouchActive) return
-    if (Date.now() - this.#lastTouchEndTime < 450) return
     if (this.#clearSelectionTimeout) return
 
     this.#clearSelectionTimeout = setTimeout(() => {
       this.#clearSelectionTimeout = null
       if (this.#isTouchActive) return
-      if (Date.now() - this.#lastTouchEndTime < 450) return
 
       const docSelection = this.#currentDoc?.defaultView?.getSelection()
       if (!docSelection || docSelection.isCollapsed) {
         this.#hasActiveSelection = false
         this.#emitSelection(null)
       }
-    }, 400)
+    }, 200)
   }
 
   #emitSelection(selection: TextSelection | null): void {
