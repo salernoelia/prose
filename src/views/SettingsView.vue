@@ -134,5 +134,8 @@ async function handleSyncDisconnect() {
             </div>
             <p class="text-xs text-(--text-secondary) font-medium">Loading settings...</p>
         </div>
+
+        <!-- Invisible bottom spacer so scrolling comfortably clears floating bottom nav -->
+        <div class="h-28 sm:h-36 w-full shrink-0 pointer-events-none" aria-hidden="true"></div>
     </div>
 </template>

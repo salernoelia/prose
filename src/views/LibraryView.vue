@@ -364,5 +364,8 @@ const confirmDelete = async () => {
                 </div>
             </div>
         </Dialog>
+
+        <!-- Invisible bottom spacer so scrolling comfortably clears floating bottom nav -->
+        <div class="h-28 sm:h-36 w-full shrink-0 pointer-events-none" aria-hidden="true"></div>
     </div>
 </template>
