@@ -84,10 +84,12 @@ async function handleSyncDisconnect() {
 
 <template>
     <div class="w-full animate-fade-in font-serif pb-12">
-        <header class="pb-6 pt-4 border-b border-(--border-color) mb-6">
-            <h1 class="text-2xl lg:text-4xl font-semibold tracking-tight text-(--text-primary) font-serif">
-                Settings
-            </h1>
+        <header class="pb-6 pt-4 border-b border-(--border-color) dark:border-white/20 mb-8 flex flex-wrap items-end justify-between gap-3">
+            <div>
+                <h1 class="text-2xl lg:text-4xl font-semibold tracking-tight text-(--text-primary) font-serif">
+                    Settings
+                </h1>
+            </div>
         </header>
 
         <div

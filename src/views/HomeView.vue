@@ -52,14 +52,6 @@ function getCoverUrl(coverPath: string | null): string | null {
     return convertFileSrc(fullPath)
 }
 
-// Time-aware editorial greeting
-const greeting = computed(() => {
-    const hour = new Date().getHours()
-    if (hour < 12) return 'Good morning'
-    if (hour < 18) return 'Good afternoon'
-    return 'Good evening'
-})
-
 // Top 3 most read or active books
 interface PosedBook {
     book: BookDto
@@ -128,13 +120,12 @@ async function handleImport() {
 <template>
     <div class="w-full animate-fade-in font-serif">
         <!-- Editorial Header -->
-        <header class="pb-2 pt-2 flex flex-wrap justify-between items-end gap-3 mb-8 select-none">
+        <header
+            class="pb-6 pt-4 border-b border-(--border-color) dark:border-white/20 mb-8 flex flex-wrap items-end justify-between gap-3 select-none"
+        >
             <div>
-                <span class="text-[11px] font-sans font-medium uppercase tracking-widest text-(--text-tertiary) block mb-1">
-                    {{ new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }) }}
-                </span>
-                <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-(--text-primary) font-serif">
-                    {{ greeting }}
+                <h1 class="text-2xl lg:text-4xl font-semibold tracking-tight text-(--text-primary) font-serif">
+                    Home
                 </h1>
             </div>
 

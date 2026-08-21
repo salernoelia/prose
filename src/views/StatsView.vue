@@ -89,10 +89,10 @@ const activeTrendData = computed(() => getTrendPoints(timeframe.value))
     <div class="w-full animate-fade-in font-serif pb-[calc(4rem+env(safe-area-inset-bottom,0px))]">
         <!-- Editorial Header with High Contrast Divider -->
         <header
-            class="pb-6 pt-4 border-b border-(--border-color) dark:border-white/20 mb-12 sm:mb-16 flex flex-wrap items-end justify-between gap-3"
+            class="pb-6 pt-4 border-b border-(--border-color) dark:border-white/20 mb-8 flex flex-wrap items-end justify-between gap-3"
         >
             <div>
-                <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-(--text-primary) font-serif">
+                <h1 class="text-2xl lg:text-4xl font-semibold tracking-tight text-(--text-primary) font-serif">
                     Reading Insights
                 </h1>
             </div>
