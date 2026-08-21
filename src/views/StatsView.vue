@@ -180,7 +180,7 @@ const activeTrendData = computed(() => getTrendPoints(timeframe.value))
                                     bar.totalSeconds > 0
                                         ? 'bg-(--accent-color) text-(--accent-ink) shadow-xs'
                                         : bar.date === todayISO
-                                            ? 'border-2 border-dashed border-(--accent-color) bg-(--text-primary)/5 dark:bg-white/5'
+                                            ? 'border border-(--accent-color) ring-1 ring-(--accent-color)/30 bg-(--accent-color-light)/20'
                                             : 'bg-(--text-primary)/5 dark:bg-white/5 border border-(--border-color) dark:border-white/15 text-(--text-tertiary)'
                                 ]"
                             >

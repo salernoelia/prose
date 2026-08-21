@@ -107,7 +107,14 @@ const maxSeconds = computed(() =>
                     @mouseleave="hoveredBar = null"
                 >
                     <!-- Column Slot with distinct background track in OLED -->
-                    <div class="w-full max-w-[32px] h-full rounded-full bg-(--text-primary)/5 dark:bg-white/5 p-1 flex flex-col justify-end items-center relative border border-(--border-color) dark:border-white/15 group-hover:border-(--accent-color) transition-all">
+                    <div
+                        class="w-full max-w-[32px] h-full rounded-full p-1 flex flex-col justify-end items-center relative border transition-all"
+                        :class="[
+                            bar.date === todayISO
+                                ? 'bg-(--accent-color-light)/15 border-(--accent-color) ring-1 ring-(--accent-color)/30'
+                                : 'bg-(--text-primary)/5 dark:bg-white/5 border-(--border-color) dark:border-white/15 group-hover:border-(--accent-color)'
+                        ]"
+                    >
                         <!-- Bar fill capsule -->
                         <div
                             class="w-full rounded-full transition-all duration-300 min-h-[8px]"
@@ -124,8 +131,8 @@ const maxSeconds = computed(() =>
                         ></div>
                     </div>
 
-                    <!-- Day Label & Today Indicator -->
-                    <div class="flex flex-col items-center gap-0.5">
+                    <!-- Day Label (Fixed uniform height across all days) -->
+                    <div class="h-5 flex items-center justify-center">
                         <span
                             class="text-xs font-sans select-none tabular-nums transition-colors"
                             :class="[
@@ -136,10 +143,6 @@ const maxSeconds = computed(() =>
                         >
                             {{ bar.label }}
                         </span>
-                        <span
-                            v-if="bar.date === todayISO"
-                            class="w-1.5 h-1.5 rounded-full bg-(--accent-color)"
-                        ></span>
                     </div>
                 </div>
             </div>

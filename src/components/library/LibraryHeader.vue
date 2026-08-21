@@ -31,7 +31,7 @@ const getSyncButtonText = computed(() => {
 
 <template>
     <header
-        class="pb-6 pt-4 border-b border-(--border-color) dark:border-white/20 mb-8 flex flex-wrap items-end justify-between gap-3"
+        class="pb-3 pt-3 border-b border-(--border-color) dark:border-white/20 mb-4 flex flex-wrap items-end justify-between gap-3"
     >
         <div>
             <h1 class="text-2xl lg:text-4xl font-semibold tracking-tight text-(--text-primary) font-serif">
