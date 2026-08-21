@@ -341,6 +341,180 @@ export function useReadingStats() {
     }
   })
 
+  // ── Extended analytics & helpers ──────────────────────────────────────────
+
+  const todaySeconds = computed(() => sessionsByDate.value.get(todayISO()) ?? 0)
+
+  const thisWeekSeconds = computed(() =>
+    weeklyActivity.value.reduce((acc, d) => acc + d.totalSeconds, 0),
+  )
+
+  const completionRate = computed(() => {
+    if (totalBooks.value === 0) return 0
+    return Math.round((booksFinished.value / totalBooks.value) * 100)
+  })
+
+  const activeDaysCount = computed(() => sessionsByDate.value.size)
+
+  const dailyAverageSeconds = computed(() => {
+    if (sessionsByDate.value.size === 0) return 0
+    return Math.round(totalReadingSeconds.value / sessionsByDate.value.size)
+  })
+
+  const peakDayWeekly = computed(() => {
+    if (weeklyActivity.value.length === 0) return null
+    let max = weeklyActivity.value[0]
+    for (const d of weeklyActivity.value) {
+      if (d.totalSeconds > max.totalSeconds) {
+        max = d
+      }
+    }
+    return max.totalSeconds > 0 ? max : null
+  })
+
+  const epubCount = computed(
+    () => entries.value.filter((e) => e.book.format === 'epub').length,
+  )
+
+  const pdfCount = computed(
+    () => entries.value.filter((e) => e.book.format === 'pdf').length,
+  )
+
+  const streakDaysThisWeek = computed(() => {
+    const todayStr = todayISO()
+    return weeklyActivity.value.map((d) => ({
+      ...d,
+      isToday: d.date === todayStr,
+      active: d.totalSeconds > 0,
+    }))
+  })
+
+  const timeOfDayDistribution = computed(() => {
+    let morning = 0
+    let afternoon = 0
+    let evening = 0
+    let night = 0
+    let mCount = 0
+    let aCount = 0
+    let eCount = 0
+    let nCount = 0
+
+    for (const s of sessionsState.sessions) {
+      const h = new Date(s.startedAt).getHours()
+      if (h >= 5 && h < 12) {
+        morning += s.durationSeconds
+        mCount++
+      } else if (h >= 12 && h < 17) {
+        afternoon += s.durationSeconds
+        aCount++
+      } else if (h >= 17 && h < 22) {
+        evening += s.durationSeconds
+        eCount++
+      } else {
+        night += s.durationSeconds
+        nCount++
+      }
+    }
+
+    const total = morning + afternoon + evening + night
+    const calcPct = (sec: number) => (total > 0 ? Math.round((sec / total) * 100) : 0)
+
+    return [
+      {
+        id: 'morning',
+        label: 'Morning',
+        period: '5:00 AM - 12:00 PM',
+        icon: 'wb_sunny',
+        seconds: morning,
+        percentage: calcPct(morning),
+        sessionCount: mCount,
+      },
+      {
+        id: 'afternoon',
+        label: 'Afternoon',
+        period: '12:00 PM - 5:00 PM',
+        icon: 'light_mode',
+        seconds: afternoon,
+        percentage: calcPct(afternoon),
+        sessionCount: aCount,
+      },
+      {
+        id: 'evening',
+        label: 'Evening',
+        period: '5:00 PM - 10:00 PM',
+        icon: 'dark_mode',
+        seconds: evening,
+        percentage: calcPct(evening),
+        sessionCount: eCount,
+      },
+      {
+        id: 'night',
+        label: 'Night',
+        period: '10:00 PM - 5:00 AM',
+        icon: 'bedtime',
+        seconds: night,
+        percentage: calcPct(night),
+        sessionCount: nCount,
+      },
+    ]
+  })
+
+  const enrichedBookActivity = computed(() => {
+    const totalSec = totalReadingSeconds.value
+    const secMap = new Map<string, number>()
+
+    for (const s of sessions.value) {
+      secMap.set(s.bookId, (secMap.get(s.bookId) ?? 0) + s.durationSeconds)
+    }
+
+    return entries.value
+      .map((entry) => {
+        const sec = secMap.get(entry.book.id) ?? 0
+        const pct = totalSec > 0 ? Math.round((sec / totalSec) * 100) : 0
+        return {
+          bookId: entry.book.id,
+          book: entry.book,
+          bookTitle: entry.book.title,
+          bookAuthor: entry.book.author,
+          totalSeconds: sec,
+          progress: entry.progress,
+          format: entry.book.format,
+          cover: entry.book.cover,
+          lastRead: entry.lastRead,
+          percentageOfTotal: pct,
+          rawEntry: entry,
+        }
+      })
+      .filter((b) => b.totalSeconds > 0 || b.progress > 0)
+      .sort((a, b) => b.totalSeconds - a.totalSeconds || (b.lastRead ?? 0) - (a.lastRead ?? 0))
+  })
+
+  function getTrendPoints(timeframe: '7d' | '30d' | '90d' | 'all'): ChartPoint[] {
+    if (timeframe === 'all') {
+      return allTimeDaily.value
+    }
+
+    const days = timeframe === '7d' ? 7 : timeframe === '30d' ? 30 : 90
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const map = sessionsByDate.value
+    const todayStr = todayISO()
+    const points: ChartPoint[] = []
+
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(today)
+      d.setDate(today.getDate() - i)
+      const iso = dateToISO(d)
+      points.push({
+        date: iso,
+        seconds: map.get(iso) ?? 0,
+        isToday: iso === todayStr,
+      })
+    }
+
+    return points
+  }
+
   // ── Formatting helpers ─────────────────────────────────────────────────────
 
   function formatDuration(seconds: number): string {
@@ -352,6 +526,15 @@ export function useReadingStats() {
     return `${m} min`
   }
 
+  function formatDurationCompact(seconds: number): string {
+    if (seconds === 0) return '0m'
+    const h = Math.floor(seconds / 3600)
+    const m = Math.floor((seconds % 3600) / 60)
+    if (h > 0 && m > 0) return `${h}h ${m}m`
+    if (h > 0) return `${h}h`
+    return `${m}m`
+  }
+
   return {
     // Library
     totalBooks,
@@ -360,15 +543,29 @@ export function useReadingStats() {
     booksUnstarted,
     averageProgress,
     lastReadEntry,
+    epubCount,
+    pdfCount,
+    completionRate,
     // Sessions
     totalReadingSeconds,
+    todaySeconds,
+    thisWeekSeconds,
+    dailyAverageSeconds,
+    activeDaysCount,
     sessionHistory,
     currentStreak,
     bestStreak,
+    peakDayWeekly,
+    streakDaysThisWeek,
     weeklyActivity,
     bookActivity,
+    enrichedBookActivity,
     allTimeDaily,
+    timeOfDayDistribution,
+    // Methods
+    getTrendPoints,
     // Helpers
     formatDuration,
+    formatDurationCompact,
   }
 }

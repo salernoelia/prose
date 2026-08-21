@@ -1,3 +1,8 @@
 export { default as ReadingChart } from './ReadingChart.vue'
 export { default as StatCard } from './StatCard.vue'
 export { default as WeeklyActivityChart } from './WeeklyActivityChart.vue'
+export { default as LibraryProgressMatrix } from './LibraryProgressMatrix.vue'
+export { default as GoalSpeedometer } from './GoalSpeedometer.vue'
+export { default as BookBreakdownList } from './BookBreakdownList.vue'
+export { default as TimeDistributionChart } from './TimeDistributionChart.vue'
+export { default as SessionHistoryList } from './SessionHistoryList.vue'

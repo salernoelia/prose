@@ -1,48 +1,66 @@
-<script setup lang="ts">
-import { computed } from 'vue'
+<script
+    setup
+    lang="ts"
+>
+import { ref, computed, onMounted } from 'vue'
+import { appDataDir } from '@tauri-apps/api/path'
 import { useReadingStats } from '../composables/useReadingStats'
 import { deleteSession } from '../stores/sessions'
-import { ReadingChart, StatCard, WeeklyActivityChart } from '../components/stats'
+import type { BookDto } from '../ipc/types'
+import {
+    WeeklyActivityChart,
+    ReadingChart,
+    LibraryProgressMatrix,
+    GoalSpeedometer,
+    BookBreakdownList,
+    TimeDistributionChart,
+    SessionHistoryList,
+} from '../components/stats'
+import type { Timeframe } from '../components/stats/ReadingChart.vue'
+
+const emit = defineEmits<{
+    (e: 'select-book', book: BookDto): void
+}>()
 
 const {
     totalBooks,
     booksFinished,
     booksInProgress,
+    booksUnstarted,
+    epubCount,
+    pdfCount,
+    averageProgress,
     totalReadingSeconds,
-    sessionHistory,
+    todaySeconds,
     currentStreak,
     bestStreak,
     weeklyActivity,
-    bookActivity,
-    allTimeDaily,
+    enrichedBookActivity,
+    timeOfDayDistribution,
+    sessionHistory,
+    getTrendPoints,
     formatDuration,
 } = useReadingStats()
+
+const appDataPath = ref('')
+const timeframe = ref<Timeframe>('30d')
+
+onMounted(async () => {
+    try {
+        appDataPath.value = await appDataDir()
+    } catch {
+        // Fallback for browser/test environments
+        appDataPath.value = ''
+    }
+})
 
 function onDeleteSession(id: string) {
     void deleteSession(id)
 }
 
-function formatSessionDate(ms: number): string {
-    return new Date(ms).toLocaleDateString(undefined, {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-    })
+function onSelectBook(book: BookDto) {
+    emit('select-book', book)
 }
-
-const CHART_MAX_HEIGHT = 64
-
-const maxWeeklySeconds = computed(() =>
-    Math.max(...weeklyActivity.value.map((d) => d.totalSeconds), 1),
-)
-
-const weeklyBars = computed(() =>
-    weeklyActivity.value.map((d) => ({
-        ...d,
-        height: Math.max(4, Math.round((d.totalSeconds / maxWeeklySeconds.value) * CHART_MAX_HEIGHT)),
-        active: d.totalSeconds > 0,
-    })),
-)
 
 const todayISO = (() => {
     const d = new Date()
@@ -52,150 +70,242 @@ const todayISO = (() => {
     return `${y}-${m}-${day}`
 })()
 
-const todaySeconds = computed(
-    () => weeklyActivity.value.find((d) => d.date === todayISO)?.totalSeconds ?? 0,
+const maxWeeklySeconds = computed(() =>
+    Math.max(...weeklyActivity.value.map((d) => d.totalSeconds), 1),
 )
 
-const readThisWeek = computed(() =>
-    weeklyActivity.value.reduce((acc, d) => acc + d.totalSeconds, 0),
+const weeklyBars = computed(() =>
+    weeklyActivity.value.map((d) => ({
+        ...d,
+        height: Math.max(8, Math.round((d.totalSeconds / maxWeeklySeconds.value) * 86)),
+        active: d.totalSeconds > 0,
+    })),
 )
 
-const topBook = computed(() => bookActivity.value[0] ?? null)
+const activeTrendData = computed(() => getTrendPoints(timeframe.value))
 </script>
 
 <template>
-    <div class="w-full animate-fade-in font-serif pb-[calc(3rem+env(safe-area-inset-bottom,0px))]">
-        <header class="pb-6 flex justify-between items-start">
+    <div class="w-full animate-fade-in font-serif pb-[calc(4rem+env(safe-area-inset-bottom,0px))]">
+        <!-- Editorial Header with High Contrast Divider -->
+        <header
+            class="pb-6 pt-4 border-b border-(--border-color) dark:border-white/20 mb-12 sm:mb-16 flex flex-wrap items-end justify-between gap-3"
+        >
             <div>
-                <h1 class="text-xl lg:text-3xl font-semibold tracking-tight text-(--text-primary)">
-                    Reading
+                <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-(--text-primary) font-serif">
+                    Reading Insights
                 </h1>
+            </div>
+
+            <!-- Header Quick Summary Badges -->
+            <div
+                v-if="totalReadingSeconds > 0"
+                class="flex items-center gap-2 select-none"
+            >
+                <span
+                    class="px-3.5 py-1 rounded-full bg-(--text-primary)/5 dark:bg-white/10 border border-(--border-color) dark:border-white/20 text-xs font-sans font-medium text-(--text-secondary) shadow-xs"
+                >
+                    Total: <strong class="text-(--text-primary) font-bold font-sans tabular-nums">{{
+                        formatDuration(totalReadingSeconds) }}</strong>
+                </span>
+                <span
+                    v-if="currentStreak > 0"
+                    class="flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-(--accent-color-light) border border-(--border-color) dark:border-white/20 text-xs font-sans font-semibold text-(--accent-color) shadow-xs"
+                >
+                    <span class="material-symbols-outlined text-sm">local_fire_department</span>
+                    <span>{{ currentStreak }} {{ currentStreak === 1 ? 'day' : 'days' }}</span>
+                </span>
             </div>
         </header>
 
+        <!-- Empty State (No Books) -->
         <div
             v-if="totalBooks === 0"
-            class="py-16 text-center"
+            class="py-20 text-center"
         >
-            <span class="material-symbols-outlined text-4xl text-(--text-tertiary) mb-3 block">auto_stories</span>
-            <p class="text-base text-(--text-secondary)">No books yet.</p>
-            <p class="text-sm text-(--text-tertiary) mt-1">Add a book to start tracking your reading.</p>
+            <span
+                class="material-symbols-outlined text-5xl text-(--accent-color) mb-4 block select-none">auto_stories</span>
+            <h2 class="text-xl font-serif font-bold text-(--text-primary)">Your library is waiting</h2>
+            <p class="text-sm font-sans text-(--text-secondary) mt-1 max-w-sm mx-auto">
+                Add an EPUB or PDF to start your reading journey and view detailed statistics.
+            </p>
         </div>
 
-        <template v-else>
-            <div class="grid grid-cols-2 gap-3 mb-3">
-                <StatCard
-                    label="Streak"
-                    icon="local_fire_department"
-                    :value="currentStreak"
-                    :unit="currentStreak === 1 ? 'day' : 'days'"
-                    :subtitle="`Best: ${bestStreak} ${bestStreak === 1 ? 'day' : 'days'}`"
-                />
-
-                <StatCard
-                    label="Today"
-                    icon="today"
-                    :value="todaySeconds > 0 ? formatDuration(todaySeconds) : '-'"
-                    :subtitle="`This week: ${readThisWeek > 0 ? formatDuration(readThisWeek) : 'None yet'}`"
-                />
-            </div>
-
-            <WeeklyActivityChart
-                :bars="weeklyBars"
-                :todayISO="todayISO"
-            />
-
-            <div class="grid grid-cols-3 gap-3 mb-3">
-                <StatCard
-                    label="Total"
-                    :value="totalBooks"
-                    unit="books"
-                />
-                <StatCard
-                    label="Reading"
-                    :value="booksInProgress"
-                    unit="in progress"
-                />
-                <StatCard
-                    label="Done"
-                    :value="booksFinished"
-                    unit="finished"
-                />
-            </div>
-
-            <div
-                v-if="totalReadingSeconds > 0"
-                class="bg-(--bg-card) border border-(--border-color) rounded-2xl p-4 mb-3"
-            >
-                <div class="flex items-baseline justify-between mb-3">
-                    <p class="text-xs font-medium tracking-wider text-(--text-tertiary)">All time</p>
-                    <div class="flex items-baseline gap-1.5">
-                        <span class="text-lg font-semibold text-(--text-primary) leading-none">
-                            {{ formatDuration(totalReadingSeconds) }}
-                        </span>
-                        <span class="text-xs text-(--text-secondary)">total</span>
+        <!-- Borderless Editorial Stream with High Contrast Section Dividers & Generous Spacing -->
+        <div
+            v-else
+            class="space-y-16 sm:space-y-20"
+        >
+            <!-- 1. Reading Streak Section -->
+            <section class="w-full">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-4 select-none">
+                    <div
+                        class="flex items-center gap-2 text-[11px] font-sans font-medium uppercase tracking-wider text-(--text-tertiary)">
+                        <span
+                            class="material-symbols-outlined text-lg text-(--accent-color)">local_fire_department</span>
+                        <span>Reading Streak</span>
                     </div>
+                    <span
+                        class="text-xs font-sans font-semibold px-3 py-1 rounded-full bg-(--accent-color-light) text-(--accent-color) border border-(--border-color) dark:border-white/20"
+                    >
+                        Best: {{ bestStreak }} {{ bestStreak === 1 ? 'day' : 'days' }}
+                    </span>
+                </div>
+
+                <div class="flex items-baseline gap-2 mt-2">
+                    <span
+                        class="text-4xl sm:text-5xl font-bold font-serif text-(--text-primary) tracking-tight leading-none tabular-nums"
+                    >
+                        {{ currentStreak }}
+                    </span>
+                    <span class="text-base sm:text-lg font-serif text-(--text-secondary)">
+                        {{ currentStreak === 1 ? 'day in a row' : 'days in a row' }}
+                    </span>
+                </div>
+
+                <!-- 7-Day Streak Momentum Pills -->
+                <div class="mt-6">
+                    <p class="text-[11px] font-sans text-(--text-tertiary) uppercase tracking-wider mb-3 select-none">
+                        This week's momentum
+                    </p>
+                    <div class="grid grid-cols-7 gap-2 sm:gap-3 text-center">
+                        <div
+                            v-for="bar in weeklyActivity"
+                            :key="bar.date"
+                            class="flex flex-col items-center gap-1.5"
+                        >
+                            <div
+                                class="w-full max-w-[48px] aspect-square rounded-xl flex items-center justify-center transition-all duration-300"
+                                :class="[
+                                    bar.totalSeconds > 0
+                                        ? 'bg-(--accent-color) text-(--accent-ink) shadow-xs'
+                                        : bar.date === todayISO
+                                            ? 'border-2 border-dashed border-(--accent-color) bg-(--text-primary)/5 dark:bg-white/10'
+                                            : 'bg-(--text-primary)/4 dark:bg-white/5 border border-(--border-color)/80 dark:border-white/15 text-(--text-tertiary)'
+                                ]"
+                            >
+                                <span
+                                    v-if="bar.totalSeconds > 0"
+                                    class="material-symbols-outlined text-sm font-bold"
+                                >
+                                    check
+                                </span>
+                                <span
+                                    v-else-if="bar.date === todayISO"
+                                    class="w-2 h-2 rounded-full bg-(--accent-color)"
+                                ></span>
+                            </div>
+                            <span
+                                class="text-xs font-sans"
+                                :class="bar.date === todayISO ? 'font-bold text-(--accent-color)' : 'text-(--text-secondary)'"
+                            >
+                                {{ bar.label }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="text-xs font-sans text-(--text-secondary) mt-4">
+                    <template v-if="todaySeconds > 0">
+                        You have completed today's reading session.
+                    </template>
+                    <template v-else-if="currentStreak > 0">
+                        Read today to keep your {{ currentStreak }}-day streak going!
+                    </template>
+                    <template v-else>
+                        Complete a reading session today to begin a new streak.
+                    </template>
+                </p>
+            </section>
+
+            <!-- 2. Today's Goal Pace -->
+            <section class="w-full pt-12 sm:pt-16 border-t border-(--border-color) dark:border-white/20">
+                <GoalSpeedometer
+                    :current-seconds="todaySeconds"
+                    :target-seconds="1800"
+                    label="Today's Pace"
+                    :format-duration="formatDuration"
+                />
+            </section>
+
+            <!-- 3. Weekly Equalizer Chart -->
+            <section class="w-full pt-12 sm:pt-16 border-t border-(--border-color) dark:border-white/20">
+                <WeeklyActivityChart
+                    :bars="weeklyBars"
+                    :todayISO="todayISO"
+                    :format-duration="formatDuration"
+                />
+            </section>
+
+            <!-- 4. Library Reading Progress -->
+            <section class="w-full pt-12 sm:pt-16 border-t border-(--border-color) dark:border-white/20">
+                <LibraryProgressMatrix
+                    :total-books="totalBooks"
+                    :books-finished="booksFinished"
+                    :books-in-progress="booksInProgress"
+                    :books-unstarted="booksUnstarted"
+                    :epub-count="epubCount"
+                    :pdf-count="pdfCount"
+                    :average-progress="averageProgress"
+                />
+            </section>
+
+            <!-- 5. Reading Velocity Trends -->
+            <section class="w-full pt-12 sm:pt-16 border-t border-(--border-color) dark:border-white/20">
+                <div class="mb-4">
+                    <span
+                        class="text-[11px] font-sans font-medium uppercase tracking-wider text-(--text-tertiary) select-none block"
+                    >
+                        Activity Trends
+                    </span>
+                    <h3 class="text-lg sm:text-xl font-serif font-bold text-(--text-primary) mt-0.5">
+                        Reading Velocity
+                    </h3>
                 </div>
 
                 <ReadingChart
-                    :data="allTimeDaily"
+                    :data="activeTrendData"
+                    :format-duration="formatDuration"
+                    v-model:timeframe="timeframe"
+                    :show-controls="true"
+                />
+            </section>
+
+            <!-- 6. Most Read Books Breakdown -->
+            <section
+                v-if="enrichedBookActivity.length > 0"
+                class="w-full pt-12 sm:pt-16 border-t border-(--border-color) dark:border-white/20"
+            >
+                <BookBreakdownList
+                    :books="enrichedBookActivity"
+                    :app-data-path="appDataPath"
+                    :format-duration="formatDuration"
+                    @select-book="onSelectBook"
+                />
+            </section>
+
+            <!-- 7. Habits & Time of Day -->
+            <section
+                v-if="totalReadingSeconds > 0"
+                class="w-full pt-12 sm:pt-16 border-t border-(--border-color) dark:border-white/20"
+            >
+                <TimeDistributionChart
+                    :distribution="timeOfDayDistribution"
                     :format-duration="formatDuration"
                 />
+            </section>
 
-                <div
-                    v-if="topBook"
-                    class="mt-3 pt-3 border-t border-(--border-color) flex items-center justify-between gap-2"
-                >
-                    <div class="min-w-0">
-                        <p class="text-xs text-(--text-tertiary)">Most read</p>
-                        <p class="text-sm font-medium text-(--text-primary) truncate mt-0.5">{{ topBook.bookTitle }}</p>
-                    </div>
-                    <span class="text-xs font-semibold tabular-nums text-(--text-secondary) shrink-0">
-                        {{ formatDuration(topBook.totalSeconds) }}
-                    </span>
-                </div>
-            </div>
-
-            <div
-                v-else
-                class="bg-(--bg-card) border border-(--border-color) rounded-2xl p-5 mb-3 text-center"
-            >
-                <span class="material-symbols-outlined text-2xl text-(--text-tertiary) block mb-2 select-none">schedule</span>
-                <p class="text-sm text-(--text-secondary)">Reading time will appear here</p>
-                <p class="text-xs text-(--text-tertiary) mt-1">Open a book to start tracking.</p>
-            </div>
-
-            <div
+            <!-- 8. Reading History Log -->
+            <section
                 v-if="sessionHistory.length > 0"
-                class="bg-(--bg-card) border border-(--border-color) rounded-2xl p-4 mb-3"
+                class="w-full pt-12 sm:pt-16 border-t border-(--border-color) dark:border-white/20"
             >
-                <p class="text-xs font-medium tracking-wider text-(--text-tertiary) mb-1">History</p>
-                <ul class="max-h-80 overflow-y-auto">
-                    <li
-                        v-for="session in sessionHistory"
-                        :key="session.id"
-                        class="py-2.5 border-b border-(--border-color) last:border-b-0 flex items-center justify-between gap-2"
-                    >
-                        <div class="min-w-0">
-                            <p class="text-sm font-medium text-(--text-primary) truncate">{{ session.bookTitle }}</p>
-                            <p class="text-xs text-(--text-tertiary) mt-0.5">{{ formatSessionDate(session.startedAt) }}</p>
-                        </div>
-                        <div class="flex items-center gap-1 shrink-0">
-                            <span class="text-xs font-semibold tabular-nums text-(--text-secondary)">
-                                {{ formatDuration(session.durationSeconds) }}
-                            </span>
-                            <button
-                                @click="onDeleteSession(session.id)"
-                                class="flex items-center justify-center w-7 h-7 rounded-full text-(--text-tertiary) hover:text-(--danger-color,#dc2626) transition-colors focus-ring-minimal"
-                                title="Delete session"
-                                aria-label="Delete session"
-                            >
-                                <span class="material-symbols-outlined text-base">delete</span>
-                            </button>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-        </template>
+                <SessionHistoryList
+                    :sessions="sessionHistory"
+                    :format-duration="formatDuration"
+                    @delete-session="onDeleteSession"
+                />
+            </section>
+        </div>
     </div>
 </template>

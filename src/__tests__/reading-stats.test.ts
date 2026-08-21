@@ -110,4 +110,59 @@ describe('useReadingStats', () => {
     expect(stats.sessionHistory.value.length).toBe(1)
     expect(stats.sessionHistory.value[0].bookTitle).toBe('Book 1')
   })
+
+  it('computes extended analytics and distributions correctly', async () => {
+    const morningTime = new Date('2026-08-20T08:30:00').getTime()
+    const eveningTime = new Date('2026-08-20T19:00:00').getTime()
+
+    const sessions = [
+      { id: 's1', bookId: '1', startedAt: morningTime, durationSeconds: 1200 },
+      { id: 's2', bookId: '1', startedAt: eveningTime, durationSeconds: 2400 },
+    ]
+
+    const entries = [
+      {
+        book: { id: '1', title: 'Book 1', author: 'Author A', format: 'epub' as const, file_path: '', cover: null, created_at: 0 },
+        progress: 0.8,
+        lastRead: eveningTime,
+        archived: false,
+      },
+      {
+        book: { id: '2', title: 'Book 2', author: 'Author B', format: 'pdf' as const, file_path: '', cover: null, created_at: 0 },
+        progress: 1.0,
+        lastRead: null,
+        archived: false,
+      },
+    ]
+
+    mockLibraryList.mockResolvedValue(entries)
+    mockReadingListSessions.mockResolvedValue(sessions)
+
+    await reloadLibrary()
+    await refreshSessions()
+
+    const stats = useReadingStats()
+    expect(stats.totalReadingSeconds.value).toBe(3600)
+    expect(stats.completionRate.value).toBe(50)
+    expect(stats.epubCount.value).toBe(1)
+    expect(stats.pdfCount.value).toBe(1)
+    expect(stats.formatDurationCompact(3600)).toBe('1h')
+    expect(stats.formatDurationCompact(3660)).toBe('1h 1m')
+    expect(stats.formatDurationCompact(120)).toBe('2m')
+
+    const dist = stats.timeOfDayDistribution.value
+    const morning = dist.find((d) => d.id === 'morning')
+    const evening = dist.find((d) => d.id === 'evening')
+    expect(morning?.seconds).toBe(1200)
+    expect(evening?.seconds).toBe(2400)
+
+    const trends7d = stats.getTrendPoints('7d')
+    expect(trends7d.length).toBe(7)
+
+    const enriched = stats.enrichedBookActivity.value
+    expect(enriched.length).toBe(2)
+    expect(enriched[0].bookTitle).toBe('Book 1')
+    expect(enriched[0].totalSeconds).toBe(3600)
+  })
 })
+
