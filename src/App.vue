@@ -4,6 +4,7 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 import { useSettings } from './composables/useSettings'
 import { useLibrary } from './composables/useLibrary'
 import { useSync } from './composables/useSync'
+import HomeView from './views/HomeView.vue'
 import SettingsView from './views/SettingsView.vue'
 import LibraryView from './views/LibraryView.vue'
 import ReaderView from './views/ReaderView.vue'
@@ -78,13 +79,17 @@ watchEffect(() => {
     root.classList.add(...(THEME_CLASSES[theme.value] ?? []))
 })
 
-type ViewType = 'library' | 'settings' | 'reader' | 'stats'
+export type ViewType = 'home' | 'library' | 'settings' | 'reader' | 'stats'
 
-const currentView = ref<ViewType>('library')
+const currentView = ref<ViewType>('home')
+const previousView = ref<ViewType>('home')
 const selectedBook = ref<BookDto | null>(null)
 const libraryLayout = ref<'grid' | 'list'>('grid')
 
 function setView(view: ViewType) {
+    if (currentView.value !== 'reader') {
+        previousView.value = currentView.value
+    }
     currentView.value = view
     if (view !== 'reader') {
         selectedBook.value = null
@@ -92,6 +97,9 @@ function setView(view: ViewType) {
 }
 
 function onSelectBook(book: BookDto) {
+    if (currentView.value !== 'reader') {
+        previousView.value = currentView.value
+    }
     selectedBook.value = book
     currentView.value = 'reader'
 }
@@ -105,7 +113,7 @@ let unlistenDragDrop: UnlistenFn | null = null
 onMounted(async () => {
     try {
         unlistenDragEnter = await listen("tauri://drag-enter", () => {
-            if (currentView.value === 'library') {
+            if (currentView.value === 'home' || currentView.value === 'library') {
                 isDraggingOver.value = true
             }
         })
@@ -114,7 +122,7 @@ onMounted(async () => {
         })
         unlistenDragDrop = await listen<{ paths?: string[] }>("tauri://drag-drop", async (event) => {
             isDraggingOver.value = false
-            if (currentView.value !== 'library') return
+            if (currentView.value !== 'home' && currentView.value !== 'library') return
             const paths = event.payload?.paths
             if (paths && paths.length > 0) {
                 const validPaths = paths.filter(p => {
@@ -162,10 +170,10 @@ onUnmounted(() => {
         >
             <div :class="currentView === 'reader' ? 'w-full max-w-4xl mx-auto h-full' : 'w-full max-w-3xl'">
                 <div
-                    v-if="currentView === 'settings'"
+                    v-if="currentView === 'home'"
                     class="w-full"
                 >
-                    <SettingsView />
+                    <HomeView @select-book="onSelectBook" @navigate="setView" />
                 </div>
 
                 <div
@@ -183,12 +191,19 @@ onUnmounted(() => {
                 </div>
 
                 <div
+                    v-else-if="currentView === 'settings'"
+                    class="w-full"
+                >
+                    <SettingsView />
+                </div>
+
+                <div
                     v-else-if="currentView === 'reader' && selectedBook"
                     class="w-full h-full"
                 >
                     <ReaderView
                         :book="selectedBook"
-                        @back-to-library="setView('library')"
+                        @back-to-library="setView(previousView === 'library' ? 'library' : 'home')"
                     />
                 </div>
             </div>

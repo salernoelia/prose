@@ -5,14 +5,12 @@
 import { ref, onMounted, computed, watch } from "vue";
 import { open } from "@tauri-apps/plugin-dialog";
 import { appDataDir } from "@tauri-apps/api/path";
-import { convertFileSrc } from "@tauri-apps/api/core";
 import DataView from "primevue/dataview";
 import Dialog from "primevue/dialog";
 import Menu from "primevue/menu";
 import { useLibrary } from "../composables/useLibrary";
 import { useSync } from "../composables/useSync";
 import { usePullToSync } from "../composables/usePullToSync";
-import { useReadingStats } from "../composables/useReadingStats";
 import type { BookDto, LibraryEntryDto } from "../ipc/types";
 import {
     LibraryHeader,
@@ -21,7 +19,6 @@ import {
     BookListItem,
     LibraryPullToSync,
 } from "../components/library";
-import GoalSpeedometer from "../components/stats/GoalSpeedometer.vue";
 
 const emit = defineEmits<{
     (e: "select-book", book: BookDto): void;
@@ -45,15 +42,7 @@ const {
     refreshSyncConfig,
 } = useSync();
 
-const {
-    todaySeconds,
-    formatDuration,
-} = useReadingStats();
-
-const DAILY_TARGET_SECONDS = 1800; // 30 minutes
-
 type FilterMode = "all" | "reading" | "read" | "archived";
-type SortKey = "title" | "author" | "last_read" | "progress";
 
 const FILTER_MODE_KEY = "prose.library.filterMode";
 const loadFilterMode = (): FilterMode => {
@@ -148,102 +137,65 @@ const handleImport = async () => {
             await importBook(selected);
         }
     } catch (err) {
-        console.error("Failed to pick or import file:", err);
+        console.error("Failed to open file dialog:", err);
     }
 };
 
-const bookMenu = ref<InstanceType<typeof Menu> | null>(null);
-const menuEntry = ref<LibraryEntryDto | null>(null);
-
-const openMenu = (entry: LibraryEntryDto, event: Event) => {
-    event.stopPropagation();
-    menuEntry.value = entry;
-    bookMenu.value?.toggle(event);
+const handleSelect = (book: BookDto) => {
+    emit("select-book", book);
 };
 
-const menuItems = computed(() => {
-    const archived = menuEntry.value?.archived ?? false;
+const menuRef = ref();
+const selectedEntry = ref<LibraryEntryDto | null>(null);
+
+const menuModel = computed(() => {
+    if (!selectedEntry.value) return [];
+    const isArchived = selectedEntry.value.archived;
     return [
         {
-            label: archived ? "Unarchive" : "Archive",
-            icon: archived ? "unarchive" : "archive",
-            command: () => toggleArchive(),
+            label: isArchived ? "Unarchive Book" : "Archive Book",
+            icon: isArchived ? "unarchive" : "archive",
+            command: () => {
+                if (selectedEntry.value) {
+                    setBookArchived(
+                        selectedEntry.value.book.id,
+                        !selectedEntry.value.archived
+                    );
+                }
+            },
         },
         {
-            label: "Remove",
+            separator: true,
+        },
+        {
+            label: "Delete from Library",
             icon: "delete",
-            danger: true,
+            class: "text-red-500",
             command: () => {
-                if (menuEntry.value) triggerDelete(menuEntry.value.book);
+                if (selectedEntry.value) {
+                    bookToDelete.value = selectedEntry.value.book;
+                    showDeleteDialog.value = true;
+                }
             },
         },
     ];
 });
 
-const toggleArchive = async () => {
-    if (!menuEntry.value) return;
-    try {
-        await setBookArchived(menuEntry.value.book.id, !menuEntry.value.archived);
-    } catch (err) {
-        console.error("Failed to archive book:", err);
-    }
-};
-
-const triggerDelete = (book: BookDto) => {
-    bookToDelete.value = book;
-    showDeleteDialog.value = true;
+const handleOpenMenu = (event: {
+    originalEvent: MouseEvent;
+    entry: LibraryEntryDto;
+}) => {
+    selectedEntry.value = event.entry;
+    menuRef.value.toggle(event.originalEvent);
 };
 
 const confirmDelete = async () => {
-    if (!bookToDelete.value) return;
-    try {
+    if (bookToDelete.value) {
         await removeBook(bookToDelete.value.id);
-        showDeleteDialog.value = false;
         bookToDelete.value = null;
-    } catch (err) {
-        console.error("Failed to delete book:", err);
+        showDeleteDialog.value = false;
     }
 };
-
-const handleSortChange = (key: SortKey) => {
-    updateLibraryQuery({
-        sort: key,
-        descending: key === "progress" || key === "last_read",
-    });
-};
-
-const inProgressEntries = computed(() =>
-    entries.value.filter((e) => !e.archived && e.progress > 0 && e.progress < 1)
-);
-
-const featuredEntry = computed(() => {
-    if (!inProgressEntries.value.length) return null;
-    return [...inProgressEntries.value].sort((a, b) => (b.lastRead ?? 0) - (a.lastRead ?? 0))[0];
-});
-
-const featuredCoverUrl = computed(() => {
-    if (!featuredEntry.value?.book.cover || !appDataPath.value) return "";
-    try {
-        const absolutePath = `${appDataPath.value}/${featuredEntry.value.book.cover}`.replace(/\/+/g, "/");
-        if (typeof convertFileSrc === "function") {
-            return convertFileSrc(absolutePath);
-        }
-        return `asset://localhost/${encodeURIComponent(absolutePath.replace(/^\/+/, ""))}`;
-    } catch {
-        return "";
-    }
-});
-
-const randomQuote = computed(() => {
-    const quotes = [
-        { text: "A reader lives a thousand lives before he dies. The man who never reads lives only one.", author: "George R.R. Martin" },
-        { text: "Naturally, since I myself am a writer, I do not wish the ordinary reader to read no modern books. But if he must read only the new or only the old, I would advise him to read the old.", author: "C.S. Lewis" },
-        { text: "I have always imagined that Paradise will be a kind of a library.", author: "Jorge Luis Borges" },
-        { text: "Books are a uniquely portable magic.", author: "Stephen King" },
-        { text: "There is no friend as loyal as a book.", author: "Ernest Hemingway" },
-    ];
-    return quotes[1];
-});
 </script>
 
 <template>
@@ -267,105 +219,6 @@ const randomQuote = computed(() => {
             @import="handleImport"
         />
 
-        <!-- Sleek Daily Goal Speedometer (Topmost directly below header) -->
-        <div
-            v-if="loaded && entries.length > 0"
-            class="mb-12 max-w-sm mx-auto"
-        >
-            <GoalSpeedometer
-                :current-seconds="todaySeconds"
-                :target-seconds="DAILY_TARGET_SECONDS"
-                label="Today's Reading Pace"
-                :format-duration="formatDuration"
-            />
-        </div>
-
-        <!-- Featured / Exposé Hero Section -->
-        <div
-            v-if="filterMode === 'all' && !query.search && loaded && entries.length > 0"
-            class="mb-6"
-        >
-            <!-- 1. Currently Reading Hero Card -->
-            <div
-                v-if="featuredEntry"
-                @click="emit('select-book', featuredEntry.book)"
-                class="group cursor-pointer bg-(--bg-card) border border-(--border-color) rounded-2xl p-4 md:p-5 flex items-center justify-between gap-5 hover:border-(--border-color-hover) shadow-xs hover:shadow-sm transition-all"
-            >
-                <div class="flex items-center gap-4 min-w-0 flex-1">
-                    <div
-                        class="w-16 h-22 book-cover-3d bg-(--bg-card) shrink-0 overflow-hidden flex items-center justify-center">
-                        <img
-                            v-if="featuredCoverUrl"
-                            :src="featuredCoverUrl"
-                            alt=""
-                            class="w-full h-full object-cover"
-                        />
-                        <div
-                            v-else
-                            class="w-full h-full p-2 bg-[#09332C] text-[#F7EDDA] flex flex-col justify-between items-center text-center select-none"
-                        >
-                            <span class="text-[8px] uppercase tracking-widest opacity-60">{{ featuredEntry.book.format
-                            }}</span>
-                            <span class="text-[9px] font-serif font-semibold line-clamp-2 leading-tight">{{
-                                featuredEntry.book.title }}</span>
-                            <span></span>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col gap-1 min-w-0 flex-1">
-                        <span
-                            class="text-[10px] font-sans font-medium uppercase tracking-widest text-(--accent-color) select-none"
-                        >
-                            Currently Reading
-                        </span>
-                        <h2
-                            class="text-base font-semibold tracking-tight text-(--text-primary) truncate group-hover:text-(--accent-color) transition-colors">
-                            {{ featuredEntry.book.title }}
-                        </h2>
-                        <p class="text-xs text-(--text-secondary) truncate">
-                            {{ featuredEntry.book.author || 'Unknown Author' }}
-                        </p>
-                        <div class="flex items-center gap-3 mt-1.5 max-w-xs">
-                            <div class="flex-1 h-1 bg-(--border-color) rounded-full overflow-hidden">
-                                <div
-                                    class="h-full bg-(--accent-color) transition-all duration-300"
-                                    :style="{ width: `${featuredEntry.progress * 100}%` }"
-                                ></div>
-                            </div>
-                            <span class="text-[11px] font-medium tabular-nums text-(--text-secondary)">
-                                {{ Math.round(featuredEntry.progress * 100) }}%
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <button
-                    class="px-4 py-1.5 rounded-full bg-(--text-primary) text-(--bg-app) text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer shrink-0 shadow-xs hidden sm:flex items-center gap-1"
-                >
-                    <span>Read</span>
-                    <span class="material-symbols-outlined text-sm leading-none">arrow_forward</span>
-                </button>
-            </div>
-
-            <!-- 2. Literary Quote Banner (when no book is in progress) -->
-            <div
-                v-else
-                class="bg-(--bg-card) border border-(--border-color) rounded-2xl p-5 relative overflow-hidden shadow-xs"
-            >
-                <span
-                    class="text-3xl leading-none text-(--accent-color) opacity-60 font-serif absolute top-3 left-4 select-none"
-                >“</span>
-                <div class="pl-5 pr-2">
-                    <p class="text-sm text-(--text-primary) leading-relaxed italic font-serif">
-                        {{ randomQuote.text }}
-                    </p>
-                    <p class="text-xs text-(--text-secondary) mt-2 text-right font-sans font-medium tracking-wide">
-                        {{ randomQuote.author }}
-                    </p>
-                </div>
-            </div>
-        </div>
-
         <LibraryToolbar
             :search="query.search || ''"
             :layout="layout"
@@ -373,125 +226,143 @@ const randomQuote = computed(() => {
             :sortKey="query.sort"
             :descending="query.descending"
             @update:search="(val) => updateLibraryQuery({ search: val })"
-            @update:layout="(val) => layout = val"
-            @update:filterMode="(val) => filterMode = val"
-            @update:sortKey="handleSortChange"
-            @toggle-direction="updateLibraryQuery({ descending: !query.descending })"
+            @update:layout="(val) => (layout = val)"
+            @update:filterMode="(val) => (filterMode = val)"
+            @update:sortKey="(val) => updateLibraryQuery({ sort: val })"
+            @toggle-direction="() => updateLibraryQuery({ descending: !query.descending })"
         />
 
+        <div
+            v-if="!loaded"
+            class="grid grid-cols-2 gap-4 py-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
+        >
+            <div
+                v-for="i in 10"
+                :key="i"
+                class="flex flex-col gap-2.5 animate-pulse"
+            >
+                <div class="w-full aspect-[2/3] rounded-2xl bg-(--border-color)/50"></div>
+                <div class="h-3 w-3/4 bg-(--border-color)/40 rounded-full"></div>
+                <div class="h-2.5 w-1/2 bg-(--border-color)/30 rounded-full"></div>
+            </div>
+        </div>
+
+        <div
+            v-else-if="entries.length === 0"
+            class="flex flex-col items-center justify-center py-20 text-center"
+        >
+            <span class="material-symbols-outlined mb-3 text-5xl text-(--text-tertiary) select-none">
+                local_library
+            </span>
+            <p class="text-base font-medium text-(--text-primary)">
+                Your library is empty
+            </p>
+            <p class="mt-1 text-xs text-(--text-secondary) max-w-xs">
+                Import EPUB or PDF files to start reading and tracking your progress.
+            </p>
+            <button
+                @click="handleImport"
+                class="mt-4 px-4 py-2 text-xs font-medium rounded-full bg-(--text-primary) text-(--bg-app) hover:opacity-90 transition-opacity cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
+            >
+                <span class="material-symbols-outlined text-base leading-none select-none">add</span>
+                <span>Import your first book</span>
+            </button>
+        </div>
+
+        <div
+            v-else-if="dataViewEntries.length === 0"
+            class="flex flex-col items-center justify-center py-16 text-center"
+        >
+            <span class="material-symbols-outlined mb-3 text-4xl text-(--text-tertiary) select-none">
+                search_off
+            </span>
+            <p class="text-sm font-medium text-(--text-primary)">
+                No books match your criteria
+            </p>
+            <p class="mt-1 text-xs text-(--text-secondary)">
+                Try adjusting your search query or active filter.
+            </p>
+        </div>
+
         <DataView
-            v-if="loaded"
+            v-else
             :value="dataViewEntries"
             :layout="layout"
+            dataKey="book.id"
             class="w-full"
-            :pt="{
-                root: { class: '!bg-transparent !border-none' },
-                header: { class: '!bg-transparent !border-none' },
-                content: { class: '!bg-transparent !border-0 p-0' },
-                footer: { class: '!bg-transparent !border-none' },
-            }"
         >
-            <template #list="slotProps">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <BookListItem
-                        v-for="entry in slotProps.items"
-                        :key="entry.book.id"
-                        :entry="entry"
-                        @select="emit('select-book', entry.book)"
-                        @open-menu="(e) => openMenu(entry, e)"
-                    />
-                </div>
-            </template>
-
             <template #grid="slotProps">
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-5 gap-y-6">
+                <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:gap-6">
                     <BookGridCard
                         v-for="entry in slotProps.items"
                         :key="entry.book.id"
                         :entry="entry"
                         :appDataPath="appDataPath"
-                        @select="emit('select-book', entry.book)"
-                        @open-menu="(e) => openMenu(entry, e)"
+                        @select="handleSelect(entry.book)"
+                        @openMenu="handleOpenMenu"
                     />
                 </div>
             </template>
 
-            <template #empty>
-                <div class="py-16 text-center">
-                    <span
-                        class="material-symbols-outlined text-4xl text-(--text-tertiary) mb-2 select-none">auto_stories</span>
-                    <p class="text-base text-(--text-secondary) leading-relaxed">
-                        No books found in the library.
-                    </p>
-                    <p class="text-xs text-(--text-tertiary) mt-1">
-                        Click "Import" to add your ePub or PDF files.
-                    </p>
+            <template #list="slotProps">
+                <div class="flex flex-col gap-2">
+                    <BookListItem
+                        v-for="entry in slotProps.items"
+                        :key="entry.book.id"
+                        :entry="entry"
+                        :appDataPath="appDataPath"
+                        @select="handleSelect(entry.book)"
+                        @openMenu="handleOpenMenu"
+                    />
                 </div>
             </template>
         </DataView>
 
         <Menu
-            ref="bookMenu"
-            :model="menuItems"
-            popup
-            class="font-serif"
-            :pt="{
-                root: { class: '!bg-(--bg-card) !border-(--border-color) rounded-lg shadow-lg text-sm min-w-40' },
-            }"
+            ref="menuRef"
+            :model="menuModel"
+            :popup="true"
+            class="border border-(--border-color) bg-(--bg-card) shadow-lg rounded-2xl p-1 font-serif text-xs"
         >
-            <template #item="{ item, props }">
-                <a
-                    v-bind="props.action"
-                    class="flex items-center gap-2 px-3 py-2 cursor-pointer transition-colors"
-                    :class="item.danger
-                        ? 'text-red-600 dark:text-red-400 hover:!bg-red-50 dark:hover:!bg-red-950/20'
-                        : 'text-(--text-primary) hover:!bg-(--accent-color-light)'"
+            <template #item="{ item }">
+                <button
+                    class="flex items-center gap-2 w-full px-3 py-2 text-left rounded-xl transition-colors cursor-pointer hover:bg-(--accent-color-light)"
+                    :class="item.class || 'text-(--text-primary)'"
                 >
-                    <span class="material-symbols-outlined text-base leading-none select-none">{{ item.icon }}</span>
-                    <span class="font-medium">{{ item.label }}</span>
-                </a>
+                    <span class="material-symbols-outlined text-base select-none">{{ item.icon }}</span>
+                    <span>{{ item.label }}</span>
+                </button>
             </template>
         </Menu>
 
         <Dialog
             v-model:visible="showDeleteDialog"
             modal
-            header="Remove Book"
-            class="font-serif border border-(--border-color) bg-(--bg-card) rounded"
-            :style="{ width: '28rem' }"
-            :pt="{
-                root: {
-                    class: 'p-2 shadow-xl bg-[var(--bg-card)] text-[var(--text-primary)]',
-                },
-                closeButton: {
-                    class:
-                        'text-[var(--text-tertiary)] hover:text-[var(--text-primary)] border-0 cursor-pointer focus:outline-none',
-                },
-            }"
+            header="Delete Book"
+            :style="{ width: '90vw', maxWidth: '380px' }"
+            class="border border-(--border-color) bg-(--bg-card) rounded-2xl shadow-xl font-serif"
         >
-            <p>
-                Are you sure you want to remove
-                <span class="font-semibold text-(--text-primary)">"{{ bookToDelete?.title }}"</span>
-                from your library?
-            </p>
-            <p class="mt-2 text-xs text-(--text-tertiary)">
-                This will delete the book record and its locally stored file and cover thumbnail.
-            </p>
-
-            <template #footer>
-                <button
-                    @click="showDeleteDialog = false"
-                    class="px-4 py-1.5 text-xs font-semibold rounded border border-(--border-color) text-(--text-secondary) hover:text-(--text-primary) cursor-pointer focus-ring-minimal"
-                >
-                    Cancel
-                </button>
-                <button
-                    @click="confirmDelete"
-                    class="px-4 py-1.5 text-xs font-semibold rounded bg-red-600 hover:bg-red-700 text-white cursor-pointer focus-ring-minimal"
-                >
-                    Remove
-                </button>
-            </template>
+            <div class="flex flex-col gap-4 p-1">
+                <p class="text-xs text-(--text-secondary) leading-relaxed">
+                    Are you sure you want to remove
+                    <strong class="text-(--text-primary)">{{ bookToDelete?.title }}</strong>
+                    from your library? This will delete local reading data and bookmarks.
+                </p>
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button
+                        @click="showDeleteDialog = false"
+                        class="px-3.5 py-1.5 text-xs font-medium rounded-full border border-(--border-color) text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        @click="confirmDelete"
+                        class="px-3.5 py-1.5 text-xs font-medium rounded-full bg-red-600 text-white hover:bg-red-700 transition-all cursor-pointer shadow-xs"
+                    >
+                        Delete
+                    </button>
+                </div>
+            </div>
         </Dialog>
     </div>
 </template>

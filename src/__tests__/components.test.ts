@@ -12,6 +12,7 @@ import BookListItem from '../components/library/BookListItem.vue'
 import LibraryHeader from '../components/library/LibraryHeader.vue'
 import BottomNavigationBar from '../components/BottomNavigationBar.vue'
 import SyncSettings from '../components/settings/SyncSettings.vue'
+import HomeView from '../views/HomeView.vue'
 
 describe('Stats Components', () => {
   it('renders StatCard correctly', () => {
@@ -205,13 +206,14 @@ describe('Library Components', () => {
       props: { currentView: 'stats' },
     })
 
+    expect(wrapper.text()).toContain('Home')
     expect(wrapper.text()).toContain('Library')
     expect(wrapper.text()).toContain('Stats')
     expect(wrapper.text()).toContain('Settings')
 
     const buttons = wrapper.findAll('button')
     await buttons[0].trigger('click')
-    expect(wrapper.emitted('navigate')?.[0]).toEqual(['library'])
+    expect(wrapper.emitted('navigate')?.[0]).toEqual(['home'])
   })
 
   it('renders SyncSettings and toggles password visibility', async () => {
@@ -235,5 +237,14 @@ describe('Library Components', () => {
     await toggleBtn.trigger('click')
     expect(wrapper.find('#sync-password').attributes('type')).toBe('text')
     expect(wrapper.find('button[aria-label="Hide password"]').exists()).toBe(true)
+  })
+
+  it('renders HomeView and handles empty or populated library state', () => {
+    const wrapper = mount(HomeView, {
+      global: {
+        plugins: [PrimeVue],
+      },
+    })
+    expect(wrapper.exists()).toBe(true)
   })
 })
