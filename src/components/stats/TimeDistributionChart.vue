@@ -88,10 +88,9 @@ function cleanPeriod(id: string): string {
                 :key="item.id"
                 class="h-full transition-all duration-500 first:rounded-l-full last:rounded-r-full"
                 :class="[
-                    item.id === 'morning' ? 'bg-amber-400' :
-                    item.id === 'afternoon' ? 'bg-orange-500' :
-                    item.id === 'evening' ? 'bg-(--accent-color)' :
-                    'bg-indigo-500 dark:bg-indigo-400'
+                    dominantTime && dominantTime.id === item.id
+                        ? 'bg-(--accent-color)'
+                        : 'bg-(--text-primary)/30 dark:bg-white/30'
                 ]"
                 :style="{ width: `${item.percentage}%` }"
                 :title="`${item.label}: ${item.percentage}% (${formatDuration(item.seconds)})`"
@@ -103,18 +102,13 @@ function cleanPeriod(id: string): string {
             <div
                 v-for="item in distribution"
                 :key="item.id"
-                class="p-3.5 rounded-xl bg-(--text-primary)/4 dark:bg-white/5 border border-(--border-color)/60 dark:border-white/10 flex flex-col justify-between transition-all"
-                :class="dominantTime && dominantTime.id === item.id ? 'ring-1 ring-(--accent-color) dark:ring-(--accent-color)' : ''"
+                class="p-3.5 rounded-xl bg-(--text-primary)/5 dark:bg-white/5 border border-(--border-color) dark:border-white/15 flex flex-col justify-between transition-all"
+                :class="dominantTime && dominantTime.id === item.id ? 'ring-1 ring-(--accent-color)/40' : ''"
             >
                 <div class="flex items-center gap-1.5 mb-1.5">
                     <span
                         class="material-symbols-outlined text-lg shrink-0"
-                        :class="[
-                            item.id === 'morning' ? 'text-amber-500 dark:text-amber-400' :
-                            item.id === 'afternoon' ? 'text-orange-500 dark:text-orange-400' :
-                            item.id === 'evening' ? 'text-(--accent-color)' :
-                            'text-indigo-500 dark:text-indigo-400'
-                        ]"
+                        :class="dominantTime && dominantTime.id === item.id ? 'text-(--accent-color)' : 'text-(--text-secondary)'"
                     >
                         {{ item.icon }}
                     </span>

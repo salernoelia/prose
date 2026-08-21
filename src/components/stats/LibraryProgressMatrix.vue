@@ -1,4 +1,7 @@
-<script setup lang="ts">
+<script
+    setup
+    lang="ts"
+>
 import { computed } from 'vue'
 
 const props = defineProps<{
@@ -32,7 +35,9 @@ const unreadPct = computed(() => {
         <!-- Header -->
         <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
             <div>
-                <span class="text-[11px] font-sans font-medium uppercase tracking-wider text-(--text-tertiary) select-none block">
+                <span
+                    class="text-[11px] font-sans font-medium uppercase tracking-wider text-(--text-tertiary) select-none block"
+                >
                     Library Status
                 </span>
                 <h3 class="text-lg sm:text-xl font-serif font-bold text-(--text-primary) mt-0.5">
@@ -45,19 +50,22 @@ const unreadPct = computed(() => {
                     v-if="(epubCount ?? 0) > 0 || (pdfCount ?? 0) > 0"
                     class="hidden sm:flex items-center gap-1.5 text-[11px]"
                 >
-                    <span v-if="(epubCount ?? 0) > 0" class="px-2 py-0.5 rounded-full bg-(--text-primary)/5 dark:bg-white/10 border border-(--border-color) dark:border-white/15 font-sans font-semibold text-(--text-secondary)">
+                    <span
+                        v-if="(epubCount ?? 0) > 0"
+                        class="px-2 py-0.5 rounded-full bg-(--text-primary)/5 dark:bg-white/10 border border-(--border-color) dark:border-white/15 font-sans font-semibold text-(--text-secondary)"
+                    >
                         {{ epubCount }} EPUB
                     </span>
-                    <span v-if="(pdfCount ?? 0) > 0" class="px-2 py-0.5 rounded-full bg-(--text-primary)/5 dark:bg-white/10 border border-(--border-color) dark:border-white/15 font-sans font-semibold text-(--text-secondary)">
+                    <span
+                        v-if="(pdfCount ?? 0) > 0"
+                        class="px-2 py-0.5 rounded-full bg-(--text-primary)/5 dark:bg-white/10 border border-(--border-color) dark:border-white/15 font-sans font-semibold text-(--text-secondary)"
+                    >
                         {{ pdfCount }} PDF
                     </span>
                 </div>
 
                 <span
-                    class="text-xs font-sans font-semibold px-3 py-1 rounded-full border"
-                    :class="completionPct >= 100
-                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                        : 'bg-(--accent-color-light) text-(--accent-color) border-(--border-color) dark:border-white/20'"
+                    class="text-xs font-sans font-semibold px-3 py-1 rounded-full border bg-(--accent-color-light) text-(--accent-color) border-(--border-color) dark:border-white/20"
                 >
                     {{ completionPct }}% Finished
                 </span>
@@ -66,7 +74,9 @@ const unreadPct = computed(() => {
 
         <!-- Big Typographic Fraction -->
         <div class="flex items-baseline gap-2 mb-4">
-            <span class="text-3xl sm:text-4xl font-bold font-serif text-(--text-primary) tracking-tight leading-none tabular-nums">
+            <span
+                class="text-3xl sm:text-4xl font-bold font-serif text-(--text-primary) tracking-tight leading-none tabular-nums"
+            >
                 {{ booksFinished }}
             </span>
             <span class="text-base sm:text-lg font-serif text-(--text-secondary)">
@@ -75,10 +85,11 @@ const unreadPct = computed(() => {
         </div>
 
         <!-- Sleek Segmented Progress Bar -->
-        <div class="h-3.5 w-full rounded-full bg-(--text-primary)/10 dark:bg-white/10 overflow-hidden flex mb-5 border border-(--border-color) dark:border-white/20 p-0.5">
+        <div
+            class="h-3 w-full rounded-full bg-(--text-primary)/10 dark:bg-white/10 overflow-hidden flex mb-5 border border-(--border-color) dark:border-white/20 p-0.5">
             <div
                 v-if="booksFinished > 0"
-                class="h-full bg-emerald-500 rounded-l-full transition-all duration-500"
+                class="h-full bg-(--text-primary) rounded-l-full transition-all duration-500"
                 :style="{ width: `${(booksFinished / totalBooks) * 100}%` }"
                 title="Finished"
             ></div>
@@ -103,10 +114,11 @@ const unreadPct = computed(() => {
         <!-- 3 Clean Status Blocks -->
         <div class="grid grid-cols-3 gap-3">
             <!-- Done -->
-            <div class="p-3.5 rounded-xl bg-(--text-primary)/4 dark:bg-white/5 border border-(--border-color)/60 dark:border-white/10 flex flex-col justify-between">
+            <div
+                class="p-3.5 rounded-xl bg-(--text-primary)/5 dark:bg-white/5 border border-(--border-color) dark:border-white/15 flex flex-col justify-between">
                 <div class="flex items-center justify-between gap-1 mb-1">
-                    <span class="material-symbols-outlined text-base text-emerald-500 dark:text-emerald-400">check_circle</span>
-                    <span class="text-xs font-sans font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                    <span class="material-symbols-outlined text-base text-(--text-primary)">check_circle</span>
+                    <span class="text-xs font-sans font-bold text-(--text-primary) tabular-nums">
                         {{ completionPct }}%
                     </span>
                 </div>
@@ -119,7 +131,8 @@ const unreadPct = computed(() => {
             </div>
 
             <!-- Reading -->
-            <div class="p-3.5 rounded-xl bg-(--text-primary)/4 dark:bg-white/5 border border-(--border-color)/60 dark:border-white/10 flex flex-col justify-between ring-1 ring-(--accent-color)/30">
+            <div
+                class="p-3.5 rounded-xl bg-(--text-primary)/5 dark:bg-white/5 border border-(--border-color) dark:border-white/15 flex flex-col justify-between ring-1 ring-(--accent-color)/40">
                 <div class="flex items-center justify-between gap-1 mb-1">
                     <span class="material-symbols-outlined text-base text-(--accent-color)">auto_stories</span>
                     <span class="text-xs font-sans font-bold text-(--accent-color) tabular-nums">
@@ -135,7 +148,8 @@ const unreadPct = computed(() => {
             </div>
 
             <!-- Unread -->
-            <div class="p-3.5 rounded-xl bg-(--text-primary)/4 dark:bg-white/5 border border-(--border-color)/60 dark:border-white/10 flex flex-col justify-between">
+            <div
+                class="p-3.5 rounded-xl bg-(--text-primary)/5 dark:bg-white/5 border border-(--border-color) dark:border-white/15 flex flex-col justify-between">
                 <div class="flex items-center justify-between gap-1 mb-1">
                     <span class="material-symbols-outlined text-base text-(--text-tertiary)">bookmark</span>
                     <span class="text-xs font-sans font-bold text-(--text-tertiary) tabular-nums">

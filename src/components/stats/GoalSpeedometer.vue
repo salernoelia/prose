@@ -71,10 +71,7 @@ const ticks = computed(() => {
                 </h3>
             </div>
             <span
-                class="text-xs font-sans font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wider border"
-                :class="percentage >= 100
-                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                    : 'bg-(--accent-color-light) text-(--accent-color) border-(--border-color) dark:border-white/20'"
+                class="text-xs font-sans font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wider border bg-(--accent-color-light) text-(--accent-color) border-(--border-color) dark:border-white/20"
             >
                 {{ percentage }}%
             </span>

@@ -232,15 +232,15 @@ function tooltipX(x: number): number {
         </span>
       </div>
 
-      <!-- Timeframe Pills with OLED borders -->
-      <div class="flex items-center gap-1 bg-(--text-primary)/5 dark:bg-white/10 p-1 rounded-xl border border-(--border-color)/60 dark:border-white/20">
+      <!-- Timeframe Pills -->
+      <div class="flex items-center gap-1 bg-(--text-primary)/5 dark:bg-white/5 p-1 rounded-xl border border-(--border-color) dark:border-white/15">
         <button
           v-for="tf in (['7d', '30d', '90d', 'all'] as Timeframe[])"
           :key="tf"
           @click="emit('update:timeframe', tf)"
           class="px-2.5 py-1 text-xs font-sans font-medium rounded-lg transition-all capitalize cursor-pointer"
           :class="timeframe === tf
-            ? 'bg-(--bg-card) dark:bg-zinc-800 text-(--text-primary) shadow-xs font-bold border border-(--border-color)/80 dark:border-white/30'
+            ? 'bg-(--bg-card) text-(--text-primary) shadow-2xs font-semibold border border-(--border-color) dark:border-white/20'
             : 'text-(--text-secondary) hover:text-(--text-primary)'"
         >
           {{ tf === 'all' ? 'All' : tf.toUpperCase() }}
@@ -380,7 +380,7 @@ function tooltipX(x: number): number {
       <Transition name="tip">
         <div
           v-if="tooltip && tooltip.point.seconds > 0"
-          class="absolute top-1 pointer-events-none z-10 bg-(--bg-card) dark:bg-zinc-900 border border-(--border-color) dark:border-white/30 rounded-xl px-3.5 py-1.5 shadow-lg text-xs font-sans font-medium text-(--text-primary) whitespace-nowrap -translate-x-1/2"
+          class="absolute top-1 pointer-events-none z-10 bg-(--bg-card) border border-(--border-color) dark:border-white/20 rounded-xl px-3.5 py-1.5 shadow-md text-xs font-sans font-medium text-(--text-primary) whitespace-nowrap -translate-x-1/2"
           :style="{ left: `${(tooltipX(tooltip.x) / VW) * 100}%` }"
         >
           <span class="text-(--text-secondary) mr-1.5">{{ formatDate(tooltip.point.date) }}:</span>
@@ -388,7 +388,7 @@ function tooltipX(x: number): number {
         </div>
         <div
           v-else-if="tooltip && tooltip.point.seconds === 0"
-          class="absolute top-1 pointer-events-none z-10 bg-(--bg-card) dark:bg-zinc-900 border border-(--border-color) dark:border-white/30 rounded-xl px-3.5 py-1.5 shadow-lg text-xs font-sans text-(--text-tertiary) whitespace-nowrap -translate-x-1/2"
+          class="absolute top-1 pointer-events-none z-10 bg-(--bg-card) border border-(--border-color) dark:border-white/20 rounded-xl px-3.5 py-1.5 shadow-md text-xs font-sans text-(--text-tertiary) whitespace-nowrap -translate-x-1/2"
           :style="{ left: `${(tooltipX(tooltip.x) / VW) * 100}%` }"
         >
           {{ formatDate(tooltip.point.date) }}: no reading

@@ -86,7 +86,7 @@ const maxSeconds = computed(() =>
             <!-- Active hover tooltip bubble -->
             <div
                 v-if="hoveredBar"
-                class="absolute -top-1 left-1/2 -translate-x-1/2 px-3 py-1 rounded-xl bg-(--bg-card) dark:bg-zinc-900 border border-(--border-color) dark:border-white/30 shadow-md text-xs font-sans font-medium text-(--text-primary) whitespace-nowrap pointer-events-none transition-all z-10"
+                class="absolute -top-1 left-1/2 -translate-x-1/2 px-3 py-1 rounded-xl bg-(--bg-card) border border-(--border-color) dark:border-white/20 shadow-md text-xs font-sans font-medium text-(--text-primary) whitespace-nowrap pointer-events-none transition-all z-10"
             >
                 <span class="font-semibold mr-1.5">{{ hoveredBar.label }}:</span>
                 <span :class="hoveredBar.totalSeconds > 0 ? 'text-(--accent-color) font-bold' : 'text-(--text-tertiary)'">
@@ -107,16 +107,14 @@ const maxSeconds = computed(() =>
                     @mouseleave="hoveredBar = null"
                 >
                     <!-- Column Slot with distinct background track in OLED -->
-                    <div class="w-full max-w-[32px] h-full rounded-full bg-(--text-primary)/8 dark:bg-white/8 p-1 flex flex-col justify-end items-center relative border border-(--border-color)/80 dark:border-white/20 group-hover:border-(--accent-color) transition-all">
+                    <div class="w-full max-w-[32px] h-full rounded-full bg-(--text-primary)/5 dark:bg-white/5 p-1 flex flex-col justify-end items-center relative border border-(--border-color) dark:border-white/15 group-hover:border-(--accent-color) transition-all">
                         <!-- Bar fill capsule -->
                         <div
                             class="w-full rounded-full transition-all duration-300 min-h-[8px]"
                             :class="[
-                                bar.date === todayISO
-                                    ? 'bg-(--accent-color) shadow-xs'
-                                    : bar.active
-                                        ? 'bg-(--text-primary)'
-                                        : 'bg-(--text-primary)/25 dark:bg-white/25',
+                                bar.active
+                                    ? 'bg-(--accent-color)'
+                                    : 'bg-(--text-primary)/15 dark:bg-white/15',
                             ]"
                             :style="{
                                 height: bar.active
