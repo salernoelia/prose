@@ -25,13 +25,18 @@ const alignOptions: { value: TextAlign; icon: string; label: string }[] = [
 </script>
 
 <template>
-    <div class="flex flex-col gap-6">
+    <div class="flex flex-col gap-6 pt-4 border-t border-(--border-color)">
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-(--text-secondary)">
+            Typography & Layout
+        </h2>
+
+        <!-- Font Size Slider -->
         <div class="flex flex-col gap-1.5">
-            <div class="flex justify-between items-center text-xs font-medium uppercase tracking-wider text-(--text-secondary)">
-                <label for="font-size-slider">Size</label>
-                <span class="text-(--text-tertiary)">{{ fontSize }}px</span>
+            <div class="flex justify-between items-center text-xs font-medium text-(--text-secondary)">
+                <label for="font-size-slider">Font Size</label>
+                <span class="text-(--text-tertiary) tabular-nums font-mono text-[11px]">{{ fontSize }}px</span>
             </div>
-            <div class="py-2">
+            <div class="py-1">
                 <Slider
                     id="font-size-slider"
                     :modelValue="fontSize"
@@ -43,12 +48,13 @@ const alignOptions: { value: TextAlign; icon: string; label: string }[] = [
             </div>
         </div>
 
+        <!-- Line Spacing Slider -->
         <div class="flex flex-col gap-1.5">
-            <div class="flex justify-between items-center text-xs font-medium uppercase tracking-wider text-(--text-secondary)">
-                <label for="line-height-slider">Spacing</label>
-                <span class="text-(--text-tertiary)">{{ lineHeight.toFixed(1) }}x</span>
+            <div class="flex justify-between items-center text-xs font-medium text-(--text-secondary)">
+                <label for="line-height-slider">Line Spacing</label>
+                <span class="text-(--text-tertiary) tabular-nums font-mono text-[11px]">{{ lineHeight.toFixed(1) }}x</span>
             </div>
-            <div class="py-2">
+            <div class="py-1">
                 <Slider
                     id="line-height-slider"
                     :modelValue="lineHeight"
@@ -61,12 +67,13 @@ const alignOptions: { value: TextAlign; icon: string; label: string }[] = [
             </div>
         </div>
 
+        <!-- Margin Slider -->
         <div class="flex flex-col gap-1.5">
-            <div class="flex justify-between items-center text-xs font-medium uppercase tracking-wider text-(--text-secondary)">
-                <label for="margin-slider">Margin</label>
-                <span class="text-(--text-tertiary)">{{ margin.toFixed(1) }}x</span>
+            <div class="flex justify-between items-center text-xs font-medium text-(--text-secondary)">
+                <label for="margin-slider">Page Margins</label>
+                <span class="text-(--text-tertiary) tabular-nums font-mono text-[11px]">{{ margin.toFixed(1) }}x</span>
             </div>
-            <div class="py-2">
+            <div class="py-1">
                 <Slider
                     id="margin-slider"
                     :modelValue="margin"
@@ -79,19 +86,20 @@ const alignOptions: { value: TextAlign; icon: string; label: string }[] = [
             </div>
         </div>
 
-        <div class="flex flex-col gap-1.5">
-            <span class="text-xs font-medium uppercase tracking-wider text-(--text-secondary)">
-                Alignment
+        <!-- Text Alignment -->
+        <div class="flex flex-col gap-2">
+            <span class="text-xs font-medium text-(--text-secondary)">
+                Text Alignment
             </span>
             <div class="grid grid-cols-4 gap-2">
                 <button
                     v-for="opt in alignOptions"
                     :key="opt.value"
                     @click="emit('update:textAlign', opt.value)"
-                    class="py-2 px-3 rounded border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer focus-ring-minimal"
+                    class="py-2 px-3 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95"
                     :class="textAlign === opt.value
-                        ? 'border-(--text-primary) bg-(--accent-color-light) text-(--text-primary)'
-                        : 'border-(--border-color) text-(--text-secondary) hover:text-(--text-primary)'"
+                        ? 'border-(--text-primary) bg-(--bg-card) text-(--text-primary) font-bold ring-1 ring-(--text-primary)'
+                        : 'border-(--border-color) bg-(--bg-card) text-(--text-secondary) hover:text-(--text-primary) hover:border-(--border-color-hover)'"
                 >
                     <span class="material-symbols-outlined text-base select-none">{{ opt.icon }}</span>
                     <span>{{ opt.label }}</span>

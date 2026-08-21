@@ -19,15 +19,15 @@ const translationOptions = [...TRANSLATION_LANGUAGES]
 <template>
     <div class="flex flex-col gap-6 pt-4 border-t border-(--border-color)">
         <h2 class="text-xs font-semibold uppercase tracking-wider text-(--text-secondary)">
-            Reader Controls
+            Navigation & Lookup
         </h2>
 
         <div class="flex flex-col gap-1.5">
-            <div class="flex justify-between items-center text-xs font-medium uppercase tracking-wider text-(--text-secondary)">
+            <div class="flex justify-between items-center text-xs font-medium text-(--text-secondary)">
                 <label for="click-zone-slider">Page Turn Zone Width</label>
-                <span class="text-(--text-tertiary)">{{ clickZoneSize }}%</span>
+                <span class="text-(--text-tertiary) tabular-nums font-mono text-[11px]">{{ clickZoneSize }}%</span>
             </div>
-            <div class="py-2">
+            <div class="py-1">
                 <Slider
                     id="click-zone-slider"
                     :modelValue="clickZoneSize"
@@ -38,15 +38,15 @@ const translationOptions = [...TRANSLATION_LANGUAGES]
                     class="w-full focus-ring-minimal"
                 />
             </div>
-            <p class="text-xs text-(--text-tertiary)">
-                Tapping within this percentage from the left or right edge turns pages. Tapping the middle area toggles the dock.
+            <p class="text-[11px] text-(--text-tertiary) leading-relaxed">
+                Tapping within this percentage from the left or right edge turns pages. Tapping the center area toggles controls.
             </p>
         </div>
 
         <div class="flex flex-col gap-1.5">
             <label
                 for="translation-lang-select"
-                class="text-xs font-medium uppercase tracking-wider text-(--text-secondary)"
+                class="text-xs font-medium text-(--text-secondary)"
             >
                 Translation Target Language
             </label>

@@ -8,3 +8,4 @@ export { default as ReaderImageViewer } from "./ReaderImageViewer.vue";
 export { default as ReaderQuickSettings } from "./ReaderQuickSettings.vue";
 export { default as ReaderTocDrawer } from "./ReaderTocDrawer.vue";
 export { default as ReaderTocList } from "./ReaderTocList.vue";
+export { default as ReaderContentsDrawer } from "./ReaderContentsDrawer.vue";

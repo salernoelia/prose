@@ -3,7 +3,6 @@
     lang="ts"
 >
 import { useSettings } from '../../composables/useSettings'
-import Select from 'primevue/select'
 import type { Theme, TextAlign } from '../../ipc/types'
 
 defineProps<{
@@ -14,7 +13,7 @@ const emit = defineEmits<{
     (e: 'close'): void
 }>()
 
-const { theme, fontSize, lineHeight, textAlign } = useSettings()
+const { theme, fontFamily, fontSize, lineHeight, textAlign } = useSettings()
 
 const alignOptions: { value: TextAlign; icon: string; label: string }[] = [
     { value: 'left', icon: 'format_align_left', label: 'Left' },
@@ -23,19 +22,22 @@ const alignOptions: { value: TextAlign; icon: string; label: string }[] = [
     { value: 'right', icon: 'format_align_right', label: 'Right' },
 ]
 
-const themeOptions = [
-    { label: 'Light', value: 'light' as Theme },
-    { label: 'Paper', value: 'paper' as Theme },
-    { label: 'Dark', value: 'dark' as Theme },
-    { label: 'OLED Black', value: 'oled' as Theme },
-    { label: 'Night', value: 'night' as Theme },
-    { label: 'Sepia', value: 'sepia' as Theme },
-    { label: 'Sepia Dark', value: 'sepia-dark' as Theme },
-    { label: 'E-Ink Light', value: 'eink' as Theme },
-    { label: 'E-Ink Dark', value: 'eink-dark' as Theme },
+const themeCards: { label: string; value: Theme; bg: string; fg: string; border: string }[] = [
+    { label: 'Light', value: 'light', bg: '#F7EDDA', fg: '#1C1917', border: '#E8DCC8' },
+    { label: 'Paper', value: 'paper', bg: '#ffffff', fg: '#111111', border: '#e5e5e5' },
+    { label: 'Sepia', value: 'sepia', bg: '#E4D7BE', fg: '#2E2218', border: '#D2C1A5' },
+    { label: 'Sepia Dark', value: 'sepia-dark', bg: '#1C1611', fg: '#F7EDDA', border: '#382E25' },
+    { label: 'Dark', value: 'dark', bg: '#09332C', fg: '#F7EDDA', border: '#1D4B42' },
+    { label: 'OLED', value: 'oled', bg: '#000000', fg: '#F7EDDA', border: '#1e1e1e' },
 ]
 
-// Match the ranges and steps used by the full settings view.
+const fontOptions = [
+    { label: 'Literata', value: 'Literata' },
+    { label: 'Georgia', value: 'Georgia' },
+    { label: 'Inter', value: 'Inter' },
+    { label: 'Outfit', value: 'Outfit' },
+]
+
 const FONT_MIN = 12
 const FONT_MAX = 48
 const LINE_MIN = 1.0
@@ -48,7 +50,6 @@ function stepFont(delta: number) {
 }
 
 function stepLine(delta: number) {
-    // Round to one decimal to avoid floating-point drift across steps.
     lineHeight.value = clamp(Math.round((lineHeight.value + delta) * 10) / 10, LINE_MIN, LINE_MAX)
 }
 </script>
@@ -57,109 +58,130 @@ function stepLine(delta: number) {
     <!-- Tap-outside backdrop -->
     <div
         v-if="visible"
-        class="fixed inset-0 z-40"
+        class="fixed inset-0 z-40 bg-black/10 backdrop-blur-xs"
         @click="emit('close')"
     ></div>
 
     <div
         v-if="visible"
-        class="fixed left-1/2 -translate-x-1/2 z-50 w-64 animate-fade-in
-               bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:bottom-20"
+        class="fixed left-1/2 -translate-x-1/2 z-50 w-80 max-w-[92vw] animate-fade-in
+               bottom-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:bottom-18"
     >
-        <div class="flex flex-col gap-3 rounded-2xl bg-(--bg-card) border border-(--border-color) shadow-md p-4">
-            <!-- Theme -->
-            <div class="flex flex-col gap-1.5">
-                <span class="text-[11px] font-medium uppercase tracking-wider text-(--text-tertiary) select-none">
-                    Theme
+        <div class="flex flex-col gap-4 rounded-3xl bg-(--bg-card) border border-(--border-color) shadow-xl p-5 font-serif select-none">
+            <!-- Header with Close -->
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold tracking-wide text-(--text-primary)">
+                    Reading Appearance
                 </span>
-                <Select
-                    v-model="theme"
-                    :options="themeOptions"
-                    optionLabel="label"
-                    optionValue="value"
-                    class="w-full focus-ring-minimal"
-                />
+                <button
+                    @click="emit('close')"
+                    class="w-6 h-6 rounded-full flex items-center justify-center text-(--text-tertiary) hover:text-(--text-primary) hover:bg-(--accent-color-light) transition-colors cursor-pointer"
+                >
+                    <span class="material-symbols-outlined text-base">close</span>
+                </button>
             </div>
 
-            <!-- Text size -->
-            <div class="flex items-center justify-between gap-2">
-                <span class="text-[11px] font-medium uppercase tracking-wider text-(--text-tertiary) select-none">
-                    Text size
+            <!-- Theme Swatches (Apple Books inspired) -->
+            <div class="grid grid-cols-3 gap-2">
+                <button
+                    v-for="tc in themeCards"
+                    :key="tc.value"
+                    @click="theme = tc.value"
+                    class="flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all cursor-pointer relative"
+                    :style="{
+                        backgroundColor: tc.bg,
+                        color: tc.fg,
+                        border: `1.5px solid ${theme === tc.value ? 'var(--accent-color)' : tc.border}`,
+                    }"
+                >
+                    <span class="text-xs font-serif font-bold">Aa</span>
+                    <span class="text-[10px] font-sans font-medium opacity-80 mt-0.5">{{ tc.label }}</span>
+                </button>
+            </div>
+
+            <!-- Typeface Picker -->
+            <div class="flex flex-col gap-1.5">
+                <span class="text-[10px] font-sans font-medium uppercase tracking-wider text-(--text-tertiary)">
+                    Typeface
                 </span>
-                <div class="flex items-center gap-1.5">
+                <div class="grid grid-cols-4 gap-1 bg-(--accent-color-light)/60 p-1 rounded-xl border border-(--border-color)/50">
                     <button
-                        @click="stepFont(-1)"
-                        :disabled="fontSize <= FONT_MIN"
-                        class="flex items-center justify-center w-8 h-8 rounded-full text-(--text-secondary) hover:text-(--text-primary) transition-all duration-100 active:scale-90 active:opacity-80 focus-ring-minimal disabled:opacity-20 disabled:active:scale-100"
-                        title="Smaller text"
-                        aria-label="Smaller text"
+                        v-for="fo in fontOptions"
+                        :key="fo.value"
+                        @click="fontFamily = fo.value"
+                        class="py-1 px-1.5 rounded-lg text-xs transition-all cursor-pointer truncate text-center"
+                        :class="fontFamily === fo.value
+                            ? 'bg-(--bg-card) text-(--text-primary) font-semibold shadow-xs'
+                            : 'text-(--text-secondary) hover:text-(--text-primary)'"
+                        :style="{ fontFamily: fo.value }"
                     >
-                        <span class="material-symbols-outlined text-base">remove</span>
-                    </button>
-                    <span class="w-9 text-center text-sm tabular-nums text-(--text-primary) select-none">{{ fontSize }}</span>
-                    <button
-                        @click="stepFont(1)"
-                        :disabled="fontSize >= FONT_MAX"
-                        class="flex items-center justify-center w-8 h-8 rounded-full text-(--text-secondary) hover:text-(--text-primary) transition-all duration-100 active:scale-90 active:opacity-80 focus-ring-minimal disabled:opacity-20 disabled:active:scale-100"
-                        title="Larger text"
-                        aria-label="Larger text"
-                    >
-                        <span class="material-symbols-outlined text-base">add</span>
+                        {{ fo.label }}
                     </button>
                 </div>
             </div>
 
-            <!-- Line spacing -->
-            <div class="flex items-center justify-between gap-2">
-                <span class="text-[11px] font-medium uppercase tracking-wider text-(--text-tertiary) select-none">
-                    Line spacing
-                </span>
-                <div class="flex items-center gap-1.5">
+            <!-- Font Size & Line Spacing Steppers -->
+            <div class="grid grid-cols-2 gap-2">
+                <!-- Size -->
+                <div class="flex items-center justify-between bg-(--accent-color-light)/40 border border-(--border-color)/50 rounded-xl px-2.5 py-1.5">
+                    <button
+                        @click="stepFont(-1)"
+                        :disabled="fontSize <= FONT_MIN"
+                        class="w-7 h-7 rounded-full flex items-center justify-center text-(--text-secondary) hover:text-(--text-primary) active:scale-90 transition-all disabled:opacity-20 cursor-pointer"
+                        title="Smaller text"
+                    >
+                        <span class="text-xs font-serif font-semibold">A</span>
+                    </button>
+                    <span class="text-xs font-medium tabular-nums text-(--text-primary)">{{ fontSize }}</span>
+                    <button
+                        @click="stepFont(1)"
+                        :disabled="fontSize >= FONT_MAX"
+                        class="w-7 h-7 rounded-full flex items-center justify-center text-(--text-secondary) hover:text-(--text-primary) active:scale-90 transition-all disabled:opacity-20 cursor-pointer"
+                        title="Larger text"
+                    >
+                        <span class="text-base font-serif font-bold">A</span>
+                    </button>
+                </div>
+
+                <!-- Spacing -->
+                <div class="flex items-center justify-between bg-(--accent-color-light)/40 border border-(--border-color)/50 rounded-xl px-2.5 py-1.5">
                     <button
                         @click="stepLine(-0.1)"
                         :disabled="lineHeight <= LINE_MIN"
-                        class="flex items-center justify-center w-8 h-8 rounded-full text-(--text-secondary) hover:text-(--text-primary) transition-all duration-100 active:scale-90 active:opacity-80 focus-ring-minimal disabled:opacity-20 disabled:active:scale-100"
-                        title="Tighter line spacing"
-                        aria-label="Tighter line spacing"
+                        class="w-7 h-7 rounded-full flex items-center justify-center text-(--text-secondary) hover:text-(--text-primary) active:scale-90 transition-all disabled:opacity-20 cursor-pointer"
+                        title="Tighter spacing"
                     >
-                        <span class="material-symbols-outlined text-base">remove</span>
+                        <span class="material-symbols-outlined text-sm">density_medium</span>
                     </button>
-                    <span class="w-9 text-center text-sm tabular-nums text-(--text-primary) select-none">{{ lineHeight.toFixed(1) }}</span>
+                    <span class="text-xs font-medium tabular-nums text-(--text-primary)">{{ lineHeight.toFixed(1) }}</span>
                     <button
                         @click="stepLine(0.1)"
                         :disabled="lineHeight >= LINE_MAX"
-                        class="flex items-center justify-center w-8 h-8 rounded-full text-(--text-secondary) hover:text-(--text-primary) transition-all duration-100 active:scale-90 active:opacity-80 focus-ring-minimal disabled:opacity-20 disabled:active:scale-100"
-                        title="Looser line spacing"
-                        aria-label="Looser line spacing"
+                        class="w-7 h-7 rounded-full flex items-center justify-center text-(--text-secondary) hover:text-(--text-primary) active:scale-90 transition-all disabled:opacity-20 cursor-pointer"
+                        title="Looser spacing"
                     >
-                        <span class="material-symbols-outlined text-base">add</span>
+                        <span class="material-symbols-outlined text-sm">density_large</span>
                     </button>
                 </div>
             </div>
 
             <!-- Alignment -->
-            <div class="flex items-center justify-between gap-2">
-                <span class="text-[11px] font-medium uppercase tracking-wider text-(--text-tertiary) select-none">
-                    Alignment
-                </span>
-                <div class="flex items-center gap-1">
-                    <button
-                        v-for="opt in alignOptions"
-                        :key="opt.value"
-                        @click="textAlign = opt.value"
-                        :class="[
-                            'flex items-center justify-center w-8 h-8 rounded-full transition-all duration-100 active:scale-90 focus-ring-minimal',
-                            textAlign === opt.value
-                                ? 'text-(--accent-color) bg-(--accent-color)/10'
-                                : 'text-(--text-secondary) hover:text-(--text-primary)',
-                        ]"
-                        :title="opt.label"
-                        :aria-label="opt.label"
-                        :aria-pressed="textAlign === opt.value"
-                    >
-                        <span class="material-symbols-outlined text-base">{{ opt.icon }}</span>
-                    </button>
-                </div>
+            <div class="flex items-center justify-between gap-1 bg-(--accent-color-light)/60 p-1 rounded-xl border border-(--border-color)/50">
+                <button
+                    v-for="opt in alignOptions"
+                    :key="opt.value"
+                    @click="textAlign = opt.value"
+                    :class="[
+                        'flex-1 py-1 flex items-center justify-center rounded-lg transition-all duration-100 cursor-pointer',
+                        textAlign === opt.value
+                            ? 'bg-(--bg-card) text-(--text-primary) shadow-xs'
+                            : 'text-(--text-secondary) hover:text-(--text-primary)',
+                    ]"
+                    :title="opt.label"
+                    :aria-label="opt.label"
+                >
+                    <span class="material-symbols-outlined text-base leading-none">{{ opt.icon }}</span>
+                </button>
             </div>
         </div>
     </div>

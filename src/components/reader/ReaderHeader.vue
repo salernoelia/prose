@@ -27,14 +27,14 @@ const shortAuthor = computed(() => {
 
 <template>
     <header
-        class="mb-2 pb-2 border-b border-(--border-color) flex justify-between items-center text-xs text-(--text-tertiary) select-none whitespace-nowrap overflow-hidden"
+        class="mb-2 pb-2 border-b border-(--border-color)/60 flex justify-between items-center text-[11px] tracking-wide text-(--text-tertiary) select-none whitespace-nowrap overflow-hidden font-serif"
         :style="{
             paddingLeft: '1.5rem',
             paddingRight: '1.5rem',
             paddingTop: 'calc(0.5rem + env(safe-area-inset-top, 0px))',
         }"
     >
-        <span class="truncate flex-1 min-w-0 pr-4 text-left">{{ book.title }}</span>
-        <span class="shrink-0 text-right">{{ shortAuthor }}</span>
+        <span class="truncate flex-1 min-w-0 pr-4 text-left font-medium opacity-80">{{ book.title }}</span>
+        <span class="shrink-0 text-right opacity-60">{{ shortAuthor }}</span>
     </header>
 </template>

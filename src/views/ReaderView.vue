@@ -9,8 +9,7 @@ import { useAnnotations } from "../composables/useAnnotations";
 import {
     ReaderClickZones,
     ReaderDock,
-    ReaderTocDrawer,
-    ReaderAnnotationsDrawer,
+    ReaderContentsDrawer,
     ReaderAnnotationPopover,
     ReaderDefinitionPopover,
     ReaderQuickSettings,
@@ -99,10 +98,15 @@ const isActiveHighlightSingleWord = computed(() => {
 });
 
 const showDock = ref(true);
-const showToc = ref(false);
-const showAnnotations = ref(false);
+const showContents = ref(false);
+const contentsTab = ref<'contents' | 'bookmarks' | 'highlights'>('contents');
 const showQuickSettings = ref(false);
 const imageViewerSrc = ref<string | null>(null);
+
+function openContents(tab: 'contents' | 'bookmarks' | 'highlights' = 'contents') {
+    contentsTab.value = tab;
+    showContents.value = true;
+}
 
 function handleImageClick(e: Event) {
     const detail = (e as CustomEvent<{ src?: string }>).detail;
@@ -124,12 +128,12 @@ function onSelectToc(href: string) {
 
 function onSelectBookmark(bookmark: BookmarkDto) {
     void goToLocator(bookmark.locator);
-    showAnnotations.value = false;
+    showContents.value = false;
 }
 
 function onSelectHighlight(highlight: HighlightDto) {
     void goToLocator(highlight.locator);
-    showAnnotations.value = false;
+    showContents.value = false;
 }
 
 function onHighlight() {
@@ -395,8 +399,8 @@ onUnmounted(() => {
             :can-undo-jump="canUndoJump"
             @back="handleBack"
             @undo-jump="undoJump"
-            @toc="showToc = true"
-            @annotations="showAnnotations = true"
+            @toc="openContents('contents')"
+            @annotations="openContents('bookmarks')"
             @toggle-bookmark="toggleBookmark"
             @prev="prev"
             @next="next"
@@ -416,16 +420,14 @@ onUnmounted(() => {
             @close="imageViewerSrc = null"
         />
 
-        <ReaderTocDrawer
-            v-model:visible="showToc"
-            :items="toc"
-            @select="onSelectToc"
-        />
-
-        <ReaderAnnotationsDrawer
-            v-model:visible="showAnnotations"
+        <ReaderContentsDrawer
+            v-model:visible="showContents"
+            :initialTab="contentsTab"
+            :tocItems="toc"
             :bookmarks="bookmarks"
             :highlights="highlights"
+            :bookTitle="book.title"
+            @select-toc="onSelectToc"
             @select-bookmark="onSelectBookmark"
             @delete-bookmark="removeBookmark"
             @select-highlight="onSelectHighlight"

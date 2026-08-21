@@ -1,4 +1,7 @@
-<script setup lang="ts">
+<script
+    setup
+    lang="ts"
+>
 import { onMounted, ref } from 'vue'
 import { useSettings } from '../composables/useSettings'
 import { syncConfigure, syncDisconnect, syncStatus } from '../ipc/sync'
@@ -81,8 +84,8 @@ async function handleSyncDisconnect() {
 
 <template>
     <div class="w-full animate-fade-in font-serif pb-12">
-        <header class="pb-6">
-            <h1 class="text-xl lg:text-3xl font-semibold tracking-tight text-(--text-primary)">
+        <header class="pb-6 pt-4 border-b border-(--border-color) mb-6">
+            <h1 class="text-2xl lg:text-4xl font-semibold tracking-tight text-(--text-primary) font-serif">
                 Settings
             </h1>
         </header>
@@ -125,7 +128,8 @@ async function handleSyncDisconnect() {
             v-else
             class="flex flex-col items-center justify-center py-16 gap-3"
         >
-            <div class="w-6 h-6 rounded-full border border-(--border-color) border-t-(--accent-color) animate-spin"></div>
+            <div class="w-6 h-6 rounded-full border border-(--border-color) border-t-(--accent-color) animate-spin">
+            </div>
             <p class="text-xs text-(--text-secondary) font-medium">Loading settings...</p>
         </div>
     </div>
