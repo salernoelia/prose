@@ -99,6 +99,10 @@ function readingCss(style: ReadingStyle): string {
       -webkit-touch-callout: default !important;
       -webkit-user-select: text !important;
       user-select: text !important;
+      /* Kill the browser's ~300ms double-tap-zoom wait before click fires, so
+         a tap in a turn zone flips the page immediately. Zoom is off in the
+         reader anyway; word double-tap-select is a separate gesture and stays. */
+      touch-action: manipulation !important;
     }
     /* Force the reader's font everywhere, overriding embedded fonts, but leave
        genuine monospace content (which a more specific rule re-asserts). */
@@ -222,12 +226,12 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
       })
 
       let hadSelectionOnPointerDown = false
-      // iOS selects a word on double tap, and the first tap of that gesture
-      // still fires a click. Acting on it at once would turn the page or toggle
-      // the dock under the fresh selection, so on touch platforms the click
-      // action waits out the double-tap window and a second tap cancels it.
+      // The click action fires immediately: a delay here made every page turn
+      // feel laggy. An existing selection still cancels the turn via the guards
+      // below (checked at fire time), so long-press and drag selection are safe;
+      // a pending pointerdown also clears any in-flight action.
       let pendingClickAction: ReturnType<typeof setTimeout> | null = null
-      const clickActionDelay = navigator.maxTouchPoints > 0 ? 350 : 0
+      const clickActionDelay = 0
 
       doc.addEventListener('pointerdown', () => {
         if (pendingClickAction !== null) {
@@ -289,6 +293,28 @@ export class EpubRenderer implements BookRenderer, Annotatable, JumpHistory {
     view.history.addEventListener('index-change', () => {
       for (const listener of this.#jumpHistoryListeners) listener(view.history.canGoBack)
     })
+
+    // On a wide screen foliate caps the text column and leaves gutters that
+    // belong to its own shadow DOM, so a tap near the screen edge never reaches
+    // the section document and the page would not turn. Clicks inside the frame
+    // stay in the frame's document, so anything arriving here landed on a
+    // gutter and can be reported straight away, in window coordinates.
+    let gutterDownX = 0
+    let gutterDownY = 0
+    container.addEventListener('pointerdown', (e) => {
+      gutterDownX = e.clientX
+      gutterDownY = e.clientY
+    })
+    container.addEventListener('click', (e) => {
+      if (Math.abs(e.clientX - gutterDownX) > 5 || Math.abs(e.clientY - gutterDownY) > 5) return
+      const selection = this.#currentDoc?.defaultView?.getSelection()
+      if (this.#hasActiveSelection || (selection && !selection.isCollapsed)) return
+      container.dispatchEvent(new CustomEvent('renderer-click', {
+        bubbles: true,
+        detail: { target: e.target, x: e.clientX }
+      }))
+    })
+
     container.append(view)
     this.#view = view
   }
