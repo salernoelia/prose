@@ -197,8 +197,8 @@ async function handleImport() {
             </section>
 
             <!-- 2. The 3 Most Read Books (Exposé without cards) -->
-            <section v-if="topThreeBooks.length > 0" class="w-full">
-                <div class="mb-6 select-none">
+            <section v-if="topThreeBooks.length > 0" class="w-full max-w-xl mx-auto">
+                <div class="mb-8 text-center select-none">
                     <span class="text-[11px] font-sans font-medium uppercase tracking-widest text-(--text-tertiary) block">
                         Pick up where you left off
                     </span>
@@ -207,16 +207,16 @@ async function handleImport() {
                     </h2>
                 </div>
 
-                <!-- Exposed Books List -->
-                <div class="space-y-8 sm:space-y-10">
+                <!-- Exposed Books List (Vertically & Horizontally Centered) -->
+                <div class="space-y-10 sm:space-y-12">
                     <div
                         v-for="(item, idx) in topThreeBooks"
                         :key="item.book.id"
                         @click="emit('select-book', item.book)"
-                        class="group cursor-pointer active:scale-[0.99] transition-transform select-none flex items-start gap-5 sm:gap-7"
+                        class="group cursor-pointer active:scale-[0.99] transition-transform select-none flex items-center justify-center gap-6 sm:gap-8 max-w-lg mx-auto w-full"
                     >
                         <!-- Big Book 3D Cover on Left -->
-                        <div class="w-20 h-28 sm:w-24 sm:h-34 md:w-28 md:h-40 book-cover-3d shrink-0 overflow-hidden flex items-center justify-center rounded-sm shadow-md">
+                        <div class="w-24 h-34 sm:w-28 sm:h-40 book-cover-3d shrink-0 overflow-hidden flex items-center justify-center rounded-sm shadow-md">
                             <img
                                 v-if="item.coverUrl"
                                 :src="item.coverUrl"
@@ -225,15 +225,15 @@ async function handleImport() {
                             />
                             <div
                                 v-else
-                                class="w-full h-full p-2.5 bg-[#09332C] text-[#F7EDDA] flex flex-col justify-between items-center text-center select-none"
+                                class="w-full h-full p-3 bg-[#09332C] text-[#F7EDDA] flex flex-col justify-between items-center text-center select-none"
                             >
                                 <span class="text-[8px] uppercase tracking-widest opacity-60">{{ item.book.format }}</span>
-                                <span class="text-[10px] sm:text-xs font-serif font-semibold line-clamp-3 leading-tight">{{ item.book.title }}</span>
+                                <span class="text-[11px] sm:text-xs font-serif font-semibold line-clamp-3 leading-tight">{{ item.book.title }}</span>
                                 <span></span>
                             </div>
                         </div>
 
-                        <!-- Details on Right -->
+                        <!-- Details on Right (Vertically Centered with Cover) -->
                         <div class="flex flex-col justify-center min-w-0 flex-1 py-1">
                             <span class="text-[10px] sm:text-[11px] font-sans font-semibold uppercase tracking-widest text-(--accent-color) select-none mb-1">
                                 {{ idx === 0 ? 'Current Read' : `Top Pick #${idx + 1}` }}
@@ -246,7 +246,7 @@ async function handleImport() {
                             </p>
 
                             <!-- Reading Progress Bar & Details -->
-                            <div class="mt-3.5 sm:mt-4 w-full max-w-md flex flex-col gap-1.5">
+                            <div class="mt-3.5 sm:mt-4 w-full max-w-sm flex flex-col gap-1.5">
                                 <div class="h-1.5 w-full bg-(--text-primary)/10 dark:bg-white/10 rounded-full overflow-hidden">
                                     <div
                                         class="h-full bg-(--accent-color) rounded-full transition-all duration-300"
