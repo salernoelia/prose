@@ -126,7 +126,7 @@ async function handleImport() {
 </script>
 
 <template>
-    <div class="w-full animate-fade-in font-serif pb-12">
+    <div class="w-full animate-fade-in font-serif">
         <!-- Editorial Header -->
         <header class="pb-2 pt-2 flex flex-wrap justify-between items-end gap-3 mb-8 select-none">
             <div>
@@ -186,7 +186,7 @@ async function handleImport() {
         </div>
 
         <div v-else class="space-y-12 sm:space-y-16">
-            <!-- 1. Daily Reading Goal Gauge -->
+            <!-- 1. Daily Reading Goal Gauge (Topmost directly below header) -->
             <section class="w-full max-w-sm mx-auto select-none">
                 <GoalSpeedometer
                     :current-seconds="todaySeconds"
@@ -196,110 +196,74 @@ async function handleImport() {
                 />
             </section>
 
-            <!-- 2. The 3 Most Read Books (Posed) -->
+            <!-- 2. The 3 Most Read Books (Exposé without cards) -->
             <section v-if="topThreeBooks.length > 0" class="w-full">
-                <div class="flex items-baseline justify-between mb-5">
-                    <div>
-                        <span class="text-[11px] font-sans font-medium uppercase tracking-widest text-(--text-tertiary) select-none block">
-                            Pick up where you left off
-                        </span>
-                        <h2 class="text-xl sm:text-2xl font-bold font-serif text-(--text-primary) mt-0.5">
-                            Continue Reading
-                        </h2>
-                    </div>
-
-                    <button
-                        @click="emit('navigate', 'library')"
-                        class="text-xs font-serif text-(--text-secondary) hover:text-(--accent-color) transition-colors flex items-center gap-1 cursor-pointer select-none"
-                    >
-                        <span>View all {{ entries.length }}</span>
-                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
-                    </button>
+                <div class="mb-6 select-none">
+                    <span class="text-[11px] font-sans font-medium uppercase tracking-widest text-(--text-tertiary) block">
+                        Pick up where you left off
+                    </span>
+                    <h2 class="text-xl sm:text-2xl font-bold font-serif text-(--text-primary) mt-0.5">
+                        Continue Reading
+                    </h2>
                 </div>
 
-                <!-- 3 Posed Books Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+                <!-- Exposed Books List -->
+                <div class="space-y-8 sm:space-y-10">
                     <div
                         v-for="(item, idx) in topThreeBooks"
                         :key="item.book.id"
                         @click="emit('select-book', item.book)"
-                        class="group cursor-pointer bg-(--bg-card) border border-(--border-color) dark:border-white/15 rounded-2xl p-4 flex flex-col justify-between gap-4 hover:border-(--border-color-hover) dark:hover:border-white/30 shadow-xs hover:shadow-sm transition-all duration-200"
+                        class="group cursor-pointer active:scale-[0.99] transition-transform select-none flex items-start gap-5 sm:gap-7"
                     >
-                        <div class="flex items-start gap-3.5">
-                            <!-- Book 3D Cover Spine -->
-                            <div class="w-14 h-20 book-cover-3d bg-(--bg-card) shrink-0 overflow-hidden flex items-center justify-center rounded-sm">
-                                <img
-                                    v-if="item.coverUrl"
-                                    :src="item.coverUrl"
-                                    alt=""
-                                    class="w-full h-full object-cover"
-                                />
-                                <div
-                                    v-else
-                                    class="w-full h-full p-2 bg-[#09332C] text-[#F7EDDA] flex flex-col justify-between items-center text-center select-none"
-                                >
-                                    <span class="text-[7px] uppercase tracking-widest opacity-60">{{ item.book.format }}</span>
-                                    <span class="text-[8px] font-serif font-semibold line-clamp-2 leading-tight">{{ item.book.title }}</span>
-                                    <span></span>
-                                </div>
-                            </div>
-
-                            <div class="flex flex-col min-w-0 flex-1">
-                                <span class="text-[10px] font-sans font-medium uppercase tracking-wider text-(--accent-color) select-none mb-0.5">
-                                    {{ idx === 0 ? 'Current Book' : `Pick #${idx + 1}` }}
-                                </span>
-                                <h3 class="text-sm font-semibold tracking-tight text-(--text-primary) line-clamp-2 group-hover:text-(--accent-color) transition-colors font-serif leading-snug">
-                                    {{ item.book.title }}
-                                </h3>
-                                <p class="text-xs text-(--text-secondary) truncate mt-0.5 font-serif">
-                                    {{ item.book.author || 'Unknown Author' }}
-                                </p>
+                        <!-- Big Book 3D Cover on Left -->
+                        <div class="w-20 h-28 sm:w-24 sm:h-34 md:w-28 md:h-40 book-cover-3d shrink-0 overflow-hidden flex items-center justify-center rounded-sm shadow-md">
+                            <img
+                                v-if="item.coverUrl"
+                                :src="item.coverUrl"
+                                alt=""
+                                class="w-full h-full object-cover"
+                            />
+                            <div
+                                v-else
+                                class="w-full h-full p-2.5 bg-[#09332C] text-[#F7EDDA] flex flex-col justify-between items-center text-center select-none"
+                            >
+                                <span class="text-[8px] uppercase tracking-widest opacity-60">{{ item.book.format }}</span>
+                                <span class="text-[10px] sm:text-xs font-serif font-semibold line-clamp-3 leading-tight">{{ item.book.title }}</span>
+                                <span></span>
                             </div>
                         </div>
 
-                        <!-- Progress Track & Duration Readout -->
-                        <div class="pt-2 border-t border-(--border-color)/50 dark:border-white/10 flex flex-col gap-2">
-                            <div class="flex items-center justify-between text-[11px] font-sans">
-                                <span class="text-(--text-secondary) tabular-nums">
-                                    {{ Math.round(item.progress * 100) }}% completed
-                                </span>
-                                <span v-if="item.totalSeconds > 0" class="text-(--text-tertiary) tabular-nums">
-                                    {{ formatDuration(item.totalSeconds) }} read
-                                </span>
-                            </div>
-                            <div class="h-1.5 w-full bg-(--text-primary)/10 dark:bg-white/10 rounded-full overflow-hidden">
-                                <div
-                                    class="h-full bg-(--accent-color) rounded-full transition-all duration-300"
-                                    :style="{ width: `${item.progress * 100}%` }"
-                                ></div>
+                        <!-- Details on Right -->
+                        <div class="flex flex-col justify-center min-w-0 flex-1 py-1">
+                            <span class="text-[10px] sm:text-[11px] font-sans font-semibold uppercase tracking-widest text-(--accent-color) select-none mb-1">
+                                {{ idx === 0 ? 'Current Read' : `Top Pick #${idx + 1}` }}
+                            </span>
+                            <h3 class="text-lg sm:text-xl md:text-2xl font-bold font-serif text-(--text-primary) line-clamp-2 leading-snug group-hover:text-(--accent-color) transition-colors">
+                                {{ item.book.title }}
+                            </h3>
+                            <p class="text-xs sm:text-sm font-serif text-(--text-secondary) truncate mt-1">
+                                {{ item.book.author || 'Unknown Author' }}
+                            </p>
+
+                            <!-- Reading Progress Bar & Details -->
+                            <div class="mt-3.5 sm:mt-4 w-full max-w-md flex flex-col gap-1.5">
+                                <div class="h-1.5 w-full bg-(--text-primary)/10 dark:bg-white/10 rounded-full overflow-hidden">
+                                    <div
+                                        class="h-full bg-(--accent-color) rounded-full transition-all duration-300"
+                                        :style="{ width: `${item.progress * 100}%` }"
+                                    ></div>
+                                </div>
+                                <div class="flex items-center gap-2 text-xs font-sans tabular-nums">
+                                    <span class="font-medium text-(--text-primary)">
+                                        {{ Math.round(item.progress * 100) }}% completed
+                                    </span>
+                                    <span v-if="item.totalSeconds > 0" class="text-(--text-tertiary)">
+                                        · {{ formatDuration(item.totalSeconds) }} read
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </section>
-
-            <!-- 3. Bottom Quick Navigation Strip -->
-            <section class="pt-6 border-t border-(--border-color) dark:border-white/15 flex flex-wrap items-center justify-between gap-4 select-none">
-                <div class="flex items-center gap-2 text-xs font-serif text-(--text-secondary)">
-                    <span class="material-symbols-outlined text-base text-(--accent-color)">collections_bookmark</span>
-                    <span>{{ entries.length }} {{ entries.length === 1 ? 'book' : 'books' }} in your catalog</span>
-                </div>
-
-                <div class="flex items-center gap-3">
-                    <button
-                        @click="handleImport"
-                        class="px-4 py-1.5 text-xs font-serif rounded-full border border-(--border-color) dark:border-white/20 bg-(--bg-card) text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer shadow-xs flex items-center gap-1.5"
-                    >
-                        <span class="material-symbols-outlined text-sm">add</span>
-                        <span>Import Book</span>
-                    </button>
-                    <button
-                        @click="emit('navigate', 'library')"
-                        class="px-4 py-1.5 text-xs font-serif font-semibold rounded-full bg-(--text-primary) text-(--bg-app) hover:opacity-90 transition-all cursor-pointer shadow-xs flex items-center gap-1"
-                    >
-                        <span>Open Library</span>
-                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
-                    </button>
                 </div>
             </section>
         </div>
