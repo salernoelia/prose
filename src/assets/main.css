@@ -7,30 +7,31 @@
 }
 
 :root {
-  /* Color Palette - Light Mode (Classic Paper) */
-  --bg-app: #faf9f5;
-  --bg-card: #ffffff;
+  /* Color Palette - Light Mode (Venetian Lace & Macadamia Beige) */
+  --bg-app: #F7EDDA;
+  --bg-card: #FDF9F2;
 
-  --text-primary: #18181b; /* deep charcoal ink */
-  --text-secondary: #52525b; /* muted charcoal */
-  --text-tertiary: #a1a1aa; /* light gray */
+  --text-primary: #1C1917; /* deep charcoal ink */
+  --text-secondary: #57534E; /* warm stone */
+  --text-tertiary: #A8A29E; /* soft graphite */
 
-  /* Recolor monochrome (black) icon art to suit the theme: light themes keep
-     it dark, dark-family themes invert it to read as light. */
+  /* Recolor monochrome (black) icon art to suit the theme */
   --icon-invert: 0;
 
-  --border-color: #e5e5e0; /* hairline gray-sand */
-  --border-color-hover: #c8c8c0; /* darker hairline */
+  --border-color: #E8DCC8; /* warm lace hairline */
+  --border-color-hover: #D9CBAD;
 
-  --accent-color: #18181b; /* ink black */
-  --accent-color-hover: #3f3f46;
-  --accent-color-light: #f5f5f0; /* warm white background selection */
+  --accent-color: #F0531C; /* Fiery Glow */
+  --accent-ink: #ffffff;
+  --accent-color-hover: #D4420F;
+  --accent-color-light: #F7DFBA; /* Macadamia Beige */
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.01);
-  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.02);
-  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.03);
+  --shadow-sm: 0 1px 3px rgba(28, 25, 23, 0.04);
+  --shadow-md: 0 4px 12px rgba(28, 25, 23, 0.06);
+  --shadow-lg: 0 12px 28px rgba(28, 25, 23, 0.08);
+  --shadow-book: 2px 4px 12px rgba(28, 25, 23, 0.12), 0 1px 3px rgba(28, 25, 23, 0.08);
 
-  --focus-ring: 0 0 0 2px #faf9f5, 0 0 0 4px #18181b;
+  --focus-ring: 0 0 0 2px #F7EDDA, 0 0 0 4px #F0531C;
 
   /* PrimeVue Variables Mapping - Light */
   --p-font-family: var(--font-serif);
@@ -52,46 +53,48 @@
   --p-select-option-color: var(--text-primary);
   --p-select-option-focus-color: var(--text-primary);
   --p-select-option-focus-background: var(--accent-color-light);
-  --p-select-option-selected-color: var(--text-primary);
+  --p-select-option-selected-color: var(--accent-color);
   --p-select-option-selected-background: var(--accent-color-light);
 
   --p-slider-track-background: var(--border-color);
   --p-slider-range-background: var(--accent-color);
   --p-slider-handle-background: var(--bg-card);
-  --p-slider-handle-border-color: var(--border-color);
+  --p-slider-handle-border-color: var(--accent-color);
   --p-slider-handle-hover-background: var(--accent-color-light);
   --p-slider-handle-focus-ring-color: var(--accent-color);
 
   --p-button-primary-background: var(--accent-color);
   --p-button-primary-border-color: var(--accent-color);
-  --p-button-primary-color: var(--bg-card);
+  --p-button-primary-color: #ffffff;
   --p-button-primary-hover-background: var(--accent-color-hover);
   --p-button-primary-hover-border-color: var(--accent-color-hover);
 }
 
 .dark {
-  /* Color Palette - Dark Mode (Vellum Black) */
-  --bg-app: #121212;
-  --bg-card: #1c1c1c;
+  /* Color Palette - Dark Mode (Fence Green & Norfolk Green) */
+  --bg-app: #09332C;
+  --bg-card: #15413A;
 
-  --text-primary: #e4e4e7; /* soft silver */
-  --text-secondary: #a1a1aa; /* medium gray */
-  --text-tertiary: #52525b; /* dark gray */
+  --text-primary: #F7EDDA; /* Venetian Lace */
+  --text-secondary: #C8DCD6;
+  --text-tertiary: #7D9B94;
 
   --icon-invert: 1;
 
-  --border-color: #27272a; /* charcoal gray border */
-  --border-color-hover: #3f3f46;
+  --border-color: #1D4B42;
+  --border-color-hover: #2E5F55;
 
-  --accent-color: #f4f4f5; /* silver white */
-  --accent-color-hover: #e4e4e7;
-  --accent-color-light: #242424; /* dark highlights */
+  --accent-color: #FFA74F; /* Pumpkin Vapor */
+  --accent-ink: #09332C;
+  --accent-color-hover: #F0531C;
+  --accent-color-light: #1A4D45;
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.2);
-  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.5);
+  --shadow-book: 2px 4px 14px rgba(0, 0, 0, 0.6), 0 1px 4px rgba(0, 0, 0, 0.4);
 
-  --focus-ring: 0 0 0 2px #121212, 0 0 0 4px #f4f4f5;
+  --focus-ring: 0 0 0 2px #09332C, 0 0 0 4px #FFA74F;
 
   /* PrimeVue Variables Mapping - Dark */
   --p-font-family: var(--font-serif);
@@ -113,44 +116,46 @@
   --p-select-option-color: var(--text-primary);
   --p-select-option-focus-color: var(--text-primary);
   --p-select-option-focus-background: var(--accent-color-light);
-  --p-select-option-selected-color: var(--text-primary);
+  --p-select-option-selected-color: var(--accent-color);
   --p-select-option-selected-background: var(--accent-color-light);
 
   --p-slider-track-background: var(--border-color);
   --p-slider-range-background: var(--accent-color);
   --p-slider-handle-background: var(--bg-card);
-  --p-slider-handle-border-color: var(--border-color);
+  --p-slider-handle-border-color: var(--accent-color);
   --p-slider-handle-hover-background: var(--accent-color-light);
   --p-slider-handle-focus-ring-color: var(--accent-color);
 
   --p-button-primary-background: var(--accent-color);
   --p-button-primary-border-color: var(--accent-color);
-  --p-button-primary-color: #121212;
+  --p-button-primary-color: #ffffff;
   --p-button-primary-hover-background: var(--accent-color-hover);
   --p-button-primary-hover-border-color: var(--accent-color-hover);
 }
 
 .sepia {
-  /* Color Palette - Sepia Mode (Vintage Book - Richer & Darker) */
-  --bg-app: #d0b580; /* classic aged book page, deep warm sepia */
-  --bg-card: #dfcdab; /* slightly lighter warm card */
+  /* Color Palette - Sepia Mode (Vintage Book Paper & Warm Espresso Ink) */
+  --bg-app: #E4D7BE;
+  --bg-card: #ECE1C8;
 
-  --text-primary: #36291b; /* dark earth/umber ink */
-  --text-secondary: #5c4c38; /* warm medium umber */
-  --text-tertiary: #8c7b64; /* muted warm clay */
+  --text-primary: #2E2218;
+  --text-secondary: #665343;
+  --text-tertiary: #968370;
 
-  --border-color: #c5b38d; /* aged parchment border */
-  --border-color-hover: #b09f7a;
+  --border-color: #D2C1A5;
+  --border-color-hover: #BFAD8E;
 
-  --accent-color: #705235; /* leather-brown accent */
-  --accent-color-hover: #543b22;
-  --accent-color-light: #dfcca5; /* subtle light-sepia highlight */
+  --accent-color: #8A5028; /* Warm Leather Chestnut */
+  --accent-ink: #FAF6ED;
+  --accent-color-hover: #733E1A;
+  --accent-color-light: #DACAB0;
 
-  --shadow-sm: 0 1px 2px 0 rgba(67, 52, 34, 0.02);
-  --shadow-md: 0 4px 10px rgba(67, 52, 34, 0.04);
-  --shadow-lg: 0 10px 20px rgba(67, 52, 34, 0.06);
+  --shadow-sm: 0 1px 3px rgba(46, 34, 24, 0.05);
+  --shadow-md: 0 4px 12px rgba(46, 34, 24, 0.08);
+  --shadow-lg: 0 12px 28px rgba(46, 34, 24, 0.1);
+  --shadow-book: 2px 4px 12px rgba(46, 34, 24, 0.15), 0 1px 3px rgba(46, 34, 24, 0.08);
 
-  --focus-ring: 0 0 0 2px #d7c49e, 0 0 0 4px #705235;
+  --focus-ring: 0 0 0 2px #E4D7BE, 0 0 0 4px #8A5028;
 
   /* PrimeVue Variables Mapping - Sepia */
   --p-font-family: var(--font-serif);
@@ -172,19 +177,19 @@
   --p-select-option-color: var(--text-primary);
   --p-select-option-focus-color: var(--text-primary);
   --p-select-option-focus-background: var(--accent-color-light);
-  --p-select-option-selected-color: var(--text-primary);
+  --p-select-option-selected-color: var(--accent-color);
   --p-select-option-selected-background: var(--accent-color-light);
 
   --p-slider-track-background: var(--border-color);
   --p-slider-range-background: var(--accent-color);
   --p-slider-handle-background: var(--bg-card);
-  --p-slider-handle-border-color: var(--border-color);
+  --p-slider-handle-border-color: var(--accent-color);
   --p-slider-handle-hover-background: var(--accent-color-light);
   --p-slider-handle-focus-ring-color: var(--accent-color);
 
   --p-button-primary-background: var(--accent-color);
   --p-button-primary-border-color: var(--accent-color);
-  --p-button-primary-color: #faf7f0;
+  --p-button-primary-color: #FAF6ED;
   --p-button-primary-hover-background: var(--accent-color-hover);
   --p-button-primary-hover-border-color: var(--accent-color-hover);
 
@@ -195,156 +200,162 @@
   --p-button-secondary-hover-border-color: var(--border-color-hover);
 }
 
-/* The themes below only override the core color tokens. The PrimeVue `--p-*`
-   mappings declared on :root reference these tokens through var(), so they pick
-   up each theme automatically. Dark-family themes (oled, sepia-dark, eink-dark)
-   also carry the `.dark` class; their blocks sit after `.dark` here so these
-   token overrides win. */
-
-/* Paper - crisp neutral white, flatter than the warm Light default */
+/* Paper - crisp neutral gallery white */
 .paper {
   --bg-app: #ffffff;
-  --bg-card: #ffffff;
+  --bg-card: #f9f9f9;
 
   --text-primary: #111111;
-  --text-secondary: #444444;
-  --text-tertiary: #999999;
+  --text-secondary: #4b4b4b;
+  --text-tertiary: #8e8e8e;
 
   --border-color: #e5e5e5;
-  --border-color-hover: #d4d4d4;
+  --border-color-hover: #cccccc;
 
   --accent-color: #111111;
+  --accent-ink: #111111;
   --accent-color-hover: #333333;
-  --accent-color-light: #f2f2f2;
+  --accent-color-light: #f0f0f0;
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
-  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.03);
-  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.08);
+  --shadow-book: 2px 4px 12px rgba(0, 0, 0, 0.1);
 
   --focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px #111111;
 
   --p-button-primary-color: #ffffff;
 }
 
-/* OLED - true black for power-saving displays */
+/* OLED - true black for OLED displays */
 .oled {
   --bg-app: #000000;
-  --bg-card: #0a0a0a;
+  --bg-card: #0c0c0c;
 
-  --text-primary: #f4f4f5;
-  --text-secondary: #a1a1aa;
-  --text-tertiary: #52525b;
+  --text-primary: #f5f5f5;
+  --text-secondary: #a0a0a0;
+  --text-tertiary: #505050;
 
-  --border-color: #1f1f1f;
+  --border-color: #1e1e1e;
   --border-color-hover: #2e2e2e;
 
-  --accent-color: #f4f4f5;
-  --accent-color-hover: #e4e4e7;
-  --accent-color-light: #141414;
+  --accent-color: #f5f5f5;
+  --accent-ink: #f5f5f5;
+  --accent-color-hover: #e0e0e0;
+  --accent-color-light: #161616;
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.7);
+  --shadow-book: 2px 4px 16px rgba(0, 0, 0, 0.8);
 
-  --focus-ring: 0 0 0 2px #000000, 0 0 0 4px #f4f4f5;
+  --focus-ring: 0 0 0 2px #000000, 0 0 0 4px #f5f5f5;
 
   --p-button-primary-color: #000000;
 }
 
-/* Night - OLED black with dim, warm text for low-light reading (issue #9) */
+/* Night - OLED black with dim, warm amber text for low-light reading */
 .night {
   --bg-app: #000000;
-  --bg-card: #0a0a0a;
+  --bg-card: #0c0a08;
 
-  --text-primary: #706862;
-  --text-secondary: #6b6560;
-  --text-tertiary: #403c38;
+  --text-primary: #a8947f;
+  --text-secondary: #806e5d;
+  --text-tertiary: #52463b;
 
-  --border-color: #1a1815;
-  --border-color-hover: #2a2724;
+  --border-color: #1c1814;
+  --border-color-hover: #2e2821;
 
-  --accent-color: #706862;
-  --accent-color-hover: #b0a69c;
-  --accent-color-light: #121110;
+  --accent-color: #d18d53;
+  --accent-ink: #a8947f;
+  --accent-color-hover: #e09f6b;
+  --accent-color-light: #181410;
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.7);
+  --shadow-book: 2px 4px 16px rgba(0, 0, 0, 0.8);
 
-  --focus-ring: 0 0 0 2px #000000, 0 0 0 4px #706862;
+  --focus-ring: 0 0 0 2px #000000, 0 0 0 4px #d18d53;
 
   --p-button-primary-color: #000000;
 }
 
-/* Sepia Dark - warm parchment tones on a dark night surface */
+/* Sepia Dark - warm parchment tones on deep walnut surface */
 .sepia-dark {
-  --bg-app: #1c1611;
-  --bg-card: #261e16;
+  --bg-app: #1C1611;
+  --bg-card: #261F19;
 
-  --text-primary: #e0cdab;
-  --text-secondary: #b09a78;
-  --text-tertiary: #7a6a52;
+  --text-primary: #F7EDDA;
+  --text-secondary: #C9BAA3;
+  --text-tertiary: #877864;
 
-  --border-color: #38291c;
-  --border-color-hover: #4a3826;
+  --border-color: #382E25;
+  --border-color-hover: #4E4034;
 
-  --accent-color: #d8b483;
-  --accent-color-hover: #e6c699;
-  --accent-color-light: #2e2318;
+  --accent-color: #FFA74F;
+  --accent-ink: #1C1611;
+  --accent-color-hover: #F0531C;
+  --accent-color-light: #382D24;
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.6);
+  --shadow-book: 2px 4px 16px rgba(0, 0, 0, 0.7);
 
-  --focus-ring: 0 0 0 2px #1c1611, 0 0 0 4px #d8b483;
+  --focus-ring: 0 0 0 2px #1C1611, 0 0 0 4px #FFA74F;
 
-  --p-button-primary-color: #1c1611;
+  --p-button-primary-color: #1C1611;
 }
 
-/* E-Ink Light - maximum-contrast monochrome, flat (no shadows) */
+/* E-Ink Light - maximum-contrast monochrome */
 .eink {
   --bg-app: #ffffff;
   --bg-card: #ffffff;
 
   --text-primary: #000000;
-  --text-secondary: #1a1a1a;
-  --text-tertiary: #3d3d3d;
+  --text-secondary: #222222;
+  --text-tertiary: #444444;
 
-  --border-color: #555555;
+  --border-color: #444444;
   --border-color-hover: #000000;
 
   --accent-color: #000000;
+  --accent-ink: #000000;
   --accent-color-hover: #000000;
-  --accent-color-light: #e0e0e0;
+  --accent-color-light: #e6e6e6;
 
   --shadow-sm: none;
   --shadow-md: none;
   --shadow-lg: none;
+  --shadow-book: none;
 
   --focus-ring: 0 0 0 2px #ffffff, 0 0 0 4px #000000;
 
   --p-button-primary-color: #ffffff;
 }
 
-/* E-Ink Dark - maximum-contrast monochrome on black, flat (no shadows) */
+/* E-Ink Dark - maximum-contrast monochrome on black */
 .eink-dark {
   --bg-app: #000000;
   --bg-card: #000000;
 
   --text-primary: #ffffff;
-  --text-secondary: #e0e0e0;
-  --text-tertiary: #b0b0b0;
+  --text-secondary: #dddddd;
+  --text-tertiary: #aaaaaa;
 
-  --border-color: #999999;
+  --border-color: #888888;
   --border-color-hover: #ffffff;
 
   --accent-color: #ffffff;
+  --accent-ink: #ffffff;
   --accent-color-hover: #ffffff;
-  --accent-color-light: #1a1a1a;
+  --accent-color-light: #222222;
 
   --shadow-sm: none;
   --shadow-md: none;
   --shadow-lg: none;
+  --shadow-book: none;
 
   --focus-ring: 0 0 0 2px #000000, 0 0 0 4px #ffffff;
 
@@ -466,4 +477,80 @@ html {
 .no-scrollbar {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
+}
+
+/* Book Cover Tactile & Spine Depth Effects */
+.book-cover-3d {
+  position: relative;
+  box-shadow: var(--shadow-book);
+  border-radius: 4px 8px 8px 4px;
+  overflow: hidden;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.book-cover-3d::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4%;
+  min-width: 3px;
+  max-width: 8px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(0, 0, 0, 0.25) 50%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+.book-cover-3d::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0) 50%,
+    rgba(0, 0, 0, 0.12) 100%
+  );
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Book drop cap styling */
+.drop-cap::first-letter {
+  float: left;
+  font-size: 3.25em;
+  line-height: 0.8;
+  padding-top: 4px;
+  padding-right: 8px;
+  padding-bottom: 2px;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  color: var(--accent-color);
+}
+
+/* Editorial pill tags and buttons */
+.editorial-pill {
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-card);
+  transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.editorial-pill:hover {
+  border-color: var(--border-color-hover);
+  background-color: var(--accent-color-light);
+}
+
+.editorial-pill.active {
+  background-color: var(--text-primary);
+  color: var(--bg-card);
+  border-color: var(--text-primary);
 }

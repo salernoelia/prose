@@ -3,19 +3,19 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout>
-	<!-- Glass Header -->
+	<!-- Header Navbar -->
 	<header class="navbar">
 		<div class="navbar-container">
 			<a href="#" class="logo">
 				<img class="logo-icon" src="/app-icon.svg" alt="Prose Logo" />
-				<span>Prose</span>
+				<span class="logo-text">Prose</span>
 			</a>
 			
 			<nav class="nav-links">
 				<a href="#features">Features</a>
 				<a href="#screenshots">Gallery</a>
 				<a href="/privacy">Privacy</a>
-				<a href="mailto:hello@eliasalerno.ch" class="btn btn-primary btn-sm">Contact</a>
+				<a href="https://github.com/salernoelia/prose" target="_blank" rel="noopener" class="btn btn-primary btn-sm">GitHub</a>
 			</nav>
 		</div>
 	</header>
@@ -23,24 +23,21 @@ import Layout from '../layouts/Layout.astro';
 	<!-- Hero Section -->
 	<section class="hero">
 		<div class="hero-content">
-			<span class="badge fade-in">Local-First eReader</span>
-			<h1 class="hero-title fade-in-delay-1">Read peacefully.</h1>
-			<p class="hero-subtitle fade-in-delay-2">
+			<span class="badge">Local-First eReader</span>
+			<h1 class="hero-title">Read peacefully.</h1>
+			<p class="hero-subtitle">
 				A minimalist, fast, and secure reader for ePub and PDF. Organize your personal library locally and synchronize across devices on your own terms.
 			</p>
-			<div class="hero-actions fade-in-delay-3">
-				<a href="mailto:hello@eliasalerno.ch" class="btn btn-primary">Get in Touch</a>
+			<div class="hero-actions">
+				<a href="https://github.com/salernoelia/prose" target="_blank" rel="noopener" class="btn btn-primary">Get the App</a>
 				<a href="#features" class="btn btn-secondary">Learn More</a>
 			</div>
 		</div>
 
-		<!-- Hero iPhone Mockup -->
-		<div class="hero-mockup-wrapper fade-in-delay-3">
-			<div class="iphone-mockup">
-				<div class="notch"></div>
-				<div class="screen">
-					<img src="/screenshots/personal-library-grid.png" alt="Prose Library View" />
-				</div>
+		<!-- Compact Hero Phone Mockup -->
+		<div class="hero-mockup-wrapper">
+			<div class="device-frame hero-device">
+				<img src="/screenshots/personal-library-grid.png" alt="Prose Library View" class="device-screen" />
 			</div>
 		</div>
 	</section>
@@ -103,7 +100,7 @@ import Layout from '../layouts/Layout.astro';
 		</div>
 	</section>
 
-	<!-- Screenshots Showcase -->
+	<!-- Screenshots Showcase Gallery -->
 	<section id="screenshots" class="screenshots-section">
 		<div class="section-header">
 			<h2 class="section-title">Interface Showcase</h2>
@@ -113,101 +110,71 @@ import Layout from '../layouts/Layout.astro';
 		<div class="carousel-container">
 			<div class="carousel-track">
 				<div class="carousel-item">
-					<div class="iphone-mockup">
-						<div class="notch"></div>
-						<div class="screen">
-							<img src="/screenshots/personal-library-grid.png" alt="Personal Library Grid" />
-						</div>
+					<div class="device-frame">
+						<img src="/screenshots/personal-library-grid.png" alt="Personal Library Grid" class="device-screen" />
 					</div>
 					<p class="carousel-caption">Personal Library Grid</p>
 				</div>
 
 				<div class="carousel-item">
-					<div class="iphone-mockup">
-						<div class="notch"></div>
-						<div class="screen">
-							<img src="/screenshots/reading-statistics.png" alt="Reading Statistics" />
-						</div>
+					<div class="device-frame">
+						<img src="/screenshots/reading-statistics.png" alt="Reading Statistics" class="device-screen" />
 					</div>
 					<p class="carousel-caption">Reading Statistics</p>
 				</div>
 
 				<div class="carousel-item">
-					<div class="iphone-mockup">
-						<div class="notch"></div>
-						<div class="screen">
-							<img src="/screenshots/typography-settings.png" alt="Typography Settings" />
-						</div>
+					<div class="device-frame">
+						<img src="/screenshots/typography-settings.png" alt="Typography Settings" class="device-screen" />
 					</div>
 					<p class="carousel-caption">Typography Settings</p>
 				</div>
 
 				<div class="carousel-item">
-					<div class="iphone-mockup">
-						<div class="notch"></div>
-						<div class="screen">
-							<img src="/screenshots/epub-reading-mode.png" alt="ePub Reading Mode" />
-						</div>
+					<div class="device-frame">
+						<img src="/screenshots/epub-reading-mode.png" alt="ePub Reading Mode" class="device-screen" />
 					</div>
 					<p class="carousel-caption">ePub Reading Mode</p>
 				</div>
 
 				<div class="carousel-item">
-					<div class="iphone-mockup">
-						<div class="notch"></div>
-						<div class="screen">
-							<img src="/screenshots/quick-formatting-menu.png" alt="Quick Formatting Menu" />
-						</div>
+					<div class="device-frame">
+						<img src="/screenshots/quick-formatting-menu.png" alt="Quick Formatting Menu" class="device-screen" />
 					</div>
 					<p class="carousel-caption">Quick Formatting Menu</p>
 				</div>
 
 				<div class="carousel-item">
-					<div class="iphone-mockup">
-						<div class="notch"></div>
-						<div class="screen">
-							<img src="/screenshots/text-selection-and-notes.png" alt="Text Selection and Notes" />
-						</div>
+					<div class="device-frame">
+						<img src="/screenshots/text-selection-and-notes.png" alt="Text Selection and Notes" class="device-screen" />
 					</div>
 					<p class="carousel-caption">Text Selection & Notes</p>
 				</div>
 
 				<div class="carousel-item">
-					<div class="iphone-mockup">
-						<div class="notch"></div>
-						<div class="screen">
-							<img src="/screenshots/offline-dictionary-lookup.png" alt="Offline Dictionary Lookup" />
-						</div>
+					<div class="device-frame">
+						<img src="/screenshots/offline-dictionary-lookup.png" alt="Offline Dictionary Lookup" class="device-screen" />
 					</div>
 					<p class="carousel-caption">Offline Dictionary Lookup</p>
 				</div>
 
 				<div class="carousel-item">
-					<div class="iphone-mockup">
-						<div class="notch"></div>
-						<div class="screen">
-							<img src="/screenshots/table-of-contents-sidebar.png" alt="Table of Contents Sidebar" />
-						</div>
+					<div class="device-frame">
+						<img src="/screenshots/table-of-contents-sidebar.png" alt="Table of Contents Sidebar" class="device-screen" />
 					</div>
 					<p class="carousel-caption">Table of Contents Sidebar</p>
 				</div>
 
 				<div class="carousel-item">
-					<div class="iphone-mockup">
-						<div class="notch"></div>
-						<div class="screen">
-							<img src="/screenshots/bookmarks-and-highlights-list.png" alt="Bookmarks and Highlights List" />
-						</div>
+					<div class="device-frame">
+						<img src="/screenshots/bookmarks-and-highlights-list.png" alt="Bookmarks and Highlights List" class="device-screen" />
 					</div>
 					<p class="carousel-caption">Bookmarks & Highlights List</p>
 				</div>
 
 				<div class="carousel-item">
-					<div class="iphone-mockup">
-						<div class="notch"></div>
-						<div class="screen">
-							<img src="/screenshots/fixed-layout-pdf-reader.png" alt="Fixed-Layout PDF Reader" />
-						</div>
+					<div class="device-frame">
+						<img src="/screenshots/fixed-layout-pdf-reader.png" alt="Fixed-Layout PDF Reader" class="device-screen" />
 					</div>
 					<p class="carousel-caption">Fixed-Layout PDF Reader</p>
 				</div>
@@ -221,9 +188,9 @@ import Layout from '../layouts/Layout.astro';
 			<div class="footer-brand">
 				<a href="#" class="logo">
 					<img class="logo-icon" src="/app-icon.svg" alt="Prose Logo" />
-					<span>Prose</span>
+					<span class="logo-text">Prose</span>
 				</a>
-				<p>A private, local-first reading space.</p>
+				<p>A quiet, local-first reading space for macOS, Windows, and Linux.</p>
 			</div>
 			
 			<div class="footer-links">
@@ -233,7 +200,8 @@ import Layout from '../layouts/Layout.astro';
 					<a href="#screenshots">Gallery</a>
 				</div>
 				<div class="links-column">
-					<h4>Legal & Contact</h4>
+					<h4>Project & Legal</h4>
+					<a href="https://github.com/salernoelia/prose" target="_blank" rel="noopener">GitHub</a>
 					<a href="/privacy">Privacy Policy</a>
 					<a href="mailto:hello@eliasalerno.ch">hello@eliasalerno.ch</a>
 				</div>
@@ -246,25 +214,25 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <style>
-	/* Navbar Layout */
+	/* Navbar */
 	.navbar {
 		position: fixed;
 		top: 0;
 		left: 0;
 		right: 0;
-		height: 70px;
+		height: 64px;
 		background-color: var(--glass-bg);
-		backdrop-filter: blur(16px) saturate(120%);
-		-webkit-backdrop-filter: blur(16px) saturate(120%);
+		backdrop-filter: blur(16px);
+		-webkit-backdrop-filter: blur(16px);
 		border-bottom: 1px solid var(--glass-border);
 		z-index: 100;
 	}
 
 	.navbar-container {
-		max-width: 1100px;
+		max-width: 1040px;
 		height: 100%;
 		margin: 0 auto;
-		padding: 0 24px;
+		padding: 0 20px;
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
@@ -274,32 +242,31 @@ import Layout from '../layouts/Layout.astro';
 		display: flex;
 		align-items: center;
 		gap: 10px;
-		font-family: var(--font-serif);
-		font-size: 21px;
-		font-weight: 500;
-		color: var(--text-primary);
 		text-decoration: none;
-		transition: opacity 0.2s ease;
-	}
-
-	.logo:hover {
-		opacity: 0.9;
 	}
 
 	.logo-icon {
-		width: 32px;
-		height: 32px;
-		border-radius: 8px;
+		width: 28px;
+		height: 28px;
+		border-radius: 7px;
+	}
+
+	.logo-text {
+		font-family: var(--font-serif);
+		font-size: 20px;
+		font-weight: 600;
+		color: var(--text-primary);
+		letter-spacing: -0.02em;
 	}
 
 	.nav-links {
 		display: flex;
 		align-items: center;
-		gap: 28px;
+		gap: 24px;
 	}
 
 	.nav-links a {
-		font-size: 14px;
+		font-size: 13px;
 		font-weight: 500;
 		color: var(--text-muted);
 		text-decoration: none;
@@ -311,17 +278,17 @@ import Layout from '../layouts/Layout.astro';
 	}
 
 	.nav-links .btn {
-		margin-left: 8px;
+		margin-left: 6px;
 	}
 
 	/* Hero Section */
 	.hero {
-		max-width: 1100px;
+		max-width: 1040px;
 		margin: 0 auto;
-		padding: 160px 24px 80px;
+		padding: 120px 20px 60px;
 		display: grid;
-		grid-template-columns: 1.2fr 1fr;
-		gap: 60px;
+		grid-template-columns: 1.15fr 0.85fr;
+		gap: 48px;
 		align-items: center;
 	}
 
@@ -332,119 +299,98 @@ import Layout from '../layouts/Layout.astro';
 	}
 
 	.badge {
-		background-color: var(--bg-tertiary);
+		background-color: var(--bg-secondary);
 		border: 1px solid var(--border);
 		color: var(--accent);
-		font-size: 12px;
-		font-weight: 500;
+		font-size: 11px;
+		font-weight: 600;
 		letter-spacing: 0.5px;
-		padding: 6px 14px;
-		border-radius: 20px;
-		margin-bottom: 24px;
+		padding: 4px 12px;
+		border-radius: 16px;
+		margin-bottom: 18px;
+		text-transform: uppercase;
 	}
 
 	.hero-title {
 		font-family: var(--font-serif);
-		font-size: 58px;
-		line-height: 1.15;
-		font-weight: 500;
-		margin: 0 0 20px;
+		font-size: 50px;
+		line-height: 1.1;
+		font-weight: 600;
+		margin: 0 0 16px;
 		color: var(--text-primary);
+		letter-spacing: -0.03em;
 	}
 
 	.hero-subtitle {
-		font-size: 18px;
+		font-size: 16px;
 		line-height: 1.6;
 		color: var(--text-muted);
-		margin: 0 0 36px;
-		max-width: 500px;
+		margin: 0 0 28px;
+		max-width: 460px;
 	}
 
 	.hero-actions {
 		display: flex;
-		gap: 16px;
+		gap: 12px;
 	}
 
-	/* iPhone Mockups styling */
+	/* Sleek, proportional device frames */
 	.hero-mockup-wrapper {
 		display: flex;
 		justify-content: center;
 		align-items: center;
 	}
 
-	.iphone-mockup {
-		position: relative;
-		width: 280px;
-		height: 605px;
-		border: 10px solid #28221b;
-		border-radius: 40px;
-		background-color: #0b0a09;
-		box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7);
+	.device-frame {
+		width: 210px;
+		aspect-ratio: 1284 / 2778;
+		border-radius: 28px;
+		border: 6px solid #1C1917;
+		background-color: #1C1917;
+		box-shadow: 0 16px 36px -10px rgba(28, 25, 23, 0.2), 0 1px 3px rgba(28, 25, 23, 0.08);
 		overflow: hidden;
+		flex-shrink: 0;
 	}
 
-	.iphone-mockup::after {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		border: 1px solid rgba(230, 223, 213, 0.08);
-		border-radius: 30px;
-		pointer-events: none;
-		z-index: 15;
+	.hero-device {
+		width: 230px;
+		border-width: 7px;
+		border-radius: 32px;
+		box-shadow: 0 20px 48px -12px rgba(28, 25, 23, 0.25), 0 1px 4px rgba(28, 25, 23, 0.1);
 	}
 
-	.notch {
-		position: absolute;
-		top: 12px;
-		left: 50%;
-		transform: translateX(-50%);
-		width: 100px;
-		height: 26px;
-		background-color: #0b0a09;
-		border-radius: 13px;
-		z-index: 20;
-	}
-
-	.screen {
-		position: relative;
+	.device-screen {
 		width: 100%;
 		height: 100%;
-		background-color: var(--bg-secondary);
-		z-index: 5;
-	}
-
-	.screen img {
-		width: 100%;
-		height: 100%;
+		display: block;
 		object-fit: cover;
 	}
 
 	/* Features Grid Section */
 	.features-section {
 		border-top: 1px solid var(--border);
-		max-width: 1100px;
+		max-width: 1040px;
 		margin: 0 auto;
-		padding: 100px 24px;
+		padding: 80px 20px;
 	}
 
 	.section-header {
 		text-align: center;
-		max-width: 600px;
-		margin: 0 auto 64px;
+		max-width: 560px;
+		margin: 0 auto 48px;
 	}
 
 	.section-title {
 		font-family: var(--font-serif);
-		font-size: 38px;
-		font-weight: 500;
-		margin: 0 0 16px;
+		font-size: 32px;
+		font-weight: 600;
+		margin: 0 0 12px;
+		color: var(--text-primary);
+		letter-spacing: -0.02em;
 	}
 
 	.section-desc {
-		font-size: 16px;
+		font-size: 15px;
 		line-height: 1.5;
 		color: var(--text-muted);
 		margin: 0;
@@ -453,54 +399,50 @@ import Layout from '../layouts/Layout.astro';
 	.features-grid {
 		display: grid;
 		grid-template-columns: repeat(3, 1fr);
-		gap: 32px;
+		gap: 24px;
 	}
 
 	.feature-card {
-		background-color: var(--bg-secondary);
+		background-color: var(--bg-card);
 		border: 1px solid var(--border);
-		padding: 36px;
-		border-radius: 16px;
-		transition: border-color 0.25s ease, transform 0.25s ease;
+		padding: 28px;
+		border-radius: 14px;
+		transition: border-color 0.2s ease, transform 0.2s ease;
+		box-shadow: 0 2px 8px rgba(28, 25, 23, 0.03);
 	}
 
 	.feature-card:hover {
 		border-color: var(--accent);
-		transform: translateY(-4px);
+		transform: translateY(-2px);
 	}
 
 	.feature-icon {
-		width: 48px;
-		height: 48px;
-		border-radius: 10px;
-		background-color: var(--bg-tertiary);
+		width: 42px;
+		height: 42px;
+		border-radius: 9px;
+		background-color: var(--bg-secondary);
 		color: var(--accent);
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		margin-bottom: 24px;
+		margin-bottom: 18px;
 	}
 
-	.feature-icon svg,
 	.feature-icon .material-symbols-outlined {
-		width: 24px;
-		height: 24px;
-		font-size: 24px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
+		font-size: 22px;
 	}
 
 	.feature-card h3 {
 		font-family: var(--font-serif);
-		font-size: 20px;
-		font-weight: 500;
-		margin: 0 0 12px;
+		font-size: 18px;
+		font-weight: 600;
+		margin: 0 0 8px;
+		color: var(--text-primary);
 	}
 
 	.feature-card p {
-		font-size: 14px;
-		line-height: 1.6;
+		font-size: 13px;
+		line-height: 1.55;
 		color: var(--text-muted);
 		margin: 0;
 	}
@@ -508,27 +450,27 @@ import Layout from '../layouts/Layout.astro';
 	/* Screenshots Showcase Carousel */
 	.screenshots-section {
 		border-top: 1px solid var(--border);
-		padding: 100px 0;
+		padding: 80px 0;
 		background-color: var(--bg-secondary);
 	}
 
 	.carousel-container {
 		width: 100%;
 		overflow-x: auto;
-		padding: 20px 0 60px;
+		padding: 10px 0 40px;
 		display: flex;
 		scroll-snap-type: x mandatory;
-		scrollbar-width: none; /* Hide standard Firefox scrollbar */
+		scrollbar-width: none;
 	}
 
 	.carousel-container::-webkit-scrollbar {
-		display: none; /* Hide Safari/Chrome scrollbar */
+		display: none;
 	}
 
 	.carousel-track {
 		display: flex;
-		gap: 40px;
-		padding: 0 80px;
+		gap: 28px;
+		padding: 0 60px;
 	}
 
 	.carousel-item {
@@ -536,75 +478,64 @@ import Layout from '../layouts/Layout.astro';
 		flex-direction: column;
 		align-items: center;
 		scroll-snap-align: center;
+		flex-shrink: 0;
 	}
 
 	.carousel-caption {
-		margin-top: 20px;
-		font-size: 14px;
+		margin-top: 14px;
+		font-size: 13px;
 		font-weight: 500;
 		color: var(--text-muted);
-	}
-
-
-
-	.btn-group {
-		display: flex;
-		gap: 12px;
-		width: 100%;
-	}
-
-	.btn-group .btn {
-		flex: 1;
 	}
 
 	/* Footer Layout */
 	.footer {
 		border-top: 1px solid var(--border);
 		background-color: var(--bg-primary);
-		padding: 80px 24px 40px;
+		padding: 60px 20px 32px;
 	}
 
 	.footer-container {
-		max-width: 1100px;
-		margin: 0 auto 60px;
+		max-width: 1040px;
+		margin: 0 auto 48px;
 		display: flex;
 		justify-content: space-between;
-		gap: 60px;
+		gap: 48px;
 	}
 
 	.footer-brand {
-		max-width: 320px;
+		max-width: 300px;
 	}
 
 	.footer-brand p {
-		margin-top: 16px;
-		font-size: 14px;
+		margin-top: 12px;
+		font-size: 13px;
 		line-height: 1.5;
 		color: var(--text-muted);
 	}
 
 	.footer-links {
 		display: flex;
-		gap: 80px;
+		gap: 60px;
 	}
 
 	.links-column {
 		display: flex;
 		flex-direction: column;
-		gap: 12px;
+		gap: 10px;
 	}
 
 	.links-column h4 {
-		font-size: 13px;
+		font-size: 12px;
 		font-weight: 600;
 		color: var(--text-primary);
 		text-transform: uppercase;
 		letter-spacing: 0.5px;
-		margin: 0 0 8px;
+		margin: 0 0 6px;
 	}
 
 	.links-column a {
-		font-size: 14px;
+		font-size: 13px;
 		color: var(--text-muted);
 		text-decoration: none;
 		transition: color 0.2s ease;
@@ -616,99 +547,68 @@ import Layout from '../layouts/Layout.astro';
 
 	.footer-bottom {
 		border-top: 1px solid var(--border);
-		max-width: 1100px;
+		max-width: 1040px;
 		margin: 0 auto;
-		padding-top: 32px;
+		padding-top: 24px;
 		display: flex;
 		justify-content: center;
 	}
 
 	.footer-bottom p {
-		font-size: 13px;
+		font-size: 12px;
 		color: var(--text-muted);
 		margin: 0;
 	}
 
-	/* Buttons CSS Utilities */
+	/* Buttons - White text on orange */
 	.btn {
 		display: inline-flex;
 		justify-content: center;
 		align-items: center;
-		padding: 12px 28px;
-		border-radius: 8px;
-		font-size: 14px;
-		font-weight: 500;
+		padding: 10px 22px;
+		border-radius: 24px;
+		font-size: 13px;
+		font-weight: 600;
 		text-decoration: none;
 		cursor: pointer;
 		transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 	}
 
 	.btn-sm {
-		padding: 8px 18px;
-		font-size: 13px;
-		border-radius: 6px;
+		padding: 6px 14px;
+		font-size: 12px;
+		border-radius: 16px;
 	}
 
 	.btn-primary {
 		background-color: var(--accent);
-		color: #12100e !important;
+		color: #ffffff !important;
 		border: 1px solid var(--accent);
 	}
 
 	.btn-primary:hover {
 		background-color: var(--accent-hover);
 		border-color: var(--accent-hover);
-		color: #12100e !important;
+		color: #ffffff !important;
 	}
 
 	.btn-secondary {
-		background-color: transparent;
+		background-color: var(--bg-card);
 		color: var(--text-primary);
 		border: 1px solid var(--border);
 	}
 
 	.btn-secondary:hover {
-		background-color: var(--bg-tertiary);
+		background-color: var(--bg-secondary);
 		border-color: var(--text-muted);
 	}
 
-	/* Micro Animations */
-	.fade-in {
-		animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-	}
-
-	.fade-in-delay-1 {
-		opacity: 0;
-		animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
-	}
-
-	.fade-in-delay-2 {
-		opacity: 0;
-		animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
-	}
-
-	.fade-in-delay-3 {
-		opacity: 0;
-		animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.45s forwards;
-	}
-
-	@keyframes fadeIn {
-		from {
-			opacity: 0;
-			transform: translateY(15px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	/* Responsive Media Queries */
-	@media (max-width: 900px) {
+	/* Responsive */
+	@media (max-width: 860px) {
 		.hero {
 			grid-template-columns: 1fr;
-			padding-top: 120px;
-			gap: 40px;
+			padding-top: 100px;
+			gap: 36px;
 			text-align: center;
 		}
 
@@ -727,25 +627,26 @@ import Layout from '../layouts/Layout.astro';
 
 		.footer-container {
 			flex-direction: column;
-			gap: 40px;
+			gap: 32px;
 		}
 	}
 
-	@media (max-width: 600px) {
+	@media (max-width: 580px) {
 		.features-grid {
 			grid-template-columns: 1fr;
 		}
 
 		.nav-links {
-			display: none; /* Hide navbar on mobile for simplicity */
+			display: none;
 		}
 
 		.hero-title {
-			font-size: 40px;
+			font-size: 36px;
 		}
 
 		.carousel-track {
-			padding: 0 24px;
+			padding: 0 20px;
+			gap: 20px;
 		}
 	}
 </style>
