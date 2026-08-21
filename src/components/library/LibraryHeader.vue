@@ -1,4 +1,7 @@
-<script setup lang="ts">
+<script
+    setup
+    lang="ts"
+>
 import { computed } from "vue";
 
 const props = withDefaults(
@@ -27,17 +30,22 @@ const getSyncButtonText = computed(() => {
 </script>
 
 <template>
-    <header class="pb-6 flex justify-between items-center">
-        <h1 class="text-xl lg:text-3xl font-semibold tracking-tight text-(--text-primary)">
-            Library
-        </h1>
+    <header
+        class="pb-6 pt-4 border-b border-(--border-color) dark:border-white/20 mb-12 sm:mb-16 flex flex-wrap items-end justify-between gap-3"
+    >
+        <div>
 
-        <div class="flex items-center gap-3">
+            <h1 class="text-2xl lg:text-4xl font-semibold tracking-tight text-(--text-primary) font-serif">
+                Library
+            </h1>
+        </div>
+
+        <div class="flex items-center gap-2">
             <button
                 v-if="configured"
                 @click="emit('sync')"
                 :disabled="syncing"
-                class="px-4 py-1.5 text-xs font-semibold rounded border text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer focus-ring-minimal flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="px-3.5 py-1.5 text-xs font-medium rounded-full border text-(--text-primary) bg-(--bg-card) hover:bg-(--accent-color-light) transition-all cursor-pointer focus-ring-minimal flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
                 :class="hasSyncError
                     ? 'border-red-500 text-red-500 dark:border-red-500 dark:text-red-400'
                     : 'border-(--border-color)'"
@@ -52,7 +60,7 @@ const getSyncButtonText = computed(() => {
                 v-else
                 disabled
                 title="Configure WebDAV sync in settings"
-                class="px-4 py-1.5 text-xs font-semibold rounded border border-(--border-color) text-(--text-tertiary) opacity-50 cursor-not-allowed flex items-center gap-2"
+                class="px-3.5 py-1.5 text-xs font-medium rounded-full border border-(--border-color) text-(--text-tertiary) opacity-40 cursor-not-allowed flex items-center gap-1.5"
             >
                 <span class="material-symbols-outlined text-base select-none">sync</span>
                 <span>Sync</span>
@@ -60,7 +68,7 @@ const getSyncButtonText = computed(() => {
 
             <button
                 @click="emit('import')"
-                class="px-4 py-1.5 text-xs font-semibold rounded border border-(--border-color) text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer focus-ring-minimal flex items-center gap-2"
+                class="px-3.5 py-1.5 text-xs font-medium rounded-full border border-(--border-color) bg-(--bg-card) text-(--text-primary) hover:bg-(--accent-color-light) transition-all cursor-pointer focus-ring-minimal flex items-center gap-1.5 shadow-xs"
             >
                 <span class="material-symbols-outlined text-base select-none">add</span>
                 <span>Import</span>

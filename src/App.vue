@@ -157,7 +157,7 @@ onUnmounted(() => {
             class="flex-1 min-h-0 transition-all duration-300 flex justify-center w-full"
             :class="currentView === 'reader'
                 ? 'h-full md:px-12 md:pb-8 overflow-hidden items-stretch'
-                : 'overflow-y-auto p-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-28 items-start scroll-smooth md:p-8 md:pt-12 md:pb-24'"
+                : 'overflow-y-auto p-6 pt-[calc(1.5rem+env(safe-area-inset-top,0px))] pb-36 items-start scroll-smooth md:p-8 md:pt-12 md:pb-36'"
             style="touch-action: pan-y; -webkit-overflow-scrolling: touch;"
         >
             <div :class="currentView === 'reader' ? 'w-full max-w-4xl mx-auto h-full' : 'w-full max-w-3xl'">
@@ -179,7 +179,7 @@ onUnmounted(() => {
                     v-else-if="currentView === 'stats'"
                     class="w-full"
                 >
-                    <StatsView />
+                    <StatsView @select-book="onSelectBook" />
                 </div>
 
                 <div

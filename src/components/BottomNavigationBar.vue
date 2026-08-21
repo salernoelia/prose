@@ -1,7 +1,4 @@
-<script
-    setup
-    lang="ts"
->
+<script setup lang="ts">
 type ViewType = 'library' | 'settings' | 'reader' | 'stats'
 
 interface NavItem {
@@ -27,52 +24,34 @@ const navItems: NavItem[] = [
 
 <template>
     <nav
-        class="fixed z-40 flex items-center justify-around bg-(--bg-app) border border-(--border-color) shadow-lg transition-all duration-300 bottom-0 left-0 right-0 h-18 px-6 border-x-0 border-b-0 safe-bottom md:bottom-6 md:left-1/2 md:right-auto md:-translate-x-1/2 md:h-16 md:w-80 md:grid md:grid-cols-3 md:justify-items-center md:rounded-full md:px-4 md:border">
+        class="fixed z-40 font-serif select-none transition-all duration-200 bottom-0 left-0 right-0 h-[calc(4.75rem+env(safe-area-inset-bottom,0px))] pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] pt-2 bg-(--bg-app)/92 dark:bg-(--bg-app)/95 backdrop-blur-xl border-t border-(--border-color) flex items-center justify-around px-3 md:bottom-8 md:left-1/2 md:right-auto md:-translate-x-1/2 md:h-14 md:w-auto md:min-w-[320px] md:rounded-full md:border md:border-(--border-color) md:bg-(--bg-card)/90 md:shadow-lg md:p-1.5 md:gap-1.5 md:pb-1.5 md:pt-1.5"
+    >
         <button
             v-for="item in navItems"
             :key="item.value"
             @click="emit('navigate', item.value)"
-            class="flex flex-col items-center justify-center gap-1 min-w-16 h-full text-xs transition-all duration-100 active:scale-95 active:opacity-80 focus-ring-minimal md:flex-row md:gap-2 md:px-3 md:rounded-full"
-            :class="currentView === item.value || (item.value === 'library' && currentView === 'reader')
+            class="relative flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 flex-1 md:flex-initial h-full px-3 md:px-5 rounded-xl md:rounded-full transition-all duration-150 cursor-pointer active:scale-95 text-(--text-secondary) hover:text-(--text-primary)"
+            :class="[
+                currentView === item.value || (item.value === 'library' && currentView === 'reader')
                     ? 'text-(--text-primary) font-semibold'
-                    : 'text-(--text-secondary)'
-                "
+                    : 'font-normal'
+            ]"
+            :aria-label="item.label"
         >
-            <span class="material-symbols-outlined text-lg leading-none select-none">
+            <!-- Active pill background -->
+            <div
+                v-if="currentView === item.value || (item.value === 'library' && currentView === 'reader')"
+                class="absolute inset-0 rounded-xl md:rounded-full bg-(--text-primary)/8 dark:bg-white/10 -z-10 transition-all duration-200"
+            ></div>
+
+            <span
+                class="material-symbols-outlined text-[24px] md:text-[20px] leading-none flex items-center justify-center select-none shrink-0"
+            >
                 {{ item.icon }}
             </span>
-            <span
-                :data-text="item.label"
-                class="nav-label"
-            >{{ item.label }}</span>
+            <span class="text-xs md:text-sm font-serif leading-none flex items-center tracking-normal">
+                {{ item.label }}
+            </span>
         </button>
     </nav>
 </template>
-
-<style scoped>
-    @media (max-width: 767px) {
-        .safe-bottom {
-            padding-bottom: env(safe-area-inset-bottom, 0px);
-            height: calc(4.5rem + env(safe-area-inset-bottom, 0px));
-        }
-    }
-
-    /* Fixes horizontal layout shift from font-weight changes */
-    .nav-label {
-        display: inline-flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .nav-label::after {
-        content: attr(data-text);
-        content: attr(data-text) / '';
-        height: 0;
-        visibility: hidden;
-        overflow: hidden;
-        user-select: none;
-        pointer-events: none;
-        font-weight: 600;
-        /* Match font-semibold */
-    }
-</style>
