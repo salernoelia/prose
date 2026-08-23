@@ -289,7 +289,11 @@ const confirmDelete = async () => {
             :value="dataViewEntries"
             :layout="layout"
             dataKey="book.id"
-            class="w-full"
+            class="w-full !bg-transparent"
+            :pt="{
+                root: { class: '!bg-transparent !border-none' },
+                content: { class: '!bg-transparent !border-none !p-0' },
+            }"
         >
             <template #grid="slotProps">
                 <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:gap-6">
@@ -366,6 +370,9 @@ const confirmDelete = async () => {
         </Dialog>
 
         <!-- Invisible bottom spacer so scrolling comfortably clears floating bottom nav -->
-        <div class="h-28 sm:h-36 w-full shrink-0 pointer-events-none" aria-hidden="true"></div>
+        <div
+            class="h-28 sm:h-36 w-full shrink-0 pointer-events-none"
+            aria-hidden="true"
+        ></div>
     </div>
 </template>

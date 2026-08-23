@@ -464,9 +464,16 @@ html {
   background: var(--border-color-hover);
 }
 
-/* Global PrimeVue Font Override */
+/* Global PrimeVue Overrides */
 .p-component {
   font-family: var(--font-serif) !important;
+}
+
+.p-dataview,
+.p-dataview-content {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
