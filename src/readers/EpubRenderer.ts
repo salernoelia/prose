@@ -19,6 +19,7 @@ import type {
   ViewportRect,
 } from './types'
 import { DARK_THEMES, THEME_TOKENS } from './themes'
+import { readerFontFaceCss, readerFontStack } from './fonts'
 
 /** Default highlight color, also used as the annotation tint foliate draws. */
 const DEFAULT_HIGHLIGHT_COLOR = '#f6c945'
@@ -88,9 +89,10 @@ interface FoliateLandmark {
  * centering and indents). The `!important` rules win over all but author `!important`.
  */
 function readingCss(style: ReadingStyle): string {
-  const font = style.fontFamily
+  const font = readerFontStack(style.fontFamily)
   const { bg, fg } = THEME_TOKENS[style.theme]
   return `
+    ${readerFontFaceCss()}
     html {
       color-scheme: ${DARK_THEMES.has(style.theme) ? 'dark' : 'light'};
       font-size: ${style.fontSize}px;

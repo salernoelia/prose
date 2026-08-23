@@ -4,8 +4,11 @@ import PrimeVue from 'primevue/config'
 import { definePreset } from '@primeuix/themes'
 import Aura from '@primeuix/themes/aura'
 import 'material-symbols/outlined.css'
-import '@fontsource-variable/literata/opsz.css'
-import '@fontsource-variable/literata/opsz-italic.css'
+// Static cuts, not the variable package: that one registers the family as
+// "Literata Variable", which never matches the "Literata" stored in settings.
+import '@fontsource/literata/400.css'
+import '@fontsource/literata/400-italic.css'
+import '@fontsource/literata/700.css'
 import '@fontsource/lora/400.css'
 import '@fontsource/lora/400-italic.css'
 import '@fontsource/lora/700.css'
