@@ -5,15 +5,15 @@ set -e
 cd "$(dirname "$0")/.."
 
 # Check if mobile icon source exists
-MOBILE_SRC="assets/app-icon-mobile.png"
+MOBILE_SRC="assets/app-icon-2.png"
 if [ ! -f "$MOBILE_SRC" ]; then
   echo "Error: $MOBILE_SRC not found."
-  echo "Please place a full-bleed 1024x1024 square PNG (no rounded corners, no transparency) at assets/app-icon-mobile.png"
+  echo "Please place a full-bleed 1024x1024 square PNG (no rounded corners, no transparency) at assets/app-icon-2.png"
   exit 1
 fi
 
-echo "Generating desktop icons from assets/app-icon.png..."
-bunx tauri icon assets/app-icon.png
+echo "Generating desktop icons from assets/app-icon-2.png..."
+bunx tauri icon assets/app-icon-2.png
 
 echo "Generating mobile icons from $MOBILE_SRC..."
 bunx tauri icon "$MOBILE_SRC" --output temp-icons
