@@ -1,0 +1,19 @@
+[project]
+name = "prose"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Elia Salerno", email = "hello@eliasalerno.ch" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "pillow>=12.3.0",
+]
+
+[project.scripts]
+prose = "prose:main"
+
+[build-system]
+requires = ["uv_build>=0.12.3,<0.13.0"]
+build-backend = "uv_build"
