@@ -347,6 +347,7 @@ onUnmounted(() => {
 <template>
     <div class="w-full relative h-full flex flex-col justify-between select-none">
         <ReaderClickZones
+            :click-zone-size="clickZoneSize"
             @prev="prev"
             @next="next"
         />
@@ -362,6 +363,7 @@ onUnmounted(() => {
             <div class="relative flex-1 overflow-hidden">
                 <div
                     ref="host"
+                    data-reader-host
                     class="absolute inset-x-0 top-0"
                     style="bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px))"
                     @renderer-click="handleRendererClick"
