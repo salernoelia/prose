@@ -10,7 +10,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     (e: "select"): void;
-    (e: "open-menu", event: Event): void;
+    (e: "open-menu", event: MouseEvent): void;
 }>();
 
 const imageLoadFailed = ref(false);

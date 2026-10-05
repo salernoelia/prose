@@ -7,7 +7,7 @@ defineProps<{
 
 const emit = defineEmits<{
     (e: "select"): void;
-    (e: "open-menu", event: Event): void;
+    (e: "open-menu", event: MouseEvent): void;
 }>();
 </script>
 
