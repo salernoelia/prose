@@ -1,5 +1,12 @@
 # Prose
 
+<div align="center">
+  <img src="assets/app-icon.png" width="160" alt="Prose Icon" style="border-radius: 22%" />
+  <p><em>Minimalist, local-first reader for ePub and PDF books</em></p>
+</div>
+
+---
+
 A minimalist, local-first reader for ePub 2, ePub 3, and PDF books.
 
 Prose is built with Tauri 2 and Rust for the application core, paired with a Vue 3 and TypeScript frontend powered by PrimeVue and Tailwind CSS.
