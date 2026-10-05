@@ -476,6 +476,11 @@ html {
   padding: 0 !important;
 }
 
+.p-menu-separator {
+  border-top: 1px solid var(--border-color) !important;
+  margin: 4px 0 !important;
+}
+
 /* Hide scrollbar for Chrome, Safari and Opera */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

@@ -181,12 +181,22 @@ const menuModel = computed(() => {
     ];
 });
 
-const handleOpenMenu = (event: {
-    originalEvent: MouseEvent;
-    entry: LibraryEntryDto;
-}) => {
-    selectedEntry.value = event.entry;
-    menuRef.value.toggle(event.originalEvent);
+const handleOpenMenu = (event: MouseEvent, entry: LibraryEntryDto) => {
+    const target =
+        (event.currentTarget as HTMLElement) ||
+        (event.target as HTMLElement)?.closest("button") ||
+        (event.target as HTMLElement);
+
+    if (
+        menuRef.value?.overlayVisible &&
+        selectedEntry.value?.book.id === entry.book.id
+    ) {
+        menuRef.value.hide();
+        return;
+    }
+
+    selectedEntry.value = entry;
+    menuRef.value?.show(event, target);
 };
 
 const confirmDelete = async () => {
@@ -303,7 +313,7 @@ const confirmDelete = async () => {
                         :entry="entry"
                         :appDataPath="appDataPath"
                         @select="handleSelect(entry.book)"
-                        @openMenu="handleOpenMenu"
+                        @open-menu="(event) => handleOpenMenu(event, entry)"
                     />
                 </div>
             </template>
@@ -316,7 +326,7 @@ const confirmDelete = async () => {
                         :entry="entry"
                         :appDataPath="appDataPath"
                         @select="handleSelect(entry.book)"
-                        @openMenu="handleOpenMenu"
+                        @open-menu="(event) => handleOpenMenu(event, entry)"
                     />
                 </div>
             </template>
@@ -326,7 +336,7 @@ const confirmDelete = async () => {
             ref="menuRef"
             :model="menuModel"
             :popup="true"
-            class="border border-(--border-color) bg-(--bg-card) shadow-lg rounded-2xl p-1 font-serif text-xs"
+            class="border border-(--border-color) bg-(--bg-card) shadow-lg rounded-2xl p-1 font-serif text-xs min-w-44"
         >
             <template #item="{ item }">
                 <button

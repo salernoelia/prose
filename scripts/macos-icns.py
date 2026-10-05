@@ -16,7 +16,8 @@ import sys
 from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.join(ROOT, "assets", "app-icon.png")
+SRC_ARG = sys.argv[1] if len(sys.argv) > 1 else os.path.join("assets", "app-icon-2.png")
+SRC = SRC_ARG if os.path.isabs(SRC_ARG) else os.path.join(ROOT, SRC_ARG)
 OUT = os.path.join(ROOT, "src-tauri", "icons", "icon.icns")
 
 CANVAS = 1024            # Apple macOS icon grid, expressed at 1024px

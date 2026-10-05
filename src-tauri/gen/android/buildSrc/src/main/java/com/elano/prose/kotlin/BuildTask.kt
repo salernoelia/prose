@@ -14,9 +14,26 @@ open class BuildTask : DefaultTask() {
     @Input
     var release: Boolean? = null
 
+    private fun findExecutable(name: String): String {
+        val home = System.getenv("HOME") ?: System.getProperty("user.home") ?: ""
+        val candidates = listOf(
+            "/opt/homebrew/bin/$name",
+            "/usr/local/bin/$name",
+            "$home/.bun/bin/$name",
+            "$home/.cargo/bin/$name"
+        )
+        for (candidate in candidates) {
+            val file = File(candidate)
+            if (file.canExecute()) {
+                return file.absolutePath
+            }
+        }
+        return name
+    }
+
     @TaskAction
     fun assemble() {
-        val executable = """bun""";
+        val executable = findExecutable("""bun""");
         try {
             runTauriCli(executable)
         } catch (e: Exception) {
@@ -75,10 +92,16 @@ open class BuildTask : DefaultTask() {
                 environment("ANDROID_HOME", sdkDir)
                 environment("NDK_HOME", properties.getProperty("ndk.dir") ?: "$sdkDir/ndk/29.0.13846066")
             }
-            val home = System.getenv("HOME") ?: System.getProperty("user.home")
-            val cargoBin = "$home/.cargo/bin"
+            val home = System.getenv("HOME") ?: System.getProperty("user.home") ?: ""
+            val extraPaths = listOf(
+                "$home/.cargo/bin",
+                "$home/.bun/bin",
+                "/opt/homebrew/bin",
+                "/opt/homebrew/sbin",
+                "/usr/local/bin"
+            ).filter { File(it).isDirectory }.joinToString(":")
             val currentPath = System.getenv("PATH") ?: ""
-            environment("PATH", "$cargoBin:$currentPath")
+            environment("PATH", if (currentPath.isNotEmpty()) "$extraPaths:$currentPath" else extraPaths)
         }.assertNormalExitValue()
     }
 }

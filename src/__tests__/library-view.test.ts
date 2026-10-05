@@ -79,4 +79,23 @@ describe('Library View Component', () => {
     expect(screen.getByText('Library')).toBeTruthy()
     expect(screen.getByPlaceholderText('Search by title or author...')).toBeTruthy()
   })
+
+  it('opens the book actions dropdown menu when clicking three-dot button', async () => {
+    await initLibraryStore()
+
+    const { fireEvent } = await import('@testing-library/vue')
+    render(Library, {
+      global: {
+        plugins: [PrimeVue],
+      },
+    })
+
+    const actionButtons = screen.getAllByLabelText('Book Actions')
+    expect(actionButtons.length).toBeGreaterThan(0)
+
+    await fireEvent.click(actionButtons[0])
+
+    expect(screen.getByText('Archive Book')).toBeTruthy()
+    expect(screen.getByText('Delete from Library')).toBeTruthy()
+  })
 })
