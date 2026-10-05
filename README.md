@@ -1,7 +1,7 @@
 # Prose
 
 <div align="center">
-  <img src="assets/app-icon.png" width="160" alt="Prose Icon" style="border-radius: 22%" />
+  <img src="assets/app-icon-2.png" width="160" alt="Prose Icon" style="border-radius: 22%" />
   <p><em>Minimalist, local-first reader for ePub and PDF books</em></p>
 </div>
 
